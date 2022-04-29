@@ -12,6 +12,7 @@ using Eigen::VectorX;
 
 template <typename T> struct AbstractVector {};
 
+#define ABSTRACT_KNOT_POINT_TYPENAME int Nx, int Nu, typename V, typename T
 #define ABSTRACT_KNOT_POINT_TEMPLATE                                           \
   template <int Nx, int Nu, typename V, typename T>
 
@@ -108,12 +109,12 @@ struct KnotPoint : ABSTRACT_KNOT_POINT {};
 ABSTRACT_KNOT_POINT_TEMPLATE
 struct StaticKnotPoint : ABSTRACT_KNOT_POINT {};
 
-#define KNOT_POINT_TEMPLATE template <int Nx, int Nu>
-#define CONST_KNOT_POINT_REF const AbstractKnotPoint<Nx, Nu, V, T> &
+#define CONST_KNOT_POINT_REF const KnotPoint<Nx, Nu, V, T> &
 #define CONST_KNOT_POINT const AbstractKnotPoint<Nx, Nu, V, T>
 #define KNOT_POINT_REF AbstractKnotPoint<Nx, Nu, V, T> &
 #define KNOT_POINT AbstractKnotPoint<Nx, Nu, V, T>
 
+#define KNOT_POINT_TEMPLATE template <int Nx, int Nu>
 #define KNOT_POINT_PARAM Nx, Nu, VectorX<double>, double
 KNOT_POINT_TEMPLATE
 struct KnotPoint<KNOT_POINT_PARAM> : AbstractKnotPoint<KNOT_POINT_PARAM> {

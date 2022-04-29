@@ -102,4 +102,98 @@ auto getargs(::ControlOnly, CONST_ABSTRACT_KNOT_POINT_REF z) {
 
 template <> struct DataType<AbstractFunction> { typedef double datatype; };
 
+template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+auto evaluate(AbstractFunction fun, P y, CONST_ABSTRACT_KNOT_POINT_REF z) {
+  evaluate(functioninputs(fun), fun, y, z);
+}
+
+ABSTRACT_KNOT_POINT_TEMPLATE
+auto evaluate(AbstractFunction fun, CONST_ABSTRACT_KNOT_POINT_REF z) {
+  evaluate(functioninputs(fun), fun, z);
+}
+
+// TODO: need support vadiatic parameters
+template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+auto evaluate(FunctionInputs inputtype, AbstractFunction fun, P y,
+              CONST_ABSTRACT_KNOT_POINT_REF z) {
+  evaluate(fun, y, getargs(inputtype, z));
+}
+
+ABSTRACT_KNOT_POINT_TEMPLATE
+auto evaluate(FunctionInputs inputtype, AbstractFunction fun,
+              CONST_ABSTRACT_KNOT_POINT_REF z) {
+  evaluate(fun, getargs(inputtype, z));
+}
+
+template <typename T, typename P>
+auto evaluate(AbstractFunction fun, T y, T x, T u, P p) {
+  evaluate(fun, y, x, u);
+}
+template <typename T, typename P>
+auto evaluate(AbstractFunction fun, T x, T u, P p) {
+  evaluate(fun, x, u);
+}
+
+template <typename T, typename... Args>
+auto evaluate(StaticReturn, AbstractFunction fun, T y, Args... args) {
+  evaluate(fun, args...);
+}
+template <typename T, typename... Args>
+auto evaluate(Inplace, AbstractFunction fun, T y, Args... args) {
+  evaluate(fun, y, args...);
+}
+
+template <typename T> auto evaluate(AbstractFunction fun, T y, T x, T u) {
+  throw std::runtime_error("Not implemented");
+}
+template <typename T> auto evaluate(AbstractFunction fun, T x, T u) {
+  throw std::runtime_error("Not implemented");
+}
+
+template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+auto evaluate(StaticReturn, AbstractFunction fun, P y,
+              CONST_ABSTRACT_KNOT_POINT_REF z) {
+  y = evaluate(fun, z);
+}
+template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+auto evaluate(Inplace, AbstractFunction fun, P y,
+              CONST_ABSTRACT_KNOT_POINT_REF z) {
+  evaluate(fun, y, z);
+}
+
+template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+auto jacobian(FunctionSignature, UserDefined, AbstractFunction fun, P J, P y,
+              CONST_ABSTRACT_KNOT_POINT_REF z) {
+  jacobian(fun, J, y, z);
+}
+
+template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+auto jacobian(AbstractFunction fun, P J, P y, CONST_ABSTRACT_KNOT_POINT_REF z) {
+  jacobian(functioninputs(fun), fun, J, y, z);
+}
+
+template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+auto jacobian(FunctionInputs inputtype, AbstractFunction fun, P J, P y,
+              CONST_ABSTRACT_KNOT_POINT_REF z) {
+  jacobian(fun, J, y, getargs(inputtype, z));
+}
+
+template <typename T, typename P>
+auto jacobian(AbstractFunction fun, T J, T y, T x, T u, P p) {
+  jacobian(fun, J, y, x, u);
+}
+template <typename T>
+auto jacobian(AbstractFunction fun, T J, T y, T x, T u) {
+  throw std::runtime_error("User-defined jacobian not implemented");
+}
+template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+auto d_jacobian(FunctionSignature, UserDefined, AbstractFunction fun, P H, P b, P y, CONST_ABSTRACT_KNOT_POINT_REF z) {
+  d_jacobian(fun, H, b, y, state(z), control(z), getparams(z));
+}
+
+template <typename T, typename Q>
+auto d_jacobian(AbstractFunction fun, T H, T b, T y, T x, T u, Q p) {
+  d_jacobian(fun, H, b, y, x, u);
+}
+
 #endif
