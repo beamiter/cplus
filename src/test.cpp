@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 
 #include "ilqr/cost_expansion.h"
+#include "ilqr/ilqr_solver.h"
 #include "robot_dynamics/knotpoint.h"
+#include "solver_opts.h"
+#include "trajectory_optimization/problem.h"
 
 //#include <glog/logging.h>
 
@@ -52,6 +55,11 @@ TEST(CostExpansionTest, StateControl) {
   KnotPoint<6, 2, Eigen::VectorX<double>, double> point1(a, 2.0, 3.0);
   KnotPoint<6, 2, Eigen::VectorX<double>, double> point2(6, 2, a, 2.0, 3.0);
   std::cout << point1.dt << std::endl;
+
+  auto prob = Problem<double>();
+  auto opts = SolverOptions<double>();
+  auto stats = SolverStats<double>();
+  auto solver = iLQRSolverHelper<double>::init(prob, opts, stats, true, UserDefined());
 }
 
 int main(int argc, char **argv) {

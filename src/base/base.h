@@ -3,12 +3,25 @@
 
 #include <Eigen/Dense>
 
+using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-template <typename T> auto length(T) {}
+template <typename T> auto length(T) { return -1; }
 
 template <> inline auto length(VectorXd t) { return t.size(); }
 
-template <typename T> struct DataType { typedef T datatype; };
+template <typename T> struct ValueType { typedef T value_type; };
+
+template <typename T, typename U> struct is_same_type {
+  const static bool value = false;
+};
+
+template <> struct is_same_type<VectorXd, VectorXd> {
+  const static bool value = true;
+};
+
+template <> struct is_same_type<MatrixXd, MatrixXd> {
+  const static bool value = true;
+};
 
 #endif

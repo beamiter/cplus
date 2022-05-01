@@ -1,6 +1,10 @@
 #ifndef SOLVER_H
 #define SOLVER_H
 
+enum class SolverName {
+  iLQR,
+};
+
 template <typename T> struct AbstractSolver {};
 
 #define ABSTRACTSOLVER AbstractSolver<T>

@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "solver.h"
+
 template <typename T> struct AbstractSolverOptions {};
 
 template<typename T>
@@ -25,6 +27,7 @@ struct SolverStats {
   std::vector<bool> iteration_pn;
   std::vector<T> cost;
 
+  SolverName parent;
 };
 
 #endif

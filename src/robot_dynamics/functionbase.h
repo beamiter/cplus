@@ -9,7 +9,11 @@
 
 struct AbstractFunction {};
 
-struct FunctionSignature {};
+template <> struct ValueType<AbstractFunction> { typedef double value_type; };
+
+struct FunctionSignature {
+  bool operator==(const FunctionSignature &rhs) const { return true; }
+};
 struct Inplace : FunctionSignature {};
 struct StaticReturn : FunctionSignature {};
 
@@ -100,8 +104,6 @@ auto getargs(::ControlOnly, CONST_ABSTRACT_KNOT_POINT_REF z) {
   return std::make_tuple(control(z));
 }
 
-template <> struct DataType<AbstractFunction> { typedef double datatype; };
-
 template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
 auto evaluate(AbstractFunction fun, P y, CONST_ABSTRACT_KNOT_POINT_REF z) {
   evaluate(functioninputs(fun), fun, y, z);
@@ -182,12 +184,12 @@ template <typename T, typename P>
 auto jacobian(AbstractFunction fun, T J, T y, T x, T u, P p) {
   jacobian(fun, J, y, x, u);
 }
-template <typename T>
-auto jacobian(AbstractFunction fun, T J, T y, T x, T u) {
+template <typename T> auto jacobian(AbstractFunction fun, T J, T y, T x, T u) {
   throw std::runtime_error("User-defined jacobian not implemented");
 }
 template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
-auto d_jacobian(FunctionSignature, UserDefined, AbstractFunction fun, P H, P b, P y, CONST_ABSTRACT_KNOT_POINT_REF z) {
+auto d_jacobian(FunctionSignature, UserDefined, AbstractFunction fun, P H, P b,
+                P y, CONST_ABSTRACT_KNOT_POINT_REF z) {
   d_jacobian(fun, H, b, y, state(z), control(z), getparams(z));
 }
 

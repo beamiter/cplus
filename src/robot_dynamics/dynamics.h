@@ -10,8 +10,8 @@ inline auto output_dim(AbstractModel model) { return state_dim(model); }
 
 struct ContinuousDynamics : AbstractModel {};
 
-KNOT_TEMP_DECL
-auto dynamics(ContinuousDynamics model, CONST_ABSTRACT_KNOT_Z) {
+ABSTRACT_KNOT_POINT_TEMPLATE
+auto dynamics(ContinuousDynamics model, CONST_ABSTRACT_KNOT_POINT_REF z) {
   return dynamics(model, state(z), control(z), time(z));
 }
 
@@ -21,7 +21,8 @@ auto dynamics(ContinuousDynamics model, T x, T u, double t) {
 }
 
 template <typename Q, int Nx, int Nu, typename V, typename T>
-auto dynamics(ContinuousDynamics model, Q xdot, CONST_ABSTRACT_KNOT_Z) {
+auto dynamics(ContinuousDynamics model, Q xdot,
+              CONST_ABSTRACT_KNOT_POINT_REF z) {
   dynamics(model, xdot, state(z), control(z), time(z));
 }
 
@@ -31,12 +32,14 @@ auto dynamics(ContinuousDynamics model, T xdot, T x, T u, double t) {
 }
 
 template <typename Q, int Nx, int Nu, typename V, typename T>
-auto dynamics(Inplace, ContinuousDynamics model, Q xdot, CONST_ABSTRACT_KNOT_Z) {
- dynamics(model, xdot, z);
+auto dynamics(Inplace, ContinuousDynamics model, Q xdot,
+              CONST_ABSTRACT_KNOT_POINT_REF z) {
+  dynamics(model, xdot, z);
 }
 
 template <typename Q, int Nx, int Nu, typename V, typename T>
-auto dynamics(StaticReturn, ContinuousDynamics model, Q xdot, CONST_ABSTRACT_KNOT_Z) {
+auto dynamics(StaticReturn, ContinuousDynamics model, Q xdot,
+              CONST_ABSTRACT_KNOT_POINT_REF z) {
   xdot = dynamics(model, z);
 }
 
@@ -46,12 +49,13 @@ auto evaluate(ContinuousDynamics model, T x, T u, P p) {
 }
 
 template <typename T, typename P>
-auto evaluate(ContinuousDynamics model, T xdot,T x, T u, P p) {
-  return dynamics(model,xdot, x, u, p.t);
+auto evaluate(ContinuousDynamics model, T xdot, T x, T u, P p) {
+  return dynamics(model, xdot, x, u, p.t);
 }
 
 template <typename Q, int Nx, int Nu, typename V, typename T>
-auto jacobian(FunctionSignature, UserDefined, ContinuousDynamics model, Q J, Q xdot, CONST_ABSTRACT_KNOT_Z) {
+auto jacobian(FunctionSignature, UserDefined, ContinuousDynamics model, Q J,
+              Q xdot, CONST_ABSTRACT_KNOT_POINT_REF z) {
   jacobian(model, J, xdot, state(z), constrol(z), time(z));
 }
 

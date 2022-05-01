@@ -16,6 +16,9 @@ using Eigen::Ref;
 using Eigen::seq;
 using Eigen::VectorX;
 
+// template <typename T> using m_data_type = MatrixX<T>;
+// template <typename T> using v_data_type = VectorX<T>;
+
 // State and control
 template <typename T, bool B = true> struct StateControlExpansion {
   static const bool state_control = B;

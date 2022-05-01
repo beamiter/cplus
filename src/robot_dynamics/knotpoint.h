@@ -14,7 +14,7 @@ template <typename T> struct AbstractVector {};
 
 #define ABSTRACT_KNOT_POINT_TYPENAME int Nx, int Nu, typename V, typename T
 #define ABSTRACT_KNOT_POINT_TEMPLATE                                           \
-  template <int Nx, int Nu, typename V, typename T>
+  template <ABSTRACT_KNOT_POINT_TYPENAME>
 
 #define CONST_ABSTRACT_KNOT_POINT_REF const AbstractKnotPoint<Nx, Nu, V, T> &
 #define CONST_ABSTRACT_KNOT_POINT const AbstractKnotPoint<Nx, Nu, V, T>
@@ -110,9 +110,9 @@ ABSTRACT_KNOT_POINT_TEMPLATE
 struct StaticKnotPoint : ABSTRACT_KNOT_POINT {};
 
 #define CONST_KNOT_POINT_REF const KnotPoint<Nx, Nu, V, T> &
-#define CONST_KNOT_POINT const AbstractKnotPoint<Nx, Nu, V, T>
-#define KNOT_POINT_REF AbstractKnotPoint<Nx, Nu, V, T> &
-#define KNOT_POINT AbstractKnotPoint<Nx, Nu, V, T>
+#define CONST_KNOT_POINT const KnotPoint<Nx, Nu, V, T>
+#define KNOT_POINT_REF KnotPoint<Nx, Nu, V, T> &
+#define KNOT_POINT KnotPoint<Nx, Nu, V, T>
 
 #define KNOT_POINT_TEMPLATE template <int Nx, int Nu>
 #define KNOT_POINT_PARAM Nx, Nu, VectorX<double>, double
