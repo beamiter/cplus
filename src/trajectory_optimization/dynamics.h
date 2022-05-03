@@ -7,8 +7,11 @@
 #include "robot_dynamics/discrete_dynamics.h"
 
 inline auto dims(std::vector<DiscreteDynamics> models) {
-  assert(models.size() > 0);
+  // assert(models.size() > 0);
   std::vector<int> nx, nu;
+  nx = {6,6,6};
+  nu = {2,2,2};
+
   std::for_each(models.begin(), models.end(), [&nx, &nu](const auto &model) {
     nx.push_back(state_dim(model));
     nu.push_back(control_dim(model));

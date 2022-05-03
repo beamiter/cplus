@@ -14,15 +14,24 @@ using Eigen::MatrixX;
 #define PROBLEM_PARAM Nx, Nu, T
 #define PROBLEM_TYPENAME int Nx, int Nu, typename T
 #define PROBLEM_TEMPLATE template <PROBLEM_TYPENAME>
-
 #define PROBLEM Problem<PROBLEM_PARAM>
+
 PROBLEM_TEMPLATE struct Problem {
+  Problem(std::vector<DiscreteDynamics> model_in, AbstractObjective obj_in,
+      MatrixX<T> x0_in, MatrixX<T> xf_in, int N_in) {}
   std::vector<DiscreteDynamics> model;
   AbstractObjective obj;
   MatrixX<T> x0;
   MatrixX<T> xf;
-  SampledTrajectory<Nx, Nu, T, KnotPoint<Nx, Nu, VectorX<T>, T>> Z;
+  SampledTrajectory<Nx, Nu, VectorX<T>, T, KnotPoint> Z;
   int N;
+};
+
+struct ProblemHelper {
+  template<typename T>
+    ProblemHelper(){}
+  template<typename T, typename P>
+    ProblemHelper(){}
 };
 
 PROBLEM_TEMPLATE auto dims(PROBLEM prob) { return dims(prob.model); }

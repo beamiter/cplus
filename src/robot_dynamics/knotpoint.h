@@ -11,10 +11,9 @@ using Eigen::seqN;
 using Eigen::VectorX;
 
 template <typename T> struct AbstractVector {};
-
 #define ABSTRACT_KNOT_POINT_TYPENAME int Nx, int Nu, typename V, typename T
 #define ABSTRACT_KNOT_POINT_TEMPLATE                                           \
-  template <ABSTRACT_KNOT_POINT_TYPENAME>
+  template <int Nx, int Nu, typename V, typename T>
 
 #define CONST_ABSTRACT_KNOT_POINT_REF const AbstractKnotPoint<Nx, Nu, V, T> &
 #define CONST_ABSTRACT_KNOT_POINT const AbstractKnotPoint<Nx, Nu, V, T>

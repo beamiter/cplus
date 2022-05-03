@@ -5,6 +5,7 @@
 #include "robot_dynamics/knotpoint.h"
 #include "solver_opts.h"
 #include "trajectory_optimization/problem.h"
+#include "robot_dynamics/car_model.h"
 
 //#include <glog/logging.h>
 
@@ -56,10 +57,12 @@ TEST(CostExpansionTest, StateControl) {
   KnotPoint<6, 2, Eigen::VectorX<double>, double> point2(6, 2, a, 2.0, 3.0);
   std::cout << point1.dt << std::endl;
 
-  // auto prob = Problem<double>();
-  // auto opts = SolverOptions<double>();
-  // auto stats = SolverStats<double>();
-  // auto solver = iLQRSolverHelper<double>::init(prob, opts, stats, true, UserDefined());
+  auto model0 = CarModel(); 
+  // auto prob = Problem<6,2,double>();
+  auto opts = SolverOptions<double>();
+  auto stats = SolverStats<double>();
+  // auto solver = iLQRSolverHelper::init(prob, opts, stats, ValBool<true>(), UserDefined());
+
 }
 
 int main(int argc, char **argv) {

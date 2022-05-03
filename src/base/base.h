@@ -24,18 +24,9 @@ template <> struct is_same_type<MatrixXd, MatrixXd> {
   const static bool value = true;
 };
 
-template <typename T> struct Val {
-  T data;
-};
-template <> 
-struct Val<bool> {
-  bool data;
-  Val(bool b) {
-    data = b;
-  }
-  bool operator==(const Val<bool> rhs) {
-    return this->data == rhs.data;
-  }
-};
+template<bool T>
+struct ValBool{};
+template<int T>
+struct ValInt{};
 
 #endif

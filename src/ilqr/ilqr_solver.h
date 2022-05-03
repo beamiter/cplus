@@ -18,6 +18,15 @@ using Eigen::Ref;
 using Eigen::VectorX;
 using Eigen::VectorXd;
 
+template <bool B, typename T>
+struct StaticArray {
+  typedef std::vector<T> type;
+};
+template <typename T>
+struct StaticArray<true, T> {
+  typedef VectorX<T> type;
+};
+
 template <typename T> struct DynamicRegularization {
   T rou;
   T d_rou;
@@ -29,25 +38,40 @@ template <typename T> struct DynamicRegularization {
 #define ILQR_SOLVER iLQRSolver<L, O, Nx, Ne, Nu, T, V>
 
 struct iLQRSolverHelper {
-template <int Nx, int Nu, typename T> 
- static auto init(Problem<Nx, Nu, T> prob, SolverOptions<T> opts, SolverStats<T> stats,
-            Val<bool> use_static, DiffMethod dynamics_diffmethod, ...) {
+  template <int Nx, int Nu, bool USE_STATIC, typename T>
+  static auto init(Problem<Nx, Nu, T> prob, SolverOptions<T> opts,
+                   SolverStats<T> stats, ValBool<USE_STATIC>,
+                   DiffMethod dynamics_diffmethod, ...) {
     // set_options(opts);
 
     std::vector<int> nx, nu, ne;
     std::tie(nx, nu) = dims(prob);
     auto N = horizonlength(prob);
-    for (const auto& m : prob.model) {
+    for (const auto &m : prob.model) {
       ne.push_back(errstate_dim(m));
     }
+    ne = {2,2,2};
     ne.push_back(ne.back());
 
     auto x0 = prob.x0;
-    const bool samestatedim = true;
-    const bool samecontroldim = true;
-    if (use_static == Val<bool>(true)) {
+    const bool samestatedim = std::all_of(
+        nx.begin(), nx.end(), [&nx](const auto x) { return x == nx[0]; });
+    const bool samecontroldim = std::all_of(
+        nu.begin(), nu.end(), [&nu](const auto u) { return u == nu[0]; });
+    auto Nx_tmp = Nx;
+    auto Nu_tmp = Nu;
+    auto Ne_tmp = 0;
+    if (USE_STATIC) {
+      assert(samecontroldim && samestatedim);
+      Nx_tmp = nx[0];
+      Nu_tmp = nu[0];
+      Ne_tmp = ne[0];
     } else {
+      Nx_tmp = samestatedim ? nx[0] : Nx;
+      Nu_tmp = samestatedim ? nx[0] : Nu;
+      Ne_tmp = samecontroldim ? nu[0] : 0;
     }
+    typedef typename StaticArray<USE_STATIC, T>::type V;
     return 1;
   }
 };
@@ -67,8 +91,8 @@ ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
   SolverOptions<T> opts;
   SolverStats<T> stats;
 
-  SampledTrajectory<Nx, Nu, T, KNOT_POINT> Z;
-  SampledTrajectory<Nx, Nu, T, KNOT_POINT> z_dot;
+  SampledTrajectory<Nx, Nu, V, T, KnotPoint> Z;
+  SampledTrajectory<Nx, Nu, V, T, KnotPoint> z_dot;
   VectorX<VectorX<T>> dx;
   VectorX<VectorX<T>> du;
 
