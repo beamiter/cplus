@@ -28,21 +28,24 @@ template <typename T> struct DynamicRegularization {
 #define ILQR_SOLVER_TEMPLATE template <ILQR_SOLVER_TYPENAME>
 #define ILQR_SOLVER iLQRSolver<L, O, Nx, Ne, Nu, T, V>
 
-template <typename T> struct iLQRSolverHelper {
- static auto init(Problem<T> prob, SolverOptions<T> opts, SolverStats<T> stats,
-            bool use_static, DiffMethod dynamics_diffmethod, ...) {
+struct iLQRSolverHelper {
+template <int Nx, int Nu, typename T> 
+ static auto init(Problem<Nx, Nu, T> prob, SolverOptions<T> opts, SolverStats<T> stats,
+            Val<bool> use_static, DiffMethod dynamics_diffmethod, ...) {
     // set_options(opts);
 
-    int n = 0, m = 0;
-    std::tie(n, m) = dims(prob);
+    std::vector<int> nx, nu, ne;
+    std::tie(nx, nu) = dims(prob);
     auto N = horizonlength(prob);
-    std::vector<int> ne = errstate_dim(prob.model);
+    for (const auto& m : prob.model) {
+      ne.push_back(errstate_dim(m));
+    }
     ne.push_back(ne.back());
 
     auto x0 = prob.x0;
     const bool samestatedim = true;
     const bool samecontroldim = true;
-    if (use_static) {
+    if (use_static == Val<bool>(true)) {
     } else {
     }
     return 1;

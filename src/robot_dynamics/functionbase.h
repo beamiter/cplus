@@ -27,12 +27,15 @@ inline auto default_signature(AbstractFunction) { return StaticReturn(); }
 
 template <typename T> auto state_dim(T t) {
   throw std::runtime_error("Need to be implemented.");
+  return 0;
 }
 template <typename T> auto control_dim(T t) {
   throw std::runtime_error("Need to be implemented.");
+  return 0;
 }
 template <typename T> auto output_dim(T t) {
   throw std::runtime_error("Need to be implemented.");
+  return 0;
 }
 
 template <> inline auto state_dim(AbstractFunction fun) {

@@ -114,12 +114,11 @@ struct StaticKnotPoint : ABSTRACT_KNOT_POINT {};
 #define KNOT_POINT_REF KnotPoint<Nx, Nu, V, T> &
 #define KNOT_POINT KnotPoint<Nx, Nu, V, T>
 
-#define KNOT_POINT_TEMPLATE template <int Nx, int Nu>
-#define KNOT_POINT_PARAM Nx, Nu, VectorX<double>, double
+#define KNOT_POINT_TEMPLATE template <int Nx, int Nu, typename T>
+#define KNOT_POINT_PARAM Nx, Nu, VectorX<T>, T
 KNOT_POINT_TEMPLATE
 struct KnotPoint<KNOT_POINT_PARAM> : AbstractKnotPoint<KNOT_POINT_PARAM> {
   typedef typename AbstractKnotPoint<KNOT_POINT_PARAM>::vectype V;
-  typedef typename AbstractKnotPoint<KNOT_POINT_PARAM>::datatype T;
   KnotPoint(V z, T t, T dt) {
     this->z = z;
     this->t = t;
