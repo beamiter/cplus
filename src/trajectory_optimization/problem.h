@@ -1,5 +1,5 @@
-#ifndef PROBLEM_H
-#define PROBLEM_H
+#ifndef ProblemDeclare_H
+#define ProblemDeclare_H
 
 #include <Eigen/Dense>
 
@@ -11,16 +11,13 @@
 #include "dynamics.h"
 #include "objective.h"
 
-#define PROBLEM_PARAM Nx, Nu, T
-#define PROBLEM_TYPENAME int Nx, int Nu, typename T
-#define PROBLEM_TEMPLATE template <int Nx, int Nu, typename T>
-#define PROBLEM Problem<Nx, Nu, T>
+#define ProblemTemplate template <int Nx, int Nu, typename T>
+#define ProblemDeclare Problem<Nx, Nu, T>
 
-PROBLEM_TEMPLATE struct Problem {
+ProblemTemplate struct Problem {
   Problem(std::vector<DiscreteDynamics> model_in, AbstractObjective obj_in,
           ConstraintList constraints_in, std::vector<T> x0_in,
-          std::vector<T> xf_in,
-          SampledTrajectory<Nx, Nu, VectorX<T>, T, KnotPoint> Z_in, int N_in,
+          std::vector<T> xf_in, SampledTrajectoryX<Nx, Nu, T> Z_in, int N_in,
           T t0, T tf)
       : model(std::move(model_in)), obj(std::move(obj_in)),
         constraints(std::move(constraints_in)), Z(std::move(Z_in)),
@@ -31,19 +28,27 @@ PROBLEM_TEMPLATE struct Problem {
   ConstraintList constraints;
   std::vector<T> x0;
   std::vector<T> xf;
-  SampledTrajectory<Nx, Nu, VectorX<T>, T, KnotPoint> Z;
+  SampledTrajectoryX<Nx, Nu, T> Z;
   int N;
 };
 
 struct ProblemHelper {
-
   template <int Nx, int Nu, typename T>
   static auto init(std::vector<DiscreteDynamics> models, AbstractObjective obj,
                    std::vector<T> x0, double tf) {
     std::vector<T> xf = std::vector<T>(state_dim(models.back()), 0);
     auto constraints = ConstraintList(models);
     auto t0 = zero(tf);
-    // X0, U0;
+
+    auto dim0 = std::get<0>(dims(models));
+    std::vector<VectorX<T>> X0, U0;
+    for (auto d : dim0) {
+      X0.push_back(VectorX<T>::Zero(d));
+    }
+    for (const auto &m : models) {
+      U0.push_back(VectorX<T>::Zero(control_dim(m)));
+    }
+
     std::vector<int> nx, nu;
     std::tie(nx, nu) = dims(models);
     const bool same_state_dimension = std::all_of(
@@ -51,8 +56,13 @@ struct ProblemHelper {
     const bool same_control_dimension = std::all_of(
         nu.begin(), nu.end(), [&nu](const auto u) { return u == nu[0]; });
     assert(same_state_dimension && same_control_dimension);
+
     const auto N = length(obj);
-    SampledTrajectory<Nx, Nu, VectorX<T>, T, KnotPoint> Z;
+    TrivialParam param;
+    param.tf = 5.0;
+    param.dt = 0.1;
+    param.N = N;
+    auto Z = SampledTrajectoryHelper::init<Nx, Nu>(X0, U0, param);
     return Problem<Nx, Nu, T>(models, obj, constraints, x0, xf, Z, N, t0, tf);
   }
 
@@ -75,44 +85,41 @@ struct ProblemHelper {
   }
 };
 
-PROBLEM_TEMPLATE auto dims(PROBLEM prob) { return dims(prob.model); }
+ProblemTemplate auto dims(ProblemDeclare prob) { return dims(prob.model); }
 
-PROBLEM_TEMPLATE auto dims(PROBLEM prob, int i) {
+ProblemTemplate auto dims(ProblemDeclare prob, int i) {
   int n = 0, m = 0;
   std::tie(n, m) = dims(prob.model[i]);
   return std::make_tuple(n, m, prob.N);
 }
 
-PROBLEM_TEMPLATE auto state_dim(PROBLEM prob, int k) {
+ProblemTemplate auto state_dim(ProblemDeclare prob, int k) {
   return state_dim(prob.model[k]);
 }
-PROBLEM_TEMPLATE auto control_dim(PROBLEM prob, int k) {
+ProblemTemplate auto control_dim(ProblemDeclare prob, int k) {
   return control_dim(prob.model[k]);
 }
 
-PROBLEM_TEMPLATE auto horizonlength(PROBLEM prob) { return prob.N; }
+ProblemTemplate auto horizonlength(ProblemDeclare prob) { return prob.N; }
 
-template <PROBLEM_TYPENAME, typename... Args>
-auto controls(PROBLEM prob, Args... args) {
+template <int Nx, int Nu, typename T, typename... Args>
+auto controls(ProblemDeclare prob, Args... args) {
   return controls(get_trajectory(prob), args...);
 }
-template <PROBLEM_TYPENAME, typename... Args>
-auto states(PROBLEM prob, Args... args) {
+template <int Nx, int Nu, typename T, typename... Args>
+auto states(ProblemDeclare prob, Args... args) {
   return states(get_trajectory(prob), args...);
 }
-PROBLEM_TEMPLATE
-auto gettimes(PROBLEM prob) { return gettimes(get_trajectory(prob)); }
-PROBLEM_TEMPLATE
-auto get_model(PROBLEM prob) { return prob.model; }
-PROBLEM_TEMPLATE
-auto get_model(PROBLEM prob, int k) { return prob.model[k]; }
-PROBLEM_TEMPLATE
-auto get_objective(PROBLEM prob) { return prob.obj; }
-PROBLEM_TEMPLATE
-auto get_trajectory(PROBLEM prob) { return prob.Z; }
-PROBLEM_TEMPLATE
-auto get_initial_state(PROBLEM prob) { return prob.x0; }
-PROBLEM_TEMPLATE
-auto get_final_state(PROBLEM prob) { return prob.xf; }
+ProblemTemplate auto gettimes(ProblemDeclare prob) {
+  return gettimes(get_trajectory(prob));
+}
+ProblemTemplate auto get_model(ProblemDeclare prob) { return prob.model; }
+ProblemTemplate auto get_model(ProblemDeclare prob, int k) {
+  return prob.model[k];
+}
+ProblemTemplate auto get_objective(ProblemDeclare prob) { return prob.obj; }
+ProblemTemplate auto get_trajectory(ProblemDeclare prob) { return prob.Z; }
+ProblemTemplate auto get_initial_state(ProblemDeclare prob) { return prob.x0; }
+ProblemTemplate auto get_final_state(ProblemDeclare prob) { return prob.xf; }
 
 #endif

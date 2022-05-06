@@ -13,20 +13,16 @@
 #include "solver_opts.h"
 #include "trajectory_optimization/problem.h"
 
+using Eigen::Map;
 using Eigen::MatrixX;
 using Eigen::Ref;
 using Eigen::VectorX;
 using Eigen::VectorXd;
-using Eigen::Map;
 
-template <bool B, typename T>
-struct StaticArray {
+template <bool B, typename T> struct StaticArray {
   typedef std::vector<T> type;
 };
-template <typename T>
-struct StaticArray<true, T> {
-  typedef VectorX<T> type;
-};
+template <typename T> struct StaticArray<true, T> { typedef VectorX<T> type; };
 
 template <typename T> struct DynamicRegularization {
   T rou;
@@ -43,8 +39,6 @@ struct iLQRSolverHelper {
   static auto init(Problem<Nx, Nu, T> prob, SolverOptions<T> opts,
                    SolverStats<T> stats, ValBool<USE_STATIC>,
                    DiffMethod dynamics_diffmethod, ...) {
-    // set_options(opts);
-
     std::vector<int> nx, nu, ne;
     std::tie(nx, nu) = dims(prob);
     auto N = horizonlength(prob);
@@ -75,9 +69,16 @@ struct iLQRSolverHelper {
     auto Z = prob.Z;
     auto d_Z = Z;
 
+    // if (std::any_of(state(Z[0]).begin(), state(Z[0]).end(),
+    //                 [](const auto &s) { return std::isnan(s); })) {
+    //   rollout(dynamics_signature(Z), prob.model[0], Z, prob.x0);
+    // }
+
     // Change std vector to Eigen Vector;
-    Map<Eigen::VectorX<T>> v(prob.x0, prob.x0.size());
-    setstate(Z[0], v);
+    VectorX<T> v(prob.x0.data());
+    VectorX<T> v1 = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
+    Map<Eigen::VectorX<T>> v2(prob.x0.data(), prob.x0.size());
+    setstate(Z[0], v1);
 
     return 1;
   }

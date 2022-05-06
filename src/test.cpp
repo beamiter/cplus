@@ -4,6 +4,7 @@
 #include "ilqr/ilqr_solver.h"
 #include "robot_dynamics/car_model.h"
 #include "robot_dynamics/knotpoint.h"
+#include "robot_dynamics/trajectories.h"
 #include "solver_opts.h"
 #include "trajectory_optimization/problem.h"
 
@@ -52,7 +53,7 @@ TEST(CostExpansionTest, StateControl) {
           cost5, model);
   std::cout << fse5[0].data << std::endl << std::endl;
 
-  std::vector<int> ha({2,3,4});
+  std::vector<int> ha({2, 3, 4});
   ha.insert(ha.begin(), 6);
   std::partial_sum(ha.begin(), ha.end(), ha.begin());
   for (auto a : ha) {
@@ -66,8 +67,12 @@ TEST(CostExpansionTest, StateControl) {
   auto prob = ProblemHelper::init<6, 2>(car, obj, x0, tf);
   auto opts = SolverOptions<double>();
   auto stats = SolverStats<double>();
+  auto traj = SampledTrajectoryX<6,2,double>();
+  traj.data.push_back(KnotPointX<6, 2, double>());
+
   // auto solver =
-  //     iLQRSolverHelper::init(prob, opts, stats, ValBool<true>(), UserDefined());
+  //     iLQRSolverHelper::init(prob, opts, stats, ValBool<true>(),
+  //     UserDefined());
 }
 
 int main(int argc, char **argv) {
