@@ -11,7 +11,7 @@ AbstractKnotPointTemplate auto evaluate(DiscreteDynamics model,
   return discrete_dynamics(model, z);
 }
 
-template <typename P, int Nx, int Nu, typename V, typename T>
+template <typename P, AbstractKnotPointTypeName>
 auto evaluate(DiscreteDynamics model, P xn, const AbstractKnotPointDeclare &z) {
   discrete_dynamics(model, xn, z);
 }

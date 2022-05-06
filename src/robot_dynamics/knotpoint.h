@@ -12,6 +12,7 @@ using Eigen::VectorX;
 
 template <typename T> struct AbstractVector {};
 
+#define AbstractKnotPointTypeName int Nx, int Nu, typename V, typename T
 #define AbstractKnotPointTemplate                                              \
   template <int Nx, int Nu, typename V, typename T>
 #define AbstractKnotPointDeclare AbstractKnotPoint<Nx, Nu, V, T>
@@ -32,6 +33,11 @@ AbstractKnotPointTemplate struct AbstractKnotPoint : AbstractVector<T> {
     getdata(*this) * c;
     return *this;
   }
+  V z;
+  T t;
+  T dt;
+  int n;
+  int m;
 };
 
 template <int Nx, int Nu, typename T>
@@ -63,6 +69,17 @@ AbstractKnotPointTemplate auto getcontrol(const AbstractKnotPointDeclare &z,
   // std::tie(n, m) = dims(z);
   // return !is_terminal(z) * v(seqN(n, m));
 }
+AbstractKnotPointTemplate auto state_dim(const AbstractKnotPointDeclare &z) {
+  return z.n;
+}
+
+AbstractKnotPointTemplate auto control_dim(const AbstractKnotPointDeclare &z) {
+  return z.m;
+}
+
+AbstractKnotPointTemplate auto getdata(const AbstractKnotPointDeclare &z) {
+  return z.z;
+}
 
 AbstractKnotPointTemplate auto state(const AbstractKnotPointDeclare &z) {
   return getstate(z, getdata(z));
@@ -72,31 +89,34 @@ AbstractKnotPointTemplate auto control(const AbstractKnotPointDeclare &z) {
   return getcontrol(z, getdata(z));
 }
 
-AbstractKnotPointTemplate auto setdata(const AbstractKnotPointDeclare &z,
+AbstractKnotPointTemplate auto setdata(AbstractKnotPointDeclare &z,
                                        const VectorX<T> &v) {
   z.z = v;
 }
 
-AbstractKnotPointTemplate auto setstate(const AbstractKnotPointDeclare &z,
+AbstractKnotPointTemplate auto setstate(AbstractKnotPointDeclare &z,
                                         const VectorX<T> &x) {
   // state(z) = x;
   setdata(z, x);
 }
 
-AbstractKnotPointTemplate auto setcontrol(const AbstractKnotPointDeclare &z,
+AbstractKnotPointTemplate auto setcontrol(AbstractKnotPointDeclare &z,
                                           const VectorX<T> &u) {
   // control(z) = u;
   setdata(z, u);
 }
 
-AbstractKnotPointTemplate auto settime(const AbstractKnotPointDeclare &z,
-                                       double t) {
+AbstractKnotPointTemplate auto settime(AbstractKnotPointDeclare &z, double t) {
   z.t = t;
 }
 
-AbstractKnotPointTemplate auto settimestep(const AbstractKnotPointDeclare &z,
+AbstractKnotPointTemplate auto settimestep(AbstractKnotPointDeclare &z,
                                            double dt) {
   z.dt = dt;
+}
+
+AbstractKnotPointTemplate auto getparams(const AbstractKnotPointDeclare &z) {
+  return std::make_tuple(z.t, z.dt);
 }
 
 AbstractKnotPointTemplate auto time(const AbstractKnotPointDeclare &z) {
@@ -114,13 +134,7 @@ AbstractKnotPointTemplate auto is_terminal(const AbstractKnotPointDeclare &z) {
 #define KnotPointTemplate template <int Nx, int Nu, typename V, typename T>
 #define KnotPointDeclare KnotPoint<Nx, Nu, V, T>
 
-KnotPointTemplate struct KnotPoint : AbstractKnotPointDeclare {
-  V z;
-  T t;
-  T dt;
-  int n;
-  int m;
-};
+KnotPointTemplate struct KnotPoint : AbstractKnotPointDeclare {};
 
 KnotPointTemplate struct StaticKnotPoint : AbstractKnotPointDeclare {};
 
@@ -178,18 +192,5 @@ struct KnotPoint<Nx, Nu, VectorX<T>, T>
   int n;
   int m;
 };
-
-KnotPointTemplate auto time(const KnotPointDeclare &z) {
-  return std::get<0>(getparams(z));
-}
-
-KnotPointTemplate auto state_dim(const KnotPointDeclare &z) { return z.n; }
-KnotPointTemplate auto control_dim(const KnotPointDeclare &z) { return z.m; }
-
-KnotPointTemplate auto getparams(const KnotPointDeclare &z) {
-  return std::make_tuple(z.t, z.dt);
-}
-
-KnotPointTemplate auto getdata(const KnotPointDeclare &z) { return z.z; }
 
 #endif

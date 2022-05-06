@@ -18,8 +18,6 @@ template <> inline auto zero(double) { return 0.0;}
 template <> inline auto zero(float) { return 0.0;}
 template <> inline auto zero(int) { return 0;}
 
-template <typename T> struct ValueType { typedef T value_type; };
-
 template <typename T, typename U> struct is_same_type {
   const static bool value = false;
 };

@@ -29,6 +29,24 @@ template <typename T> struct DynamicRegularization {
   T d_rou;
 };
 
+template <typename T> bool usestatic(T obj) {
+  return is_same_type<typename T::value_type,
+                      typename VectorXd::value_type>::value;
+}
+template <bool> auto dynamics_signature() { return Inplace(); }
+template <> inline auto dynamics_signature<true>() { return StaticReturn(); }
+template <bool> auto function_signature() { return Inplace(); }
+template <> inline auto function_signature<true>() { return StaticReturn(); }
+
+// template <typename T>  auto dynamics_signature(T obj) {
+//   return  usestatic(obj) ? StaticReturn() : Inplace();
+// }
+//
+// template <typename T> auto function_signature(T obj) {
+//   return usestatic(obj) ? StaticReturn() : Inplace();
+// }
+//
+
 #define ILQR_SOLVER_TYPENAME                                                   \
   typename L, typename O, int Nx, int Ne, int Nu, typename T, typename V
 #define ILQR_SOLVER_TEMPLATE template <ILQR_SOLVER_TYPENAME>
@@ -69,16 +87,15 @@ struct iLQRSolverHelper {
     auto Z = prob.Z;
     auto d_Z = Z;
 
-    // if (std::any_of(state(Z[0]).begin(), state(Z[0]).end(),
-    //                 [](const auto &s) { return std::isnan(s); })) {
-    //   rollout(dynamics_signature(Z), prob.model[0], Z, prob.x0);
-    // }
-
-    // Change std vector to Eigen Vector;
-    VectorX<T> v(prob.x0.data());
-    VectorX<T> v1 = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
-    Map<Eigen::VectorX<T>> v2(prob.x0.data(), prob.x0.size());
-    setstate(Z[0], v1);
+    if (std::any_of(state(Z[0]).begin(), state(Z[0]).end(),
+                    [](const auto &s) { return std::isnan(s); })) {
+      bool b = usestatic(Z);
+      // Change std vector to Eigen Vector;
+      VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
+      rollout(dynamics_signature<true>(), prob.model[0], Z, v);
+    }
+    VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
+    setstate(Z[0], v);
 
     return 1;
   }
@@ -99,8 +116,8 @@ ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
   SolverOptions<T> opts;
   SolverStats<T> stats;
 
-  SampledTrajectory<Nx, Nu, V, T, KnotPoint> Z;
-  SampledTrajectory<Nx, Nu, V, T, KnotPoint> z_dot;
+  SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z;
+  SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> z_dot;
   VectorX<VectorX<T>> dx;
   VectorX<VectorX<T>> du;
 
@@ -170,19 +187,6 @@ auto solvername(ILQR_SOLVER) { return SolverName::iLQR; }
 
 ILQR_SOLVER_TEMPLATE
 auto get_feedbackgains(ILQR_SOLVER solver) { return solver.K; }
-
-template <typename T> auto usestatic(T obj) {
-  return is_same_type<typename ValueType<T>::value_type,
-                      typename VectorXd::value_type>::value;
-}
-
-template <typename T> auto dynamics_signature(T obj) {
-  return usestatic(obj) ? StaticReturn() : Inplace();
-}
-
-template <typename T> auto function_signature(T obj) {
-  return usestatic(obj) ? StaticReturn() : Inplace();
-}
 
 inline auto usestaticdefault(AbstractFunction model) {
   return default_signature(model) == StaticReturn();

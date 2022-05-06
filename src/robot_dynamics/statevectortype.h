@@ -35,9 +35,9 @@ template <typename T, typename Q> auto state_diff(T fun, Q x, Q x0) {
   return state_diff(statevector_type(fun), fun, x, x0);
 }
 
-template <typename G, int Nx, int Nu, typename V, typename T>
+template <typename G, AbstractKnotPointTypeName>
 auto errstate_jacobian(AbstractFunction fun, G J,
-                       const AbstractKnotPoint<Nx, Nu, V, T>& z) {
+                       const AbstractKnotPoint<Nx, Nu, V, T> &z) {
   errstate_jacobian(statevector_type(fun), fun, J, state(z));
 }
 
@@ -46,9 +46,9 @@ auto errstate_jacobian(AbstractFunction fun, G J, P x) {
   errstate_jacobian(statevector_type(fun), fun, J, x);
 }
 
-template <typename G, int Nx, int Nu, typename V, typename T, typename P>
+template <typename G, typename P, AbstractKnotPointTypeName>
 auto d_errstate_jacobian(AbstractFunction fun, G J,
-                         const AbstractKnotPoint<Nx, Nu, V, T>& z, P dx) {
+                         const AbstractKnotPoint<Nx, Nu, V, T> &z, P dx) {
   return d_errstate_jacobian(statevector_type(fun), fun, J, state(z), dx);
 }
 

@@ -67,12 +67,11 @@ TEST(CostExpansionTest, StateControl) {
   auto prob = ProblemHelper::init<6, 2>(car, obj, x0, tf);
   auto opts = SolverOptions<double>();
   auto stats = SolverStats<double>();
-  auto traj = SampledTrajectoryX<6,2,double>();
+  auto traj = SampledTrajectoryX<6, 2, double>();
   traj.data.push_back(KnotPointX<6, 2, double>());
 
-  // auto solver =
-  //     iLQRSolverHelper::init(prob, opts, stats, ValBool<true>(),
-  //     UserDefined());
+  auto solver =
+      iLQRSolverHelper::init(prob, opts, stats, ValBool<true>(), UserDefined());
 }
 
 int main(int argc, char **argv) {

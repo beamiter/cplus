@@ -82,19 +82,19 @@ inline auto gettimeinfo(std::vector<double> dt, double t0 = 0.,
   return std::partial_sum(dt.begin(), dt.end(), dt.begin());
 }
 
+#define SampledTrajectoryTypeName                                              \
+  int n, int m, typename V, typename T, typename KP = KnotPoint<n, m, V, T>
 #define SampledTrajectoryTemplate                                              \
   template <int n, int m, typename V, typename T,                              \
-            template <int, int, typename, typename> class KP>
+            typename KP = KnotPoint<n, m, V, T>>
 #define SampledTrajectoryDeclare                                               \
-  SampledTrajectory<n, m, V, T, AbstractKnotPoint>
+  SampledTrajectory<n, m, V, T, KnotPoint<n, m, V, T>>
 
-template <int n, int m, typename V, typename T,
-          template <int, int, typename, typename> class KP>
-struct SampledTrajectory : AbstractTrajectory {
+SampledTrajectoryTemplate struct SampledTrajectory : AbstractTrajectory {
   typedef V vectype;
+  typedef V value_type;
   SampledTrajectory() {}
-  SampledTrajectory(std::vector<KP<n, m, V, T>> data_in,
-                    std::vector<T> times_in)
+  SampledTrajectory(std::vector<KP> data_in, std::vector<T> times_in)
       : data(std::move(data_in)), times(std::move(times_in)) {}
 
   auto begin() { return data.begin(); }
@@ -103,17 +103,18 @@ struct SampledTrajectory : AbstractTrajectory {
   auto back() { return data.back(); }
   auto size() { return data.size(); }
   const auto &operator[](int i) const { return data[i]; }
-  KP<n, m, V, T> &operator[](int i) { return data[i]; }
-  std::vector<KP<n, m, V, T>> data;
+  KP &operator[](int i) { return data[i]; }
+  std::vector<KP> data;
   std::vector<T> times;
 };
 
 template <int n, int m, typename T>
-using SampledTrajectoryX = SampledTrajectory<n, m, VectorX<T>, T, KnotPoint>;
+using SampledTrajectoryX =
+    SampledTrajectory<n, m, VectorX<T>, T, KnotPointX<n, m, T>>;
 
 template <int n, int m>
 using SampledTrajectoryXd =
-    SampledTrajectory<n, m, VectorX<double>, double, KnotPoint>;
+    SampledTrajectory<n, m, VectorX<double>, double, KnotPointXd<n, m>>;
 
 struct SampledTrajectoryHelper {
   KnotPointTemplate static auto init(std::vector<KnotPointX<Nx, Nu, T>> Z) {
@@ -310,8 +311,7 @@ SampledTrajectoryTemplate auto getdata(SampledTrajectoryDeclare Z) {
   return rtn;
 }
 
-template <int n, int m, typename V, typename T, typename Q,
-          template <int, int, typename, typename> class KP>
+template <typename Q, SampledTrajectoryTypeName>
 auto setstates(SampledTrajectoryDeclare Z, Q X) {
   for (int k = 0; k < Z.size(); ++k) {
     setstate(Z[k], X[k]);
@@ -325,8 +325,7 @@ SampledTrajectoryTemplate auto setstates(SampledTrajectoryDeclare Z,
   }
 }
 
-template <int n, int m, typename V, typename T, typename Q,
-          template <int, int, typename, typename> class KP>
+template <typename Q, SampledTrajectoryTypeName>
 auto setcontrols(SampledTrajectoryDeclare Z, Q U) {
   for (int k = 0; k < Z.size() - 1; ++k) {
     setcontrol(Z[k], U[k]);
@@ -347,8 +346,7 @@ SampledTrajectoryTemplate auto setcontrols(SampledTrajectoryDeclare Z,
   }
 }
 
-template <int n, int m, typename V, typename T, typename Q,
-          template <int, int, typename, typename> class KP>
+template <typename Q, SampledTrajectoryTypeName>
 auto setdata(SampledTrajectoryDeclare Z, Q data) {
   for (int k = 0; k < Z.size() - 1; ++k) {
     setdata(Z[k], data[k]);
@@ -395,6 +393,20 @@ SampledTrajectoryTemplate auto setinitialtime(SampledTrajectoryDeclare Z,
 
 SampledTrajectoryTemplate auto rollout(FunctionSignature sig,
                                        DiscreteDynamics model,
+                                       SampledTrajectoryDeclare Z, V x0) {
+  setstate(Z[0], x0);
+  for (auto k = 1; k < length(Z); ++k) {
+    propagate_dynamics(sig, model, Z[k], Z[k - 1]);
+  }
+}
+SampledTrajectoryTemplate auto rollout(Inplace sig, DiscreteDynamics model,
+                                       SampledTrajectoryDeclare Z, V x0) {
+  setstate(Z[0], x0);
+  for (auto k = 1; k < length(Z); ++k) {
+    propagate_dynamics(sig, model, Z[k], Z[k - 1]);
+  }
+}
+SampledTrajectoryTemplate auto rollout(StaticReturn sig, DiscreteDynamics model,
                                        SampledTrajectoryDeclare Z, V x0) {
   setstate(Z[0], x0);
   for (auto k = 1; k < length(Z); ++k) {
