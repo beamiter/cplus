@@ -29,10 +29,6 @@ template <typename T> struct DynamicRegularization {
   T d_rou;
 };
 
-template <typename T> bool usestatic(T obj) {
-  return is_same_type<typename T::value_type,
-                      typename VectorXd::value_type>::value;
-}
 template <bool> auto dynamics_signature() { return Inplace(); }
 template <> inline auto dynamics_signature<true>() { return StaticReturn(); }
 template <bool> auto function_signature() { return Inplace(); }
@@ -89,10 +85,11 @@ struct iLQRSolverHelper {
 
     if (std::any_of(state(Z[0]).begin(), state(Z[0]).end(),
                     [](const auto &s) { return std::isnan(s); })) {
-      bool b = usestatic(Z);
       // Change std vector to Eigen Vector;
       VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
-      rollout(dynamics_signature<true>(), prob.model[0], Z, v);
+      rollout(dynamics_signature<UseStatic<
+                  typename SampledTrajectoryX<Nx, Nu, T>::value_type>::val>(),
+              prob.model[0], Z, v);
     }
     VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
     setstate(Z[0], v);
