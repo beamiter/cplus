@@ -112,7 +112,7 @@ AbstractKnotPointTemplate auto is_terminal(const AbstractKnotPointDeclare &z) {
 }
 
 #define KnotPointTemplate template <int Nx, int Nu, typename V, typename T>
-#define KnotPointDeclare AbstractKnotPoint<Nx, Nu, V, T>
+#define KnotPointDeclare KnotPoint<Nx, Nu, V, T>
 
 KnotPointTemplate struct KnotPoint : AbstractKnotPointDeclare {
   V z;
@@ -178,6 +178,10 @@ struct KnotPoint<Nx, Nu, VectorX<T>, T>
   int n;
   int m;
 };
+
+KnotPointTemplate auto time(const KnotPointDeclare &z) {
+  return std::get<0>(getparams(z));
+}
 
 KnotPointTemplate auto state_dim(const KnotPointDeclare &z) { return z.n; }
 KnotPointTemplate auto control_dim(const KnotPointDeclare &z) { return z.m; }

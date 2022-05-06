@@ -109,12 +109,11 @@ struct SampledTrajectory : AbstractTrajectory {
 };
 
 template <int n, int m, typename T>
-using SampledTrajectoryX =
-    SampledTrajectory<n, m, VectorX<T>, T, AbstractKnotPoint>;
+using SampledTrajectoryX = SampledTrajectory<n, m, VectorX<T>, T, KnotPoint>;
 
 template <int n, int m>
 using SampledTrajectoryXd =
-    SampledTrajectory<n, m, VectorX<double>, double, AbstractKnotPoint>;
+    SampledTrajectory<n, m, VectorX<double>, double, KnotPoint>;
 
 struct SampledTrajectoryHelper {
   KnotPointTemplate static auto init(std::vector<KnotPointX<Nx, Nu, T>> Z) {
