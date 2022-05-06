@@ -17,6 +17,7 @@ using Eigen::MatrixX;
 using Eigen::Ref;
 using Eigen::VectorX;
 using Eigen::VectorXd;
+using Eigen::Map;
 
 template <bool B, typename T>
 struct StaticArray {
@@ -50,7 +51,6 @@ struct iLQRSolverHelper {
     for (const auto &m : prob.model) {
       ne.push_back(errstate_dim(m));
     }
-    ne = {2,2,2};
     ne.push_back(ne.back());
 
     auto x0 = prob.x0;
@@ -72,6 +72,13 @@ struct iLQRSolverHelper {
       Ne_tmp = samecontroldim ? nu[0] : 0;
     }
     typedef typename StaticArray<USE_STATIC, T>::type V;
+    auto Z = prob.Z;
+    auto d_Z = Z;
+
+    // Change std vector to Eigen Vector;
+    Map<Eigen::VectorX<T>> v(prob.x0, prob.x0.size());
+    setstate(Z[0], v);
+
     return 1;
   }
 };

@@ -57,8 +57,8 @@ inline auto dims(AbstractFunction fun) {
 
 template <typename T> auto errstate_dim(T fun) { return -1; }
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto errstate_dim(ABSTRACT_KNOT_POINT fun) { return state_dim(fun); }
+template <int Nx, int Nu, typename V, typename T>
+auto errstate_dim(AbstractKnotPoint<Nx, Nu, V, T> fun) { return state_dim(fun); }
 
 inline auto jacobian_width(AbstractFunction fun) {
   return errstate_dim(fun) + control_dim(fun);
@@ -84,49 +84,49 @@ inline auto input_dim(AbstractFunction fun) {
   return input_dim(functioninputs(fun), fun);
 }
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto getinput(::StateControl, CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <int Nx, int Nu, typename V, typename T>
+auto getinput(::StateControl, const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   return getdata(z);
 }
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto getinput(::StateOnly, CONST_ABSTRACT_KNOT_POINT_REF z) { return state(z); }
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto getinput(::ControlOnly, CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <int Nx, int Nu, typename V, typename T>
+auto getinput(::StateOnly, const AbstractKnotPoint<Nx, Nu, V, T> & z) { return state(z); }
+template <int Nx, int Nu, typename V, typename T>
+auto getinput(::ControlOnly, const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   return control(z);
 }
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto getargs(::StateControl, CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <int Nx, int Nu, typename V, typename T>
+auto getargs(::StateControl, const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   return std::make_tuple(state(z), control(z), getparams(z));
 }
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto getargs(::StateOnly, CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <int Nx, int Nu, typename V, typename T>
+auto getargs(::StateOnly, const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   return std::make_tuple(state(z));
 }
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto getargs(::ControlOnly, CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <int Nx, int Nu, typename V, typename T>
+auto getargs(::ControlOnly, const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   return std::make_tuple(control(z));
 }
 
-template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
-auto evaluate(AbstractFunction fun, P y, CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <typename P, int Nx, int Nu,typename V, typename T>
+auto evaluate(AbstractFunction fun, P y, const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   evaluate(functioninputs(fun), fun, y, z);
 }
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto evaluate(AbstractFunction fun, CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <int Nx, int Nu, typename V, typename T>
+auto evaluate(AbstractFunction fun, const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   evaluate(functioninputs(fun), fun, z);
 }
 
 // TODO: need support vadiatic parameters
-template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+template <typename P, int Nx, int Nu,typename V, typename T>
 auto evaluate(FunctionInputs inputtype, AbstractFunction fun, P y,
-              CONST_ABSTRACT_KNOT_POINT_REF z) {
+              const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   evaluate(fun, y, getargs(inputtype, z));
 }
 
-ABSTRACT_KNOT_POINT_TEMPLATE
+template <typename P, int Nx, int Nu,typename V, typename T>
 auto evaluate(FunctionInputs inputtype, AbstractFunction fun,
-              CONST_ABSTRACT_KNOT_POINT_REF z) {
+              const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   evaluate(fun, getargs(inputtype, z));
 }
 
@@ -155,31 +155,31 @@ template <typename T> auto evaluate(AbstractFunction fun, T x, T u) {
   throw std::runtime_error("Not implemented");
 }
 
-template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+template <typename P, int Nx, int Nu,typename V, typename T>
 auto evaluate(StaticReturn, AbstractFunction fun, P y,
-              CONST_ABSTRACT_KNOT_POINT_REF z) {
+              const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   y = evaluate(fun, z);
 }
-template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+template <typename P, int Nx, int Nu,typename V, typename T>
 auto evaluate(Inplace, AbstractFunction fun, P y,
-              CONST_ABSTRACT_KNOT_POINT_REF z) {
+              const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   evaluate(fun, y, z);
 }
 
-template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+template <typename P, int Nx, int Nu,typename V, typename T>
 auto jacobian(FunctionSignature, UserDefined, AbstractFunction fun, P J, P y,
-              CONST_ABSTRACT_KNOT_POINT_REF z) {
+              const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   jacobian(fun, J, y, z);
 }
 
-template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
-auto jacobian(AbstractFunction fun, P J, P y, CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <typename P, int Nx, int Nu,typename V, typename T>
+auto jacobian(AbstractFunction fun, P J, P y, const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   jacobian(functioninputs(fun), fun, J, y, z);
 }
 
-template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+template <typename P, int Nx, int Nu,typename V, typename T>
 auto jacobian(FunctionInputs inputtype, AbstractFunction fun, P J, P y,
-              CONST_ABSTRACT_KNOT_POINT_REF z) {
+              const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   jacobian(fun, J, y, getargs(inputtype, z));
 }
 
@@ -190,9 +190,10 @@ auto jacobian(AbstractFunction fun, T J, T y, T x, T u, P p) {
 template <typename T> auto jacobian(AbstractFunction fun, T J, T y, T x, T u) {
   throw std::runtime_error("User-defined jacobian not implemented");
 }
-template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
+
+template <typename P, int Nx, int Nu,typename V, typename T>
 auto d_jacobian(FunctionSignature, UserDefined, AbstractFunction fun, P H, P b,
-                P y, CONST_ABSTRACT_KNOT_POINT_REF z) {
+                P y, const AbstractKnotPoint<Nx, Nu, V, T> & z) {
   d_jacobian(fun, H, b, y, state(z), control(z), getparams(z));
 }
 

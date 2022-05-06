@@ -21,4 +21,12 @@ inline auto get_J(AbstractObjective) {
   throw std::runtime_error("Not implemented");
 }
 
+template <typename C> struct Objective : AbstractObjective {
+  std::vector<C> cost;
+  std::vector<double> J;
+  std::vector<bool> const_grad;
+  std::vector<bool> const_hess;
+  std::vector<DiffMethod> diff_method;
+};
+
 #endif

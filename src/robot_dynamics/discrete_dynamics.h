@@ -6,13 +6,15 @@
 
 struct DiscreteDynamics : AbstractModel {};
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto evaluate(DiscreteDynamics model, CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <int Nx, int Nu, typename V, typename T>
+auto evaluate(DiscreteDynamics model,
+              const AbstractKnotPoint<Nx, Nu, V, T> &z) {
   return discrete_dynamics(model, z);
 }
 
-template <typename P, ABSTRACT_KNOT_POINT_TYPENAME>
-auto evaluate(DiscreteDynamics model, P xn, CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <typename P, int Nx, int Nu, typename V, typename T>
+auto evaluate(DiscreteDynamics model, P xn,
+              const AbstractKnotPoint<Nx, Nu, V, T> &z) {
   discrete_dynamics(model, xn, z);
 }
 

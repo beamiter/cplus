@@ -2,10 +2,10 @@
 
 #include "ilqr/cost_expansion.h"
 #include "ilqr/ilqr_solver.h"
+#include "robot_dynamics/car_model.h"
 #include "robot_dynamics/knotpoint.h"
 #include "solver_opts.h"
 #include "trajectory_optimization/problem.h"
-#include "robot_dynamics/car_model.h"
 
 //#include <glog/logging.h>
 
@@ -52,17 +52,22 @@ TEST(CostExpansionTest, StateControl) {
           cost5, model);
   std::cout << fse5[0].data << std::endl << std::endl;
 
-  const auto &a = Eigen::VectorXd::Zero(8);
-  KnotPoint<6, 2, Eigen::VectorX<double>, double> point1(a, 2.0, 3.0);
-  KnotPoint<6, 2, Eigen::VectorX<double>, double> point2(6, 2, a, 2.0, 3.0);
-  std::cout << point1.dt << std::endl;
+  std::vector<int> ha({2,3,4});
+  ha.insert(ha.begin(), 6);
+  std::partial_sum(ha.begin(), ha.end(), ha.begin());
+  for (auto a : ha) {
+    std::cout << a << " -------------\n";
+  }
 
-  auto model0 = CarModel(); 
-  // auto prob = Problem<6,2,double>();
+  auto car = CarModel();
+  Objective<double> obj;
+  std::vector<double> x0({0, 0, 0, 0, 0, 0});
+  double tf = 5.0;
+  auto prob = ProblemHelper::init<6, 2>(car, obj, x0, tf);
   auto opts = SolverOptions<double>();
   auto stats = SolverStats<double>();
-  // auto solver = iLQRSolverHelper::init(prob, opts, stats, ValBool<true>(), UserDefined());
-
+  // auto solver =
+  //     iLQRSolverHelper::init(prob, opts, stats, ValBool<true>(), UserDefined());
 }
 
 int main(int argc, char **argv) {

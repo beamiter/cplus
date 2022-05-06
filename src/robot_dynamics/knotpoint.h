@@ -11,16 +11,8 @@ using Eigen::seqN;
 using Eigen::VectorX;
 
 template <typename T> struct AbstractVector {};
-#define ABSTRACT_KNOT_POINT_TYPENAME int Nx, int Nu, typename V, typename T
-#define ABSTRACT_KNOT_POINT_TEMPLATE                                           \
-  template <int Nx, int Nu, typename V, typename T>
 
-#define CONST_ABSTRACT_KNOT_POINT_REF const AbstractKnotPoint<Nx, Nu, V, T> &
-#define CONST_ABSTRACT_KNOT_POINT const AbstractKnotPoint<Nx, Nu, V, T>
-#define ABSTRACT_KNOT_POINT_REF AbstractKnotPoint<Nx, Nu, V, T> &
-#define ABSTRACT_KNOT_POINT AbstractKnotPoint<Nx, Nu, V, T>
-
-ABSTRACT_KNOT_POINT_TEMPLATE
+template <int Nx, int Nu, typename V, typename T>
 struct AbstractKnotPoint : AbstractVector<T> {
   typedef V vectype;
   typedef T datatype;
@@ -39,20 +31,25 @@ struct AbstractKnotPoint : AbstractVector<T> {
   }
 };
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto dims(CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <int Nx, int Nu, typename T>
+using AbstractKnotPointX = AbstractKnotPoint<Nx, Nu, VectorX<T>, T>;
+template <int Nx, int Nu>
+using AbstractKnotPointXd = AbstractKnotPoint<Nx, Nu, VectorX<double>, double>;
+
+template <int Nx, int Nu, typename V, typename T>
+auto dims(const AbstractKnotPoint<Nx, Nu, V, T> &z) {
   return std::make_tuple(state_dim(z), control_dim(z));
 }
 
 // May support matrix in need.
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto getstate(CONST_ABSTRACT_KNOT_POINT_REF z, const VectorX<T> &v) {
+template <int Nx, int Nu, typename V, typename T>
+auto getstate(const AbstractKnotPoint<Nx, Nu, V, T> &z, const VectorX<T> &v) {
   return v(seqN(0, state_dim(z)));
 }
 
 // May support matrix in need.
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto getcontrol(CONST_ABSTRACT_KNOT_POINT_REF z, const VectorX<T> &v) {
+template <int Nx, int Nu, typename V, typename T>
+auto getcontrol(const AbstractKnotPoint<Nx, Nu, V, T> &z, const VectorX<T> &v) {
   if (is_terminal(z)) {
     return VectorX<T>::Zero(std::get<1>(dims(z)));
   } else {
@@ -65,59 +62,73 @@ auto getcontrol(CONST_ABSTRACT_KNOT_POINT_REF z, const VectorX<T> &v) {
   // return !is_terminal(z) * v(seqN(n, m));
 }
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto state(CONST_ABSTRACT_KNOT_POINT_REF z) { return getstate(z, getdata(z)); }
+template <int Nx, int Nu, typename V, typename T>
+auto state(const AbstractKnotPoint<Nx, Nu, V, T> &z) {
+  return getstate(z, getdata(z));
+}
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto control(CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <int Nx, int Nu, typename V, typename T>
+auto control(const AbstractKnotPoint<Nx, Nu, V, T> &z) {
   return getcontrol(z, getdata(z));
 }
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto setdata(ABSTRACT_KNOT_POINT_REF z, const VectorX<T> &v) { z.z = v; }
+template <int Nx, int Nu, typename V, typename T>
+auto setdata(const AbstractKnotPoint<Nx, Nu, V, T> &z, const VectorX<T> &v) {
+  z.z = v;
+}
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto setstate(ABSTRACT_KNOT_POINT_REF z, const VectorX<T> &x) {
+template <int Nx, int Nu, typename V, typename T>
+auto setstate(const AbstractKnotPoint<Nx, Nu, V, T> &z, const VectorX<T> &x) {
   // state(z) = x;
   setdata(z, x);
 }
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto setcontrol(ABSTRACT_KNOT_POINT_REF z, const VectorX<T> &u) {
+template <int Nx, int Nu, typename V, typename T>
+auto setcontrol(const AbstractKnotPoint<Nx, Nu, V, T> &z, const VectorX<T> &u) {
   // control(z) = u;
   setdata(z, u);
 }
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto settime(ABSTRACT_KNOT_POINT_REF z, double t) { z.t = t; }
+template <int Nx, int Nu, typename V, typename T>
+auto settime(const AbstractKnotPoint<Nx, Nu, V, T> &z, double t) {
+  z.t = t;
+}
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto settimestep(ABSTRACT_KNOT_POINT_REF z, double dt) { z.dt = dt; }
+template <int Nx, int Nu, typename V, typename T>
+auto settimestep(const AbstractKnotPoint<Nx, Nu, V, T> &z, double dt) {
+  z.dt = dt;
+}
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto time(CONST_ABSTRACT_KNOT_POINT_REF z) { return z.t; }
+template <int Nx, int Nu, typename V, typename T>
+auto time(const AbstractKnotPoint<Nx, Nu, V, T> &z) {
+  return z.t;
+}
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto timestep(CONST_ABSTRACT_KNOT_POINT_REF z) { return z.dt; }
+template <int Nx, int Nu, typename V, typename T>
+auto timestep(const AbstractKnotPoint<Nx, Nu, V, T> &z) {
+  return z.dt;
+}
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto is_terminla(CONST_ABSTRACT_KNOT_POINT_REF z) { timestep(z) == 0.0; }
+template <int Nx, int Nu, typename V, typename T>
+auto is_terminla(const AbstractKnotPoint<Nx, Nu, V, T> &z) {
+  timestep(z) == 0.0;
+}
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-struct KnotPoint : ABSTRACT_KNOT_POINT {};
-ABSTRACT_KNOT_POINT_TEMPLATE
-struct StaticKnotPoint : ABSTRACT_KNOT_POINT {};
+template <int Nx, int Nu, typename V, typename T>
+struct KnotPoint : AbstractKnotPoint<Nx, Nu, V, T> {};
 
-#define CONST_KNOT_POINT_REF const KnotPoint<Nx, Nu, V, T> &
-#define CONST_KNOT_POINT const KnotPoint<Nx, Nu, V, T>
-#define KNOT_POINT_REF KnotPoint<Nx, Nu, V, T> &
-#define KNOT_POINT KnotPoint<Nx, Nu, V, T>
+template <int Nx, int Nu, typename V, typename T>
+struct StaticKnotPoint : AbstractKnotPoint<Nx, Nu, V, T> {};
 
-#define KNOT_POINT_TEMPLATE template <int Nx, int Nu, typename T>
-#define KNOT_POINT_PARAM Nx, Nu, VectorX<T>, T
-KNOT_POINT_TEMPLATE
-struct KnotPoint<KNOT_POINT_PARAM> : AbstractKnotPoint<KNOT_POINT_PARAM> {
-  typedef typename AbstractKnotPoint<KNOT_POINT_PARAM>::vectype V;
+template <int Nx, int Nu, typename T>
+using KnotPointX = KnotPoint<Nx, Nu, VectorX<T>, T>;
+template <int Nx, int Nu>
+using KnotPointXd = KnotPoint<Nx, Nu, VectorX<double>, double>;
+
+template <int Nx, int Nu, typename T>
+struct KnotPoint<Nx, Nu, VectorX<T>, T>
+    : AbstractKnotPoint<Nx, Nu, VectorX<T>, T> {
+  typedef typename AbstractKnotPoint<Nx, Nu, VectorX<T>, T>::vectype V;
   KnotPoint(V z, T t, T dt) {
     this->z = z;
     this->t = t;
@@ -161,17 +172,23 @@ struct KnotPoint<KNOT_POINT_PARAM> : AbstractKnotPoint<KNOT_POINT_PARAM> {
   int m;
 };
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto state_dim(CONST_ABSTRACT_KNOT_POINT_REF z) { return z.n; }
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto control_dim(CONST_ABSTRACT_KNOT_POINT_REF z) { return z.m; }
+template <int Nx, int Nu, typename V, typename T>
+auto state_dim(const AbstractKnotPoint<Nx, Nu, V, T> &z) {
+  return z.n;
+}
+template <int Nx, int Nu, typename V, typename T>
+auto control_dim(const AbstractKnotPoint<Nx, Nu, V, T> &z) {
+  return z.m;
+}
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto getparams(CONST_ABSTRACT_KNOT_POINT_REF z) {
+template <int Nx, int Nu, typename V, typename T>
+auto getparams(const AbstractKnotPoint<Nx, Nu, V, T> &z) {
   return std::make_tuple(z.t, z.dt);
 }
 
-ABSTRACT_KNOT_POINT_TEMPLATE
-auto getdata(CONST_ABSTRACT_KNOT_POINT_REF z) { return z.z; }
+template <int Nx, int Nu, typename V, typename T>
+auto getdata(const AbstractKnotPoint<Nx, Nu, V, T> &z) {
+  return z.z;
+}
 
 #endif
