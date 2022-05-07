@@ -24,28 +24,28 @@ inline auto default_diffmethod(AbstractFunction) { return UserDefined(); }
 inline auto default_signature(AbstractFunction) { return StaticReturn(); }
 
 template <typename T> auto state_dim(T t) {
-  throw std::runtime_error("Need to be implemented.");
+  assert(0);
   return 0;
 }
 template <typename T> auto control_dim(T t) {
-  throw std::runtime_error("Need to be implemented.");
+  assert(0);
   return 0;
 }
 template <typename T> auto output_dim(T t) {
-  throw std::runtime_error("Need to be implemented.");
+  assert(0);
   return 0;
 }
 
 template <> inline auto state_dim(AbstractFunction fun) {
-  throw std::runtime_error("Need to be implemented.");
+  assert(0);
   return 0;
 }
 template <> inline auto control_dim(AbstractFunction fun) {
-  throw std::runtime_error("Need to be implemented.");
+  assert(0);
   return 0;
 }
 template <> inline auto output_dim(AbstractFunction fun) {
-  throw std::runtime_error("Need to be implemented.");
+  assert(0);
   return 0;
 }
 
@@ -53,7 +53,7 @@ inline auto dims(AbstractFunction fun) {
   return std::make_tuple(state_dim(fun), control_dim(fun), output_dim(fun));
 }
 
-template <typename T> auto errstate_dim(T fun) { return -1; }
+template <typename T> int errstate_dim(T fun) { return -1; }
 
 AbstractKnotPointTemplate
 auto errstate_dim(AbstractKnotPointDeclare fun) { return state_dim(fun); }

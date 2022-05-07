@@ -27,6 +27,8 @@ template <typename T> struct StaticArray<true, T> { typedef VectorX<T> type; };
 template <typename T> struct DynamicRegularization {
   T rou;
   T d_rou;
+  DynamicRegularization(T rou_in, T d_rou_in) : rou(rou_in), d_rou(d_rou_in) {}
+  auto operator=(const DynamicRegularization &rhs) { *this = rhs; }
 };
 
 template <bool> auto dynamics_signature() { return Inplace(); }
@@ -43,92 +45,139 @@ template <> inline auto function_signature<true>() { return StaticReturn(); }
 // }
 //
 
-#define ILQR_SOLVER_TYPENAME                                                   \
-  typename L, typename O, int Nx, int Ne, int Nu, typename T, typename V
+#define ILQR_SOLVER_TYPENAME int Nx, int Ne, int Nu, typename T, typename V
 #define ILQR_SOLVER_TEMPLATE                                                   \
-  template <typename L, typename O, int Nx, int Ne, int Nu, typename T,        \
-            typename V>
-#define ILQR_SOLVER iLQRSolver<L, O, Nx, Ne, Nu, T, V>
-
-struct iLQRSolverHelper {
-  template <int Nx, int Nu, bool USE_STATIC, typename T>
-  static auto init(Problem<Nx, Nu, T> prob, SolverOptions<T> opts,
-                   SolverStats<T> stats, ValBool<USE_STATIC>,
-                   DiffMethod dynamics_diffmethod, ...) {
-    std::vector<int> nx, nu, ne;
-    std::tie(nx, nu) = dims(prob);
-    auto N = horizonlength(prob);
-    for (const auto &m : prob.model) {
-      ne.push_back(errstate_dim(m));
-    }
-    ne.push_back(ne.back());
-
-    auto x0 = prob.x0;
-    const bool samestatedim = std::all_of(
-        nx.begin(), nx.end(), [&nx](const auto x) { return x == nx[0]; });
-    const bool samecontroldim = std::all_of(
-        nu.begin(), nu.end(), [&nu](const auto u) { return u == nu[0]; });
-    auto Nx_tmp = Nx;
-    auto Nu_tmp = Nu;
-    auto Ne_tmp = 0;
-    if (USE_STATIC) {
-      assert(samecontroldim && samestatedim);
-      Nx_tmp = nx[0];
-      Nu_tmp = nu[0];
-      Ne_tmp = ne[0];
-    } else {
-      Nx_tmp = samestatedim ? nx[0] : Nx;
-      Nu_tmp = samestatedim ? nx[0] : Nu;
-      Ne_tmp = samecontroldim ? nu[0] : 0;
-    }
-    typedef typename StaticArray<USE_STATIC, T>::type V;
-    auto Z = prob.Z;
-    auto d_Z = Z;
-
-    if (std::any_of(state(Z[0]).begin(), state(Z[0]).end(),
-                    [](const auto &s) { return std::isnan(s); })) {
-      // Change std vector to Eigen Vector;
-      VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
-      rollout(dynamics_signature<UseStatic<
-                  typename SampledTrajectoryX<Nx, Nu, T>::value_type>::val>(),
-              prob.model[0], Z, v);
-    }
-    VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
-    setstate(Z[0], v);
-
-    std::vector<VectorX<T>> dx, du;
-    loop(0, N,
-         [&ne, &dx](const int k) { dx.push_back(VectorX<T>::Zero(ne[k])); });
-    loop(0, N - 1,
-         [&nu, &du](const int k) { du.push_back(VectorX<T>::Zero(nu[k])); });
-
-    std::vector<MatrixX<T>> gains;
-    loop(0, N - 1, [&ne, &nu, &gains](const int k) {
-      gains.push_back(MatrixX<T>::Zero(nu[k], ne[k] + 1));
-    });
-    std::vector<Ref<MatrixX<T>>> K;
-    std::vector<Ref<VectorX<T>>> d;
-    loop(0, gains.size(), [&ne, &gains, &K, &d](const int k) {
-      K.push_back(gains[k](all, seq(0, last - 1)));
-      d.push_back(gains[k](all, last));
-    });
-    std::vector<DynamicsExpansion<T>> D;
-    loop(0, N - 1, [&nx, &ne, &nu, &D](const int k) {
-      D.push_back(DynamicsExpansion<T>::init(nx[k], ne[k], nu[k]));
-    });
-    std::vector<MatrixX<T>> G;
-
-    return 1;
-  }
-};
+  template <int Nx, int Ne, int Nu, typename T, typename V,                    \
+            bool USE_STATIC = true>
+#define ILQR_SOLVER iLQRSolver<Nx, Ne, Nu, T, V>
 
 ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
   using vectype = V;
   using m_data_type = MatrixX<T>;
   using v_data_type = VectorX<T>;
 
-  L model;
-  O obj;
+  // iLQRSolver(std::vector<DiscreteDynamics> model_in, AbstractObjective obj_in,
+  //            std::vector<T> x0_in, T tf_in, int N_in, SolverOptions<T> opts_in,
+  //            SolverStats<T> stats_in,
+  //            SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_in,
+  //            SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_dot_in,
+  //            std::vector<v_data_type> dx_in, std::vector<v_data_type> du_in,
+  //            std::vector<m_data_type> gains_in,
+  //            std::vector<Ref<m_data_type>> K_in,
+  //            std::vector<Ref<v_data_type>> d_in,
+  //            std::vector<DynamicsExpansion<T>> D_in,
+  //            std::vector<m_data_type> G_in, CostExpansion<T> Efull_in,
+  //            CostExpansion<T> Eerr_in,
+  //            std::vector<StateControlExpansion<T, true>> Q_in,
+  //            std::vector<StateControlExpansion<T, false>> S_in,
+  //            std::vector<T> DV_in, StateControlExpansion<T> Qtmp_in,
+  //            m_data_type Quu_reg_in, m_data_type Qux_reg_in,
+  //            DynamicRegularization<T> reg_in, std::vector<T> grad_in,
+  //            std::vector<T> xdot_in)
+  //     : model(model_in), obj(obj_in), x0(x0_in), tf(tf_in), N(N_in),
+  //       opts(opts_in), stats(stats_in), Z(Z_in), Z_dot(Z_dot_in), dx(dx_in),
+  //       du(du_in), gains(gains_in), K(K_in), d(d_in), D(D_in), G(G_in),
+  //       Efull(Efull_in), Eerr(Eerr_in), Q(Q_in), S(S_in), DV(DV_in),
+  //       Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in), reg(reg_in),
+  //       grad(grad_in), xdot(xdot_in) {}
+
+  iLQRSolver(Problem<Nx, Nu, T> prob, SolverOptions<T> opts,
+             SolverStats<T> stats, DiffMethod dynamics_diffmethod,
+             ValBool<USE_STATIC>, ValInt<Ne>) {
+    model = prob.model;
+    obj = prob.obj;
+    x0 = prob.x0;
+    tf = get_final_time(prob);
+    // N = horizonlength(prob);
+    // opts = opts;
+    // stats = stats;
+    // Z = prob.Z;
+    // Z_dot = Z;
+    //
+    std::vector<int> nx, nu, ne;
+    std::tie(nx, nu) = dims(prob);
+    for (const auto &m : prob.model) {
+      ne.push_back(errstate_dim(m));
+    }
+    ne.push_back(ne.back());
+    //
+    // const bool samestatedim = std::all_of(
+    //     nx.begin(), nx.end(), [&nx](const auto x) { return x == nx[0]; });
+    // const bool samecontroldim = std::all_of(
+    //     nu.begin(), nu.end(), [&nu](const auto u) { return u == nu[0]; });
+    // if (USE_STATIC) {
+    //   assert(samecontroldim && samestatedim);
+    //   assert(Nx == nx[0]);
+    //   assert(Nu == nu[0]);
+    //   assert(Ne == ne[0]);
+    // } else {
+    //   assert(Nx == samestatedim ? nx[0] : Nx);
+    //   assert(Nu == samestatedim ? nu[0] : Nu);
+    //   assert(Ne == samecontroldim ? ne[0] : 0);
+    // }
+    //
+    // if (std::any_of(state(Z[0]).begin(), state(Z[0]).end(),
+    //                 [](const auto &s) { return std::isnan(s); })) {
+    //   // Change std vector to Eigen Vector;
+    //   VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
+    //   rollout(dynamics_signature<UseStatic<
+    //               typename SampledTrajectoryX<Nx, Nu, T>::value_type>::val>(),
+    //           prob.model[0], Z, v);
+    // }
+    // VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
+    // setstate(Z[0], v);
+    //
+    // loop(0, N,
+    //      [&ne, this](const int k) { dx.push_back(VectorX<T>::Zero(ne[k])); });
+    //
+    // loop(0, N - 1,
+    //      [&nu, this](const int k) { du.push_back(VectorX<T>::Zero(nu[k])); });
+    //
+    // loop(0, N - 1, [&ne, &nu, this](const int k) {
+    //   gains.push_back(MatrixX<T>::Zero(nu[k], ne[k] + 1));
+    // });
+    //
+    // loop(0, gains.size(), [&ne, this](const int k) {
+    //   K.push_back(gains[k](all, seq(0, last - 1)));
+    //   d.push_back(gains[k](all, last));
+    // });
+    //
+    // loop(0, N - 1, [&nx, &ne, &nu, this](const int k) {
+    //   D.push_back(DynamicsExpansion<T>::init(nx[k], ne[k], nu[k]));
+    // });
+    //
+    // loop(0, N, [&nx, &ne, this](const int k) {
+    //   MatrixX<T> a(nx[k], ne[k]);
+    //   a.diagonal().setOnes();
+    //   G.push_back(a);
+    // });
+
+    Eerr(ne, nu);
+    std::cout << Eerr.const_grad.size() << " ****************\n";
+    // = CostExpansion<T>(ne, nu);
+
+    // Efull = FullStateExpansion(Eerr, prob.model[0]);
+    //
+    // loop(0, N, [&ne, &nu, this](const int k) {
+    //   Q.push_back(StateControlExpansion<T>(ne[k], nu[k]));
+    // });
+    //
+    // loop(0, N, [&ne, this](const int k) {
+    //   S.push_back(StateControlExpansion<T, false>(ne[k]));
+    // });
+    //
+    // DV = std::vector<T>(2, 0);
+    //
+    // Qtmp = StateControlExpansion<T>(ne[0], nu[0]);
+    // Quu_reg = MatrixX<T>::Zero(nu[0], nu[0]);
+    // Qux_reg = MatrixX<T>::Zero(nu[0], ne[0]);
+    // reg = DynamicRegularization<T>(opts.bp_reg_initial, 0);
+    // grad = std::vector<T>(N - 1, 0);
+    // xdot = std::vector<T>(nx[0], 0);
+  }
+
+  std::vector<DiscreteDynamics> model;
+  AbstractObjective obj;
 
   std::vector<T> x0;
   T tf;
@@ -138,7 +187,7 @@ ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
   SolverStats<T> stats;
 
   SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z;
-  SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> z_dot;
+  SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_dot;
   std::vector<v_data_type> dx;
   std::vector<v_data_type> du;
 
@@ -149,18 +198,18 @@ ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
   std::vector<DynamicsExpansion<T>> D;
   std::vector<m_data_type> G;
 
-  CostExpansion<T> Efull;
+  // CostExpansion<T> Efull;
   CostExpansion<T> Eerr;
-
-  std::vector<StateControlExpansion<T>> Q;
-  std::vector<StateControlExpansion<T>> S;
+  //
+  // std::vector<StateControlExpansion<T, true>> Q;
+  // std::vector<StateControlExpansion<T, false>> S;
 
   std::vector<T> DV;
 
-  StateControlExpansion<T> Qtmp;
+  // StateControlExpansion<T> Qtmp;
   m_data_type Quu_reg;
   m_data_type Qux_reg;
-  DynamicsExpansion<T> reg;
+  // DynamicRegularization<T> reg;
 
   std::vector<T> grad;
   std::vector<T> xdot;

@@ -2,6 +2,7 @@
 #define CAR_MODEL_
 
 #include "dynamics.h"
+#include "robot_dynamics/discrete_dynamics.h"
 
 enum class RefPos {
   rear,
@@ -21,7 +22,7 @@ struct CarModel : ContinuousDynamics {
   }
 };
 
-inline auto state_dim(CarModel) { return 6; }
-inline auto control_dim(CarModel) { return 2; }
+inline auto state_dim(DiscreteDynamics) { return 6; }
+inline auto control_dim(DiscreteDynamics) { return 2; }
 
 #endif

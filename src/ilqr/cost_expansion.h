@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 
+#include "robot_dynamics/discrete_dynamics.h"
 #include "robot_dynamics/functionbase.h"
 #include "robot_dynamics/statevectortype.h"
 
@@ -21,7 +22,7 @@ using Eigen::VectorX;
 
 // State and control
 template <typename T, bool B = true> struct StateControlExpansion {
-  static const bool state_control = B;
+  static constexpr bool state_control = B;
   typedef MatrixX<T> m_data_type;
   typedef VectorX<T> v_data_type;
 
@@ -73,6 +74,7 @@ template <typename T> struct StateControlExpansion<T, false> {
 template <typename T, bool B = true> struct CostExpansion {
   static const bool state_control = B;
 
+  CostExpansion() {}
   CostExpansion(const std::vector<int> &nx, const std::vector<int> &nu = {}) {
     const auto N = nx.size();
     const_hess.resize(N);
@@ -96,6 +98,10 @@ template <typename T, bool B = true> struct CostExpansion {
     }
   }
 
+  void operator()(const std::vector<int> &nx, const std::vector<int> &nu = {}) {
+    CostExpansion(nx, nu);
+  }
+
   const auto &operator[](int i) const { return data[i]; }
   int size() const { return data.size(); }
   int length() const { return data.size(); }
@@ -111,21 +117,22 @@ template <typename T, bool B = true> struct CostExpansionHelper {
   }
 };
 
-template <typename T, bool B, typename S> struct FullStateExpansion {};
-template <typename T, bool B> struct FullStateExpansion<T, B, EuclideanState> {
-  static auto value(const CostExpansion<T, B> &cost_expantion,
-                    const int &model) {
-    return cost_expantion;
-  }
-};
-
-template <typename T, bool B> struct FullStateExpansion<T, B, RotationState> {
-  static auto value(const CostExpansion<T, B> &cost_expantion,
-                    const int &model) {
-    const int n0 = 4;
-    const int m = 2;
-    return CostExpansionHelper<T, B>::init(n0, m, cost_expantion.length());
-  }
-};
+template <typename T, bool B>
+auto FullStateExpansion(const CostExpansion<T, B> &E,
+                        const DiscreteDynamics &model) {
+  return FullStateExpansion(statevectortype(model), E, model);
+}
+template <typename T, bool B>
+auto FullStateExpansion(EuclideanState, const CostExpansion<T, B> &E,
+                        const DiscreteDynamics &) {
+  return E;
+}
+template <typename T, bool B>
+auto FullStateExpansion(RotationState, const CostExpansion<T, B> &E,
+                        const DiscreteDynamics &model) {
+  const int n = state_dim(model);
+  const int m = control_dim(model);
+  return CostExpansionHelper<T, B>::init(n, m, E.length());
+}
 
 #endif

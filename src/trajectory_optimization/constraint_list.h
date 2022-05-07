@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "abstract_constraint.h"
-#include "dynamics.h"
 #include "robot_dynamics/discrete_dynamics.h"
 
 struct AbstractConstraintSet {};

@@ -8,7 +8,6 @@
 #include "robot_dynamics/trajectories.h"
 
 #include "constraint_list.h"
-#include "dynamics.h"
 #include "objective.h"
 
 #define ProblemTemplate template <int Nx, int Nu, typename T>
@@ -85,7 +84,10 @@ struct ProblemHelper {
   }
 };
 
-ProblemTemplate auto dims(ProblemDeclare prob) { return dims(prob.model); }
+ProblemTemplate std::tuple<std::vector<int>, std::vector<int>>
+dims(ProblemDeclare prob) {
+  return dims(prob.model);
+}
 
 ProblemTemplate auto dims(ProblemDeclare prob, int i) {
   int n = 0, m = 0;
@@ -113,6 +115,20 @@ auto states(ProblemDeclare prob, Args... args) {
 ProblemTemplate auto gettimes(ProblemDeclare prob) {
   return gettimes(get_trajectory(prob));
 }
+
+ProblemTemplate auto get_initial_time(ProblemDeclare prob) {
+  return time(get_trajectory(prob).front());
+}
+ProblemTemplate T get_final_time(ProblemDeclare prob) {
+  return time(get_trajectory(prob).back());
+}
+ProblemTemplate auto get_constraints(ProblemDeclare prob) {
+  return prob.constraints;
+}
+ProblemTemplate auto num_constraints(ProblemDeclare prob) {
+  return get_constraints(prob).p;
+}
+
 ProblemTemplate auto get_model(ProblemDeclare prob) { return prob.model; }
 ProblemTemplate auto get_model(ProblemDeclare prob, int k) {
   return prob.model[k];

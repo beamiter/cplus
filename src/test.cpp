@@ -13,6 +13,7 @@
 TEST(CostExpansionTest, StateControl) {
   auto de = DynamicsExpansion<double>::init(6, 7, 2);
   de.A(2, 2) = 56;
+  de.A(4, 3) = 56;
   std::cout << de.A.size() << std::endl;
   std::cout << de.A << std::endl;
   de.B(0, 1) = 156;
@@ -40,13 +41,14 @@ TEST(CostExpansionTest, StateControl) {
   std::vector<double> x0({0, 0, 0, 0, 0, 0});
   double tf = 5.0;
   auto prob = ProblemHelper::init<6, 2>(car, obj, x0, tf);
-  auto opts = SolverOptions<double>();
-  auto stats = SolverStats<double>();
-  auto traj = SampledTrajectoryX<6, 2, double>();
-  traj.data.push_back(KnotPointX<6, 2, double>());
-
-  auto solver =
-      iLQRSolverHelper::init(prob, opts, stats, ValBool<true>(), UserDefined());
+  // auto opts = SolverOptions<double>();
+  // auto stats = SolverStats<double>();
+  // auto traj = SampledTrajectoryX<6, 2, double>();
+  // traj.data.push_back(KnotPointX<6, 2, double>());
+  //
+  // std::cout << "****************" << std::endl;
+  // auto solver = iLQRSolver<6, 7, 2, double, VectorXd>(
+  //     prob, opts, stats, UserDefined(), ValBool<true>(), ValInt<7>());
 }
 
 int main(int argc, char **argv) {
