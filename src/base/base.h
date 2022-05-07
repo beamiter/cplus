@@ -39,4 +39,10 @@ template <> struct is_same_type<MatrixXd, MatrixXd> {
 template <bool T> struct ValBool {};
 template <int T> struct ValInt {};
 
+template <typename Func> void loop(int start, int end, Func f) {
+  for (int k = start; k < end; ++k) {
+    f(k);
+  }
+}
+
 #endif

@@ -45,7 +45,9 @@ template <> inline auto function_signature<true>() { return StaticReturn(); }
 
 #define ILQR_SOLVER_TYPENAME                                                   \
   typename L, typename O, int Nx, int Ne, int Nu, typename T, typename V
-#define ILQR_SOLVER_TEMPLATE template <ILQR_SOLVER_TYPENAME>
+#define ILQR_SOLVER_TEMPLATE                                                   \
+  template <typename L, typename O, int Nx, int Ne, int Nu, typename T,        \
+            typename V>
 #define ILQR_SOLVER iLQRSolver<L, O, Nx, Ne, Nu, T, V>
 
 struct iLQRSolverHelper {
@@ -94,6 +96,28 @@ struct iLQRSolverHelper {
     VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
     setstate(Z[0], v);
 
+    std::vector<VectorX<T>> dx, du;
+    loop(0, N,
+         [&ne, &dx](const int k) { dx.push_back(VectorX<T>::Zero(ne[k])); });
+    loop(0, N - 1,
+         [&nu, &du](const int k) { du.push_back(VectorX<T>::Zero(nu[k])); });
+
+    std::vector<MatrixX<T>> gains;
+    loop(0, N - 1, [&ne, &nu, &gains](const int k) {
+      gains.push_back(MatrixX<T>::Zero(nu[k], ne[k] + 1));
+    });
+    std::vector<Ref<MatrixX<T>>> K;
+    std::vector<Ref<VectorX<T>>> d;
+    loop(0, gains.size(), [&ne, &gains, &K, &d](const int k) {
+      K.push_back(gains[k](all, seq(0, last - 1)));
+      d.push_back(gains[k](all, last));
+    });
+    std::vector<DynamicsExpansion<T>> D;
+    loop(0, N - 1, [&nx, &ne, &nu, &D](const int k) {
+      D.push_back(DynamicsExpansion<T>::init(nx[k], ne[k], nu[k]));
+    });
+    std::vector<MatrixX<T>> G;
+
     return 1;
   }
 };
@@ -106,7 +130,7 @@ ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
   L model;
   O obj;
 
-  VectorX<T> x0;
+  std::vector<T> x0;
   T tf;
   int N;
 
@@ -115,31 +139,31 @@ ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
 
   SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z;
   SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> z_dot;
-  VectorX<VectorX<T>> dx;
-  VectorX<VectorX<T>> du;
+  std::vector<v_data_type> dx;
+  std::vector<v_data_type> du;
 
-  VectorX<MatrixX<T>> gains;
-  Ref<m_data_type> K;
-  Ref<v_data_type> d;
+  std::vector<m_data_type> gains;
+  std::vector<Ref<m_data_type>> K;
+  std::vector<Ref<v_data_type>> d;
 
-  VectorX<DynamicsExpansion<T>> D;
-  VectorX<MatrixX<T>> G;
+  std::vector<DynamicsExpansion<T>> D;
+  std::vector<m_data_type> G;
 
   CostExpansion<T> Efull;
   CostExpansion<T> Eerr;
 
-  VectorX<StateControlExpansion<T>> Q;
-  VectorX<StateControlExpansion<T>> S;
+  std::vector<StateControlExpansion<T>> Q;
+  std::vector<StateControlExpansion<T>> S;
 
-  VectorX<T> d_V;
+  std::vector<T> DV;
 
   StateControlExpansion<T> Qtmp;
-  MatrixX<T> Quu_reg;
-  MatrixX<T> Qux_reg;
+  m_data_type Quu_reg;
+  m_data_type Qux_reg;
   DynamicsExpansion<T> reg;
 
-  VectorX<T> grad;
-  VectorX<T> xdot;
+  std::vector<T> grad;
+  std::vector<T> xdot;
 };
 
 ILQR_SOLVER_TEMPLATE
