@@ -79,8 +79,8 @@ struct ProblemHelper {
   template <int Nx, int Nu, typename T, typename C>
   static auto init(ContinuousDynamics model, Objective<C> obj,
                    std::vector<T> x0, T tf) {
-    auto discrete_model = DiscretizedDynamics(model, RK4());
-    return init<Nx, Nu, T, C>(discrete_model, obj, x0, tf);
+    auto discretized_model = DiscretizedDynamics(model, RK4());
+    return init<Nx, Nu, T, C>(discretized_model, obj, x0, tf);
   }
 };
 
