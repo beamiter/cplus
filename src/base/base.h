@@ -9,6 +9,47 @@ using Eigen::MatrixXf;
 using Eigen::VectorXd;
 using Eigen::VectorXf;
 
+// enum class FunctionInputs {
+//   StateOnly,
+//   ControlOnly,
+//   StateControl,
+// };
+
+struct FunctionInputs {
+  template <typename T> bool operator==(T) { return false; }
+  // bool operator==(FunctionInputs) {
+  //   return true;
+  // }
+};
+// Specialization
+template <>
+inline bool FunctionInputs::operator==<FunctionInputs>(FunctionInputs) {
+  return true;
+}
+struct StateOnly : FunctionInputs {
+  template <typename T> bool operator==(T) { return false; }
+  bool operator==(StateOnly) { return true; }
+};
+struct ControlOnly : FunctionInputs {
+  template <typename T> bool operator==(T) { return false; }
+  bool operator==(ControlOnly) { return true; }
+};
+struct StateControl : FunctionInputs {
+  template <typename T> bool operator==(T) { return false; }
+  bool operator==(StateControl) { return true; }
+};
+
+enum class FunctionSignature {
+  Inplace,
+  StaticReturn,
+};
+
+enum class DiffMethod {
+  ForwardAD,
+  FiniteDifference,
+  UserDefined,
+};
+
 template <typename T> auto length(T) { return -1; }
 template <> inline auto length(VectorXd t) { return t.size(); }
 template <> inline auto length<std::vector<double>>(std::vector<double> t) {

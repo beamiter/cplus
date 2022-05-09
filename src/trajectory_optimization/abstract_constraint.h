@@ -5,19 +5,19 @@
 
 #include "robot_dynamics/functionbase.h"
 
-struct AbstractConstraint : AbstractFunction {};
+class AbstractConstraint : AbstractFunction {};
 
-struct StageConstraint : AbstractConstraint {};
+class StageConstraint : AbstractConstraint {};
 inline auto functioninputs(StageConstraint) {
   return StateControl();
 }
 
-struct StateConstraint : StageConstraint {};
+class StateConstraint : StageConstraint {};
 inline auto functioninputs(StateConstraint) {
   return StateOnly();
 }
 
-struct ControlConstraint : StageConstraint {};
+class ControlConstraint : StageConstraint {};
 inline auto functioninputs(ControlConstraint) {
   return ControlOnly();
 }

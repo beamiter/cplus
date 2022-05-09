@@ -9,7 +9,6 @@ struct Explicit : QuadratureRule {};
 
 struct Implicit : QuadratureRule {};
 
-// template <typename L = ContinuousDynamics, typename Q = QuadratureRule>
 struct DiscretizedDynamics : DiscreteDynamics {
   DiscretizedDynamics(ContinuousDynamics dynamics_in, QuadratureRule rule) {
     continuous_dynamics = dynamics_in;

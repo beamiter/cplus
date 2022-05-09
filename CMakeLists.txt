@@ -14,6 +14,8 @@ include_directories(${GTEST_INCLUDE_DIRS})
 include_directories(src)
 
 
-add_executable(t src/test.cpp)
+# add_executable(t src/test.cpp)
+add_executable(m src/main.cpp)
 
-target_link_libraries(t Eigen3::Eigen ${GTEST_LIBRARIES}  pthread)
+# target_link_libraries(t Eigen3::Eigen ${GTEST_LIBRARIES}  pthread)
+target_link_libraries(m Eigen3::Eigen ${GTEST_LIBRARIES}  pthread)
