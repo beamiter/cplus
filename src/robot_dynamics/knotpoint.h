@@ -4,7 +4,6 @@
 #include <Eigen/Dense>
 #include <tuple>
 #include <vector>
-#include <iostream>
 
 #include <base/base.h>
 
@@ -22,6 +21,7 @@ public:
   typedef V vectype;
   typedef T datatype;
 
+
   /*Pure virtual function*/
   virtual int state_dim() = 0;
   virtual int control_dim() = 0;
@@ -35,6 +35,20 @@ public:
   virtual std::tuple<double, double> getparams() = 0;
 
   /*Function*/
+  auto getinput(FunctionInputs input) {
+    if (input == FunctionInputs::StateOnly) {
+      return state();
+    } else if (input == FunctionInputs::ControlOnly) {
+      return control();
+    } else {
+      return getdata();
+    }
+  }
+
+  auto getargs(FunctionInputs) {
+    return std::make_tuple(state(), control(), getparams());
+  }
+
   auto size() const { return std::make_tuple(state_dim() + control_dim()); }
 
   const auto &operator[](int i) const { return getdata()[i]; }
@@ -82,45 +96,6 @@ public:
   auto timestep() { return std::get<1>(getparams()); }
   auto is_terminal(const AbstractKnotPointDeclare &z) { timestep() == 0.0; }
 };
-
-// getinput
-template <AbstractKnotPointTypeName>
-auto getinput(FunctionInputs, const AbstractKnotPointDeclare *) {}
-template <AbstractKnotPointTypeName>
-auto getinput(StateOnly, const AbstractKnotPointDeclare *z) {
-  return z->state();
-}
-template <AbstractKnotPointTypeName>
-auto getinput(ControlOnly, const AbstractKnotPointDeclare *z) {
-  return z->control();
-}
-template <AbstractKnotPointTypeName>
-auto getinput(StateControl, const AbstractKnotPointDeclare *z) {
-  return z->getdata();
-}
-
-template <AbstractKnotPointTypeName, int i>
-struct getinput0 {
-  auto operator()(const AbstractKnotPointDeclare* z) {
-    return z->state();
-  }
-};
-
-// getargs
-template <AbstractKnotPointTypeName>
-auto getargs(FunctionInputs, const AbstractKnotPointDeclare *) {}
-template <AbstractKnotPointTypeName>
-auto getargs(StateOnly, const AbstractKnotPointDeclare *z) {
-  return std::make_tuple(z->state());
-}
-template <AbstractKnotPointTypeName>
-auto getargs(ControlOnly, const AbstractKnotPointDeclare *z) {
-  return std::make_tuple(z->control());
-}
-template <AbstractKnotPointTypeName>
-auto getargs(StateControl, const AbstractKnotPointDeclare *z) {
-  return std::make_tuple(z->state(), z->control(), z->getparams());
-}
 
 template <int Nx, int Nu, typename T>
 using AbstractKnotPointX = AbstractKnotPoint<Nx, Nu, VectorX<T>, T>;
@@ -199,15 +174,5 @@ private:
   int m_;
 };
 
-// template <typename P, AbstractKnotPointTypeName>
-// auto evaluate(AbstractFunction fun, P y, const AbstractKnotPointDeclare & z)
-// {
-//   evaluate(functioninputs(fun), fun, y, z);
-// }
-//
-// AbstractKnotPointTemplate
-// auto evaluate(AbstractFunction fun, const AbstractKnotPointDeclare & z) {
-//   evaluate(functioninputs(fun), fun, z);
-// }
 
 #endif

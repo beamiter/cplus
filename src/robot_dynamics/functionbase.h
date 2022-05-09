@@ -15,9 +15,6 @@ class AbstractFunction {
   virtual int output_dim() = 0;
   virtual int errstate_dim() = 0;
 
-  typedef FunctionInputs functioninputs;
-
-
   /*Virtual function*/
   virtual FunctionInputs functioninputs() {
     return FunctionInputs::StateControl;
@@ -135,4 +132,15 @@ private:
 //   d_jacobian(fun, H, b, y, x, u);
 // }
 
+// template <typename P, AbstractKnotPointTypeName>
+// auto evaluate(AbstractFunction fun, P y, const AbstractKnotPointDeclare & z)
+// {
+//   evaluate(functioninputs(fun), fun, y, z);
+// }
+//
+// AbstractKnotPointTemplate
+// auto evaluate(AbstractFunction fun, const AbstractKnotPointDeclare & z) {
+//   evaluate(functioninputs(fun), fun, z);
+// }
+//
 #endif
