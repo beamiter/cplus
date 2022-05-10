@@ -15,10 +15,18 @@ enum class FunctionInputs {
   StateControl,
 };
 
-enum class FunctionSignature {
-  Inplace,
-  StaticReturn,
-};
+struct FunctionSignature {};
+struct Inplace : FunctionSignature {};
+struct StaticReturn : FunctionSignature {};
+
+struct StateVectorType {};
+struct EuclideanState : StateVectorType {};
+struct RotationState : StateVectorType {};
+
+// enum class FunctionSignature {
+// Inplace,
+// StaticReturn,
+//};
 
 enum class DiffMethod {
   ForwardAD,

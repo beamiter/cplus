@@ -9,12 +9,14 @@ struct Explicit : QuadratureRule {};
 
 struct Implicit : QuadratureRule {};
 
-struct DiscretizedDynamics : DiscreteDynamics {
-  DiscretizedDynamics(ContinuousDynamics dynamics_in, QuadratureRule rule) {
+AbstractModelTemplate class DiscretizedDynamics
+    : public DiscreteDynamicsDeclare {
+  DiscretizedDynamics(const ContinuousDynamicsDeclare &dynamics_in,
+                      QuadratureRule rule) {
     continuous_dynamics = dynamics_in;
     integrator = rule;
   }
-  ContinuousDynamics continuous_dynamics;
+  const ContinuousDynamicsDeclare &continuous_dynamics = nullptr;
   QuadratureRule integrator;
 };
 
