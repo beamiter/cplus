@@ -66,7 +66,7 @@ public:
     return std::make_tuple(state_dim(), control_dim());
   }
   V getstate(const VectorX<T> &v) { return v(seqN(0, state_dim())); }
-  auto state() { return getstate(getdata()); }
+  V state() { return getstate(getdata()); }
   V getcontrol(const VectorX<T> &v) {
     if (is_terminal()) {
       return VectorX<T>::Zero(std::get<1>(dims()));
@@ -79,21 +79,21 @@ public:
     // std::tie(n, m) = dims(z);
     // return !is_terminal(z) * v(seqN(n, m));
   }
-  auto control() { return getcontrol(getdata()); }
+  V control() { return getcontrol(getdata()); }
 
-  auto setdata(const VectorX<T> &v) { getdata() = v; }
-  auto setstate(const VectorX<T> &x) {
+  void setdata(const VectorX<T> &v) { getdata() = v; }
+  void setstate(const VectorX<T> &x) {
     // state(z) = x;
     setdata(x);
   }
-  auto setcontrol(const VectorX<T> &u) {
+  void setcontrol(const VectorX<T> &u) {
     // control(z) = u;
     setdata(u);
   }
 
-  auto time() { return std::get<0>(getparams()); }
-  auto timestep() { return std::get<1>(getparams()); }
-  auto is_terminal() { return timestep() == 0.0; }
+  T time() { return std::get<0>(getparams()); }
+  T timestep() { return std::get<1>(getparams()); }
+  bool is_terminal() { return timestep() == 0.0; }
 };
 
 template <int Nx, int Nu, typename T>

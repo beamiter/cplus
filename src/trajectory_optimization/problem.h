@@ -97,14 +97,14 @@ ProblemTemplate auto dims(ProblemDeclare prob, int i) {
   return std::make_tuple(n, m, prob.N);
 }
 
-ProblemTemplate auto state_dim(ProblemDeclare prob, int k) {
+ProblemTemplate int state_dim(ProblemDeclare prob, int k) {
   return state_dim(prob.model[k]);
 }
-ProblemTemplate auto control_dim(ProblemDeclare prob, int k) {
+ProblemTemplate int control_dim(ProblemDeclare prob, int k) {
   return control_dim(prob.model[k]);
 }
 
-ProblemTemplate auto horizonlength(ProblemDeclare prob) { return prob.N; }
+ProblemTemplate int horizonlength(ProblemDeclare prob) { return prob.N; }
 
 template <ProblemTypeName, typename... Args>
 auto controls(ProblemDeclare prob, Args... args) {
@@ -119,10 +119,10 @@ ProblemTemplate auto gettimes(ProblemDeclare prob) {
 }
 
 ProblemTemplate auto get_initial_time(ProblemDeclare prob) {
-  return time(get_trajectory(prob).front());
+  return get_trajectory(prob).front().time();
 }
 ProblemTemplate T get_final_time(ProblemDeclare prob) {
-  return time(get_trajectory(prob).back());
+  return get_trajectory(prob).back().time();
 }
 ProblemTemplate auto get_constraints(ProblemDeclare prob) {
   return prob.constraints;

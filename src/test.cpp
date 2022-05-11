@@ -46,8 +46,9 @@ TEST(CostExpansionTest, StateControl) {
   auto traj = SampledTrajectoryX<6, 2, double>();
   traj.data.push_back(KnotPointX<6, 2, double>());
   std::cout << "****************" << std::endl;
-  auto solver = iLQRSolver<6, 7, 2, double, VectorXd, Inplace, EuclideanState>(
-      prob, opts, stats, DiffMethod::UserDefined, ValBool<true>(), ValInt<7>());
+  // auto solver = iLQRSolver<6, 7, 2, double, VectorXd, Inplace,
+  // EuclideanState>( prob, opts, stats, DiffMethod::UserDefined,
+  // ValBool<true>(), ValInt<7>());
 }
 
 int main(int argc, char **argv) {

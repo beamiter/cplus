@@ -19,6 +19,8 @@ AbstractFunctionTemplate class AbstractFunction {
                 "P is not derived of StateVectorType");
 
 public:
+  // typedef F default_signature;
+  // typedef S statevectortype;
   typedef typename std::enable_if<std::is_base_of<FunctionSignature, F>::value,
                                   F>::type default_signature;
   typedef typename std::enable_if<std::is_base_of<StateVectorType, S>::value,
@@ -35,17 +37,17 @@ public:
   }
 
   /*Function*/
-  int errstate_dim(EuclideanState) { return state_dim(); }
-  int errstate_dim(RotationState) {
+  int errstate_dim(EuclideanState) const { return state_dim(); }
+  int errstate_dim(RotationState) const {
     throw std::runtime_error("not implemented.");
     return -1;
   }
-  int errstate_dim(StateVectorType) {
+  int errstate_dim(StateVectorType) const {
     throw std::runtime_error("not implemented.");
     return -1;
   }
 
-  int errstate_dim() { return errstate_dim(statevectortype()); }
+  int errstate_dim() const { return errstate_dim(statevectortype()); }
   std::tuple<int, int, int> dims() {
     return std::make_tuple(state_dim(), control_dim(), output_dim());
   }

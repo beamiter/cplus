@@ -12,7 +12,7 @@ using namespace std;
 
 struct A {
   virtual void test() const { cout << ">>>>>>>>> A\n"; }
-  virtual void haha() const { cout << ">>>>>>>>> A\n"; }
+  virtual int haha() const { cout << ">>>>>>>>> A\n"; }
 };
 struct AA : A {
   virtual void test() const { cout << ">>>>>>>>> B\n"; }
@@ -20,13 +20,13 @@ struct AA : A {
 struct AAA : AA {};
 
 template <typename T> class B {
-  static_assert(std::is_base_of<A, T>::value, "not derived from A");
-  typedef typename std::enable_if<std::is_base_of<A, T>::value, T>::type base;
+  // static_assert(std::is_base_of<A, T>::value, "not derived from A");
+  using std::enable_if<std::is_base_of<A, T>::value, T>::type;
 
 public:
   // virtual void test() = 0;
   void fund() { cout << ">>>>>>> basic function\n"; }
-  void haha() { cout << "daidai\n"; }
+  int haha() { cout << "daidai\n"; }
 };
 
 template <typename T> class C : public B<T> {
@@ -41,7 +41,8 @@ int main() {
   aaa.haha();
   const A &a = aaa;
   a.test();
-  a.haha();
+  auto rtn = a.haha();
+  cout << ">>>>>>>>>>> " << rtn << std::endl;
   cout << std::is_base_of<A, AA>::value;
 
   char str[50];
@@ -60,8 +61,9 @@ int main() {
   cout << sizeof(Location) << endl;
 
   std::string s = "00000";
-  cout << s << ", " << s.size()<< endl;
+  cout << s << ", " << s.size() << endl;
   s.resize(8, '0');
-  cout << s << s.size() <<  endl;
+  cout << s << s.size() << endl;
 
+  //B<A> b;
 }
