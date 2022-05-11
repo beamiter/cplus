@@ -86,96 +86,96 @@ public:
         Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in), reg(reg_in),
         grad(grad_in), xdot(xdot_in) {}
 
-  // iLQRSolver(ProblemDeclare prob, SolverOptions<T> opts, SolverStats<T>
-  // stats, DiffMethod dynamics_diffmethod, ValBool<USE_STATIC>, ValInt<Ne>) {
-  // model = prob.model;
-  // obj = prob.obj;
-  // x0 = prob.x0;
-  // tf = get_final_time(prob);
-  // N = horizonlength(prob);
-  // opts = opts;
-  // stats = stats;
-  // Z = prob.Z;
-  // Z_dot = Z;
+  iLQRSolver(ProblemDeclare prob, SolverOptions<T> opts, SolverStats<T> stats,
+             DiffMethod dynamics_diffmethod, ValBool<USE_STATIC>, ValInt<Ne>) {
+    model = prob.model;
+    obj = prob.obj;
+    x0 = prob.x0;
+    tf = get_final_time(prob);
+    N = horizonlength(prob);
+    opts = opts;
+    stats = stats;
+    Z = prob.Z;
+    Z_dot = Z;
 
-  // std::vector<int> nx, nu, ne;
-  // std::tie(nx, nu) = dims(prob);
-  // for (const auto &m : prob.model) {
-  // ne.push_back(m->errstate_dim());
-  //}
-  // ne.push_back(ne.back());
+    std::vector<int> nx, nu, ne;
+    std::tie(nx, nu) = dims(prob);
+    for (const auto &m : prob.model) {
+      ne.push_back(m->errstate_dim());
+    }
+    ne.push_back(ne.back());
 
-  // const bool samestatedim = std::all_of(
-  // nx.begin(), nx.end(), [&nx](const auto x) { return x == nx[0]; });
-  // const bool samecontroldim = std::all_of(
-  // nu.begin(), nu.end(), [&nu](const auto u) { return u == nu[0]; });
-  // if (USE_STATIC) {
-  // assert(samecontroldim && samestatedim);
-  // assert(Nx == nx[0]);
-  // assert(Nu == nu[0]);
-  // assert(Ne == ne[0]);
-  //} else {
-  // assert(Nx == samestatedim ? nx[0] : Nx);
-  // assert(Nu == samestatedim ? nu[0] : Nu);
-  // assert(Ne == samecontroldim ? ne[0] : 0);
-  //}
+    const bool samestatedim = std::all_of(
+        nx.begin(), nx.end(), [&nx](const auto x) { return x == nx[0]; });
+    const bool samecontroldim = std::all_of(
+        nu.begin(), nu.end(), [&nu](const auto u) { return u == nu[0]; });
+    if (USE_STATIC) {
+      assert(samecontroldim && samestatedim);
+      assert(Nx == nx[0]);
+      assert(Nu == nu[0]);
+      assert(Ne == ne[0]);
+    } else {
+      assert(Nx == samestatedim ? nx[0] : Nx);
+      assert(Nu == samestatedim ? nu[0] : Nu);
+      assert(Ne == samecontroldim ? ne[0] : 0);
+    }
 
-  // if (std::any_of(Z[0].state().begin(), Z[0].state().end(),
-  //[](const auto &s) { return std::isnan(s); })) {
-  //// Change std vector to Eigen Vector;
-  // VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
-  //// rollout(dynamics_signature<UseStatic<
-  //// typename SampledTrajectoryX<Nx, Nu, T>::value_type>::val>(),
-  //// prob.model[0], Z, v);
-  //}
-  // VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
-  // Z[0].setstate(v);
+    if (std::any_of(Z[0].state().begin(), Z[0].state().end(),
+                    [](const auto &s) { return std::isnan(s); })) {
+      // Change std vector to Eigen Vector;
+      VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
+      // rollout(dynamics_signature<UseStatic<
+      // typename SampledTrajectoryX<Nx, Nu, T>::value_type>::val>(),
+      // prob.model[0], Z, v);
+    }
+    VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
+    Z[0].setstate(v);
 
-  // loop(0, N,
-  //[&ne, this](const int k) { dx.push_back(VectorX<T>::Zero(ne[k])); });
+    loop(0, N,
+         [&ne, this](const int k) { dx.push_back(VectorX<T>::Zero(ne[k])); });
 
-  // loop(0, N - 1,
-  //[&nu, this](const int k) { du.push_back(VectorX<T>::Zero(nu[k])); });
+    loop(0, N - 1,
+         [&nu, this](const int k) { du.push_back(VectorX<T>::Zero(nu[k])); });
 
-  // loop(0, N - 1, [&ne, &nu, this](const int k) {
-  // gains.push_back(MatrixX<T>::Zero(nu[k], ne[k] + 1));
-  //});
+    loop(0, N - 1, [&ne, &nu, this](const int k) {
+      gains.push_back(MatrixX<T>::Zero(nu[k], ne[k] + 1));
+    });
 
-  // loop(0, gains.size(), [&ne, this](const int k) {
-  // K.push_back(gains[k](all, seq(0, last - 1)));
-  // d.push_back(gains[k](all, last));
-  //});
+    loop(0, gains.size(), [&ne, this](const int k) {
+      K.push_back(gains[k](all, seq(0, last - 1)));
+      d.push_back(gains[k](all, last));
+    });
 
-  // loop(0, N - 1, [&nx, &ne, &nu, this](const int k) {
-  // D.push_back(DynamicsExpansion<T>::init(nx[k], ne[k], nu[k]));
-  //});
+    loop(0, N - 1, [&nx, &ne, &nu, this](const int k) {
+      D.push_back(DynamicsExpansion<T>::init(nx[k], ne[k], nu[k]));
+    });
 
-  // loop(0, N, [&nx, &ne, this](const int k) {
-  // MatrixX<T> a(nx[k], ne[k]);
-  // a.diagonal().setOnes();
-  // G.push_back(a);
-  //});
+    loop(0, N, [&nx, &ne, this](const int k) {
+      MatrixX<T> a(nx[k], ne[k]);
+      a.diagonal().setOnes();
+      G.push_back(a);
+    });
 
-  // Eerr(ne, nu);
-  // Efull = FullStateExpansion(Eerr, prob.model[0]);
+    Eerr(ne, nu);
+    Efull = FullStateExpansion(Eerr, prob.model[0]);
 
-  // loop(0, N, [&ne, &nu, this](const int k) {
-  // Q_vec.push_back(StateControlExpansionHelper<T>()(ne[k], nu[k]));
-  //});
+    loop(0, N, [&ne, &nu, this](const int k) {
+      Q_vec.push_back(StateControlExpansionHelper<T>()(ne[k], nu[k]));
+    });
 
-  // loop(0, N, [&ne, this](const int k) {
-  // S_vec.push_back(StateControlExpansionHelper<T>()(ne[k]));
-  //});
+    loop(0, N, [&ne, this](const int k) {
+      S_vec.push_back(StateControlExpansionHelper<T>()(ne[k]));
+    });
 
-  // DV = std::vector<T>(2, 0);
+    DV = std::vector<T>(2, 0);
 
-  ///[>Qtmp = StateControlExpansionHelper<T>()(ne[0], nu[0]);
-  // Quu_reg = MatrixX<T>::Zero(nu[0], nu[0]);
-  // Qux_reg = MatrixX<T>::Zero(nu[0], ne[0]);
-  // reg = DynamicRegularization<T>(opts.bp_reg_initial, 0);
-  // grad = std::vector<T>(N - 1, 0);
-  // xdot = std::vector<T>(nx[0], 0);
-  //}
+    *Qtmp = StateControlExpansionHelper<T>()(ne[0], nu[0]);
+    Quu_reg = MatrixX<T>::Zero(nu[0], nu[0]);
+    Qux_reg = MatrixX<T>::Zero(nu[0], ne[0]);
+    reg = DynamicRegularization<T>(opts.bp_reg_initial, 0);
+    grad = std::vector<T>(N - 1, 0);
+    xdot = std::vector<T>(nx[0], 0);
+  }
 
   std::vector<const DiscreteDynamicsDeclare *> model;
   AbstractObjective obj;
@@ -207,7 +207,7 @@ public:
 
   std::vector<T> DV;
 
-  const StateControlExpansion<T, true> *Qtmp;
+  StateControlExpansion<T, true> *Qtmp = nullptr;
   m_data_type Quu_reg;
   m_data_type Qux_reg;
   DynamicRegularization<T> reg;
