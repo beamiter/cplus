@@ -36,19 +36,18 @@ TEST(CostExpansionTest, StateControl) {
   dd(2) = 6;
   std::cout << d << std::endl;
 
-  auto car = CarModel();
+  auto car = CarModel<Inplace, EuclideanState>();
   Objective<double> obj;
   std::vector<double> x0({0, 0, 0, 0, 0, 0});
   double tf = 5.0;
   auto prob = ProblemHelper::init<6, 2>(car, obj, x0, tf);
-  // auto opts = SolverOptions<double>();
-  // auto stats = SolverStats<double>();
-  // auto traj = SampledTrajectoryX<6, 2, double>();
-  // traj.data.push_back(KnotPointX<6, 2, double>());
-  //
-  // std::cout << "****************" << std::endl;
-  // auto solver = iLQRSolver<6, 7, 2, double, VectorXd>(
-  //     prob, opts, stats, UserDefined(), ValBool<true>(), ValInt<7>());
+  auto opts = SolverOptionsD();
+  auto stats = SolverStatsD();
+  auto traj = SampledTrajectoryX<6, 2, double>();
+  traj.data.push_back(KnotPointX<6, 2, double>());
+  std::cout << "****************" << std::endl;
+  auto solver = iLQRSolver<6, 7, 2, double, VectorXd, Inplace, EuclideanState>(
+      prob, opts, stats, DiffMethod::UserDefined, ValBool<true>(), ValInt<7>());
 }
 
 int main(int argc, char **argv) {

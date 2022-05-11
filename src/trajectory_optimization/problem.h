@@ -10,19 +10,21 @@
 #include "constraint_list.h"
 #include "objective.h"
 
-#define ProblemTemplate template <int Nx, int Nu, typename T>
-#define ProblemDeclare Problem<Nx, Nu, T>
+#define ProblemTypeName int Nx, int Nu, typename T, AbstractModelTypeName
+#define ProblemTemplate                                                        \
+  template <int Nx, int Nu, typename T, AbstractModelTypeName>
+#define ProblemDeclare Problem<Nx, Nu, T, F, S>
 
 ProblemTemplate struct Problem {
-  Problem(std::vector<DiscreteDynamics> model_in, AbstractObjective obj_in,
-          ConstraintList constraints_in, std::vector<T> x0_in,
-          std::vector<T> xf_in, SampledTrajectoryX<Nx, Nu, T> Z_in, int N_in,
-          T t0, T tf)
-      : model(std::move(model_in)), obj(std::move(obj_in)),
+  Problem(std::vector<const DiscreteDynamicsDeclare *> model_in,
+          AbstractObjective obj_in, ConstraintList constraints_in,
+          std::vector<T> x0_in, std::vector<T> xf_in,
+          SampledTrajectoryX<Nx, Nu, T> Z_in, int N_in, T t0, T tf)
+      : model(model_in), obj(std::move(obj_in)),
         constraints(std::move(constraints_in)), Z(std::move(Z_in)),
         x0(std::move(x0_in)), xf(std::move(xf_in)) {}
 
-  std::vector<DiscreteDynamics> model;
+  std::vector<const DiscreteDynamicsDeclare *> model;
   AbstractObjective obj;
   ConstraintList constraints;
   std::vector<T> x0;
@@ -32,21 +34,13 @@ ProblemTemplate struct Problem {
 };
 
 struct ProblemHelper {
-  template <int Nx, int Nu, typename T>
-  static auto init(std::vector<DiscreteDynamics> models, AbstractObjective obj,
-                   std::vector<T> x0, double tf) {
-    std::vector<T> xf = std::vector<T>(state_dim(models.back()), 0);
+  template <int Nx, int Nu, typename T, AbstractModelTypeName>
+  static ProblemDeclare
+  init(std::vector<const DiscreteDynamicsDeclare *> models,
+       AbstractObjective obj, std::vector<T> x0, double tf) {
+    std::vector<T> xf = std::vector<T>(models.back()->state_dim(), 0);
     auto constraints = ConstraintList(models);
     auto t0 = zero(tf);
-
-    auto dim0 = std::get<0>(dims(models));
-    std::vector<VectorX<T>> X0, U0;
-    for (auto d : dim0) {
-      X0.push_back(VectorX<T>::Zero(d));
-    }
-    for (const auto &m : models) {
-      U0.push_back(VectorX<T>::Zero(control_dim(m)));
-    }
 
     std::vector<int> nx, nu;
     std::tie(nx, nu) = dims(models);
@@ -56,31 +50,39 @@ struct ProblemHelper {
         nu.begin(), nu.end(), [&nu](const auto u) { return u == nu[0]; });
     assert(same_state_dimension && same_control_dimension);
 
+    std::vector<VectorX<T>> X0, U0;
+    for (auto d : nx) {
+      X0.push_back(VectorX<T>::Zero(d));
+    }
+    for (const auto &m : models) {
+      U0.push_back(VectorX<T>::Zero(m->control_dim()));
+    }
+
     const auto N = length(obj);
     TrivialParam param;
     param.tf = 5.0;
     param.dt = 0.1;
     param.N = N;
     auto Z = SampledTrajectoryHelper::init<Nx, Nu>(X0, U0, param);
-    return Problem<Nx, Nu, T>(models, obj, constraints, x0, xf, Z, N, t0, tf);
+    return ProblemDeclare(models, obj, constraints, x0, xf, Z, N, t0, tf);
   }
 
-  template <int Nx, int Nu, typename T, typename C>
-  static auto init(DiscreteDynamics model, Objective<C> obj, std::vector<T> x0,
-                   T tf) {
+  template <int Nx, int Nu, typename T, typename C, AbstractModelTypeName>
+  static ProblemDeclare init(const DiscreteDynamicsDeclare *model,
+                             Objective<C> obj, std::vector<T> x0, T tf) {
     const auto N = length(obj);
-    std::vector<DiscreteDynamics> models;
+    std::vector<const DiscreteDynamicsDeclare *> models;
     for (auto k = 0; k < N - 1; ++k) {
       models.push_back(model);
     }
     return init<Nx, Nu, T>(models, obj, x0, tf);
   }
 
-  template <int Nx, int Nu, typename T, typename C>
-  static auto init(ContinuousDynamics model, Objective<C> obj,
-                   std::vector<T> x0, T tf) {
-    auto discretized_model = DiscretizedDynamics(model, RK4());
-    return init<Nx, Nu, T, C>(discretized_model, obj, x0, tf);
+  template <int Nx, int Nu, typename T, typename C, AbstractModelTypeName>
+  static ProblemDeclare init(const ContinuousDynamicsDeclare &model,
+                             Objective<C> obj, std::vector<T> x0, T tf) {
+    auto discretized_model = DiscretizedDynamicsDeclare(model, RK4());
+    return init<Nx, Nu, T, C>(&discretized_model, obj, x0, tf);
   }
 };
 
@@ -104,11 +106,11 @@ ProblemTemplate auto control_dim(ProblemDeclare prob, int k) {
 
 ProblemTemplate auto horizonlength(ProblemDeclare prob) { return prob.N; }
 
-template <int Nx, int Nu, typename T, typename... Args>
+template <ProblemTypeName, typename... Args>
 auto controls(ProblemDeclare prob, Args... args) {
   return controls(get_trajectory(prob), args...);
 }
-template <int Nx, int Nu, typename T, typename... Args>
+template <ProblemTypeName, typename... Args>
 auto states(ProblemDeclare prob, Args... args) {
   return states(get_trajectory(prob), args...);
 }

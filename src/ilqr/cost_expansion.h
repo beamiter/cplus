@@ -21,7 +21,8 @@ using Eigen::VectorX;
 // template <typename T> using v_data_type = VectorX<T>;
 
 // State and control
-template <typename T, bool B = true> struct StateControlExpansion {
+template <typename T, bool B = true> class StateControlExpansion {
+public:
   static constexpr bool state_control = B;
   typedef MatrixX<T> m_data_type;
   typedef VectorX<T> v_data_type;
@@ -47,19 +48,17 @@ template <typename T, bool B = true> struct StateControlExpansion {
   Ref<v_data_type> u;
 };
 // State only
-template <typename T> struct StateControlExpansion<T, false> {
+template <typename T> class StateControlExpansion<T, false> {
+public:
   static const bool state_control = false;
   typedef MatrixX<T> m_data_type;
   typedef VectorX<T> v_data_type;
 
-  StateControlExpansion(int n, int m = 0)
+  StateControlExpansion(int n)
       : ix(0, n), data(MatrixX<T>::Zero(n, n + 1)),
         hess(data(all, seq(0, last - 1))), grad(data(all, last)),
         xx(data(ix, ix)), x(grad(ix)) {
     assert(n > 0);
-    if (m != 0) {
-      std::cout << m << " Warning: \"m\" is not needed for state only!!!\n";
-    }
     std::cout << "Specialization finished\n";
   }
 
@@ -71,7 +70,17 @@ template <typename T> struct StateControlExpansion<T, false> {
   Ref<v_data_type> x;
 };
 
-template <typename T, bool B = true> struct CostExpansion {
+template <typename T> struct StateControlExpansionHelper {
+  StateControlExpansion<T, true> operator()(int n, int m) {
+    return StateControlExpansion<T, true>(n, m);
+  }
+  StateControlExpansion<T, false> operator()(int n) {
+    return StateControlExpansion<T, false>(n);
+  }
+};
+
+template <typename T, bool B = true> class CostExpansion {
+public:
   static const bool state_control = B;
 
   CostExpansion() {}
@@ -89,11 +98,11 @@ template <typename T, bool B = true> struct CostExpansion {
     }
     if (has_zero_control) {
       for (auto k = 0; k < N; ++k) {
-        data.push_back(StateControlExpansion<T, B>(nx[k], 0));
+        data.push_back(StateControlExpansionHelper<T>(nx[k]));
       }
     } else {
       for (auto k = 0; k < N; ++k) {
-        data.push_back(StateControlExpansion<T, B>(nx[k], nu[k]));
+        data.push_back(StateControlExpansionHelper<T>(nx[k], nu[k]));
       }
     }
   }
@@ -117,19 +126,19 @@ template <typename T, bool B = true> struct CostExpansionHelper {
   }
 };
 
-template <typename T, bool B>
+template <typename T, bool B, AbstractModelTypeName>
 auto FullStateExpansion(const CostExpansion<T, B> &E,
-                        const DiscreteDynamics &model) {
+                        const DiscreteDynamicsDeclare &model) {
   return FullStateExpansion(statevectortype(model), E, model);
 }
-template <typename T, bool B>
+template <typename T, bool B, AbstractModelTypeName>
 auto FullStateExpansion(EuclideanState, const CostExpansion<T, B> &E,
-                        const DiscreteDynamics &) {
+                        const DiscreteDynamicsDeclare &) {
   return E;
 }
-template <typename T, bool B>
+template <typename T, bool B, AbstractModelTypeName>
 auto FullStateExpansion(RotationState, const CostExpansion<T, B> &E,
-                        const DiscreteDynamics &model) {
+                        const DiscreteDynamicsDeclare &model) {
   const int n = state_dim(model);
   const int m = control_dim(model);
   return CostExpansionHelper<T, B>::init(n, m, E.length());

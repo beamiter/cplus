@@ -45,25 +45,26 @@ template <> inline auto function_signature<true>() { return StaticReturn(); }
 // }
 //
 
-#define ILQR_SOLVER_TYPENAME int Nx, int Ne, int Nu, typename T, typename V
+#define ILQR_SOLVER_TYPENAME                                                   \
+  int Nx, int Ne, int Nu, typename T, typename V, AbstractModelTypeName
 #define ILQR_SOLVER_TEMPLATE                                                   \
   template <int Nx, int Ne, int Nu, typename T, typename V,                    \
-            bool USE_STATIC = true>
-#define ILQR_SOLVER iLQRSolver<Nx, Ne, Nu, T, V>
+            AbstractModelTypeName, bool USE_STATIC = true>
+#define ILQR_SOLVER iLQRSolver<Nx, Ne, Nu, T, V, F, S>
 
-ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
+ILQR_SOLVER_TEMPLATE struct iLQRSolver : UnconstrainedSolver<T> {
   using vectype = V;
   using m_data_type = MatrixX<T>;
   using v_data_type = VectorX<T>;
 
-  // iLQRSolver(std::vector<DiscreteDynamics> model_in, AbstractObjective obj_in,
-  //            std::vector<T> x0_in, T tf_in, int N_in, SolverOptions<T> opts_in,
-  //            SolverStats<T> stats_in,
-  //            SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_in,
-  //            SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_dot_in,
-  //            std::vector<v_data_type> dx_in, std::vector<v_data_type> du_in,
-  //            std::vector<m_data_type> gains_in,
-  //            std::vector<Ref<m_data_type>> K_in,
+  // iLQRSolver(std::vector<DiscreteDynamics> model_in, AbstractObjective
+  // obj_in,
+  //            std::vector<T> x0_in, T tf_in, int N_in, SolverOptions<T>
+  //            opts_in, SolverStats<T> stats_in, SampledTrajectory<Nx, Nu, V,
+  //            T, KnotPoint<Nx, Nu, V, T>> Z_in, SampledTrajectory<Nx, Nu, V,
+  //            T, KnotPoint<Nx, Nu, V, T>> Z_dot_in, std::vector<v_data_type>
+  //            dx_in, std::vector<v_data_type> du_in, std::vector<m_data_type>
+  //            gains_in, std::vector<Ref<m_data_type>> K_in,
   //            std::vector<Ref<v_data_type>> d_in,
   //            std::vector<DynamicsExpansion<T>> D_in,
   //            std::vector<m_data_type> G_in, CostExpansion<T> Efull_in,
@@ -81,25 +82,24 @@ ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
   //       Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in), reg(reg_in),
   //       grad(grad_in), xdot(xdot_in) {}
 
-  iLQRSolver(Problem<Nx, Nu, T> prob, SolverOptions<T> opts,
-             SolverStats<T> stats, DiffMethod dynamics_diffmethod,
-             ValBool<USE_STATIC>, ValInt<Ne>) {
-    model = prob.model;
-    obj = prob.obj;
-    x0 = prob.x0;
-    tf = get_final_time(prob);
+  iLQRSolver(ProblemDeclare prob, SolverOptions<T> opts, SolverStats<T> stats,
+             DiffMethod dynamics_diffmethod, ValBool<USE_STATIC>, ValInt<Ne>) {
+    // model = prob.model;
+    // obj = prob.obj;
+    // x0 = prob.x0;
+    // tf = get_final_time(prob);
     // N = horizonlength(prob);
     // opts = opts;
     // stats = stats;
     // Z = prob.Z;
     // Z_dot = Z;
     //
-    std::vector<int> nx, nu, ne;
-    std::tie(nx, nu) = dims(prob);
-    for (const auto &m : prob.model) {
-      ne.push_back(errstate_dim(m));
-    }
-    ne.push_back(ne.back());
+    // std::vector<int> nx, nu, ne;
+    // std::tie(nx, nu) = dims(prob);
+    // for (const auto &m : prob.model) {
+    // ne.push_back(errstate_dim(m));
+    //}
+    // ne.push_back(ne.back());
     //
     // const bool samestatedim = std::all_of(
     //     nx.begin(), nx.end(), [&nx](const auto x) { return x == nx[0]; });
@@ -121,17 +121,20 @@ ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
     //   // Change std vector to Eigen Vector;
     //   VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
     //   rollout(dynamics_signature<UseStatic<
-    //               typename SampledTrajectoryX<Nx, Nu, T>::value_type>::val>(),
+    //               typename SampledTrajectoryX<Nx, Nu,
+    //               T>::value_type>::val>(),
     //           prob.model[0], Z, v);
     // }
     // VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
     // setstate(Z[0], v);
     //
     // loop(0, N,
-    //      [&ne, this](const int k) { dx.push_back(VectorX<T>::Zero(ne[k])); });
+    //      [&ne, this](const int k) { dx.push_back(VectorX<T>::Zero(ne[k]));
+    //      });
     //
     // loop(0, N - 1,
-    //      [&nu, this](const int k) { du.push_back(VectorX<T>::Zero(nu[k])); });
+    //      [&nu, this](const int k) { du.push_back(VectorX<T>::Zero(nu[k]));
+    //      });
     //
     // loop(0, N - 1, [&ne, &nu, this](const int k) {
     //   gains.push_back(MatrixX<T>::Zero(nu[k], ne[k] + 1));
@@ -152,8 +155,8 @@ ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
     //   G.push_back(a);
     // });
 
-    Eerr(ne, nu);
-    std::cout << Eerr.const_grad.size() << " ****************\n";
+    // Eerr(ne, nu);
+    // std::cout << Eerr.const_grad.size() << " ****************\n";
     // = CostExpansion<T>(ne, nu);
 
     // Efull = FullStateExpansion(Eerr, prob.model[0]);
@@ -176,7 +179,7 @@ ILQR_SOLVER_TEMPLATE struct iLQRSolver : UNCONSTRAINEDSOLVER {
     // xdot = std::vector<T>(nx[0], 0);
   }
 
-  std::vector<DiscreteDynamics> model;
+  std::vector<const DiscreteDynamicsDeclare *> model;
   AbstractObjective obj;
 
   std::vector<T> x0;
@@ -258,8 +261,9 @@ auto solvername(ILQR_SOLVER) { return SolverName::iLQR; }
 ILQR_SOLVER_TEMPLATE
 auto get_feedbackgains(ILQR_SOLVER solver) { return solver.K; }
 
-inline auto usestaticdefault(AbstractFunction model) {
-  return default_signature(model) == StaticReturn();
+AbstractFunctionTemplate inline auto
+usestaticdefault(const AbstractFunctionDeclare &model) {
+  return model.default_signature() == StaticReturn();
 }
 
 #endif

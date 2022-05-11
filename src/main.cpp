@@ -10,9 +10,14 @@
 
 using namespace std;
 
-struct A {};
-struct AA : A {};
-struct AAA : A {};
+struct A {
+  virtual void test() const { cout << ">>>>>>>>> A\n"; }
+  virtual void haha() const { cout << ">>>>>>>>> A\n"; }
+};
+struct AA : A {
+  virtual void test() const { cout << ">>>>>>>>> B\n"; }
+};
+struct AAA : AA {};
 
 template <typename T> class B {
   static_assert(std::is_base_of<A, T>::value, "not derived from A");
@@ -21,23 +26,8 @@ template <typename T> class B {
 public:
   // virtual void test() = 0;
   void fund() { cout << ">>>>>>> basic function\n"; }
-  void haha() {
-    cout << "daidai\n";
-  }
+  void haha() { cout << "daidai\n"; }
 };
-
-// template <> class B<A> {
-// public:
-// virtual void test() { cout << ">>>>>>> A\n"; }
-//};
-// template <> class B<AA> {
-// public:
-// virtual void test() { cout << ">>>>>>> AA\n"; }
-//};
-// template <> class B<AAA> {
-// public:
-// virtual void test() { cout << ">>>>>>> AAA\n"; }
-//};
 
 template <typename T> class C : public B<T> {
   void test() const { cout << ">>>>>>> c\n"; }
@@ -46,12 +36,32 @@ template <typename T> class C : public B<T> {
 using Eigen::MatrixXd;
 
 int main() {
-  //B<int> ha;
-  B<A> b;
-  B<AA> b0;
-  B<AAA> b1;
-  b.haha();
+  AAA aaa;
+  aaa.test();
+  aaa.haha();
+  const A &a = aaa;
+  a.test();
+  a.haha();
   cout << std::is_base_of<A, AA>::value;
 
-  cout << endl;
+  char str[50];
+
+  strcpy(str, "This is string.h library function");
+  puts(str);
+
+  memset(&str, '$', 7 * sizeof(char));
+  puts(str);
+
+  cout << sizeof(char) << ", " << sizeof(float) << endl;
+
+  float Location[3];
+  cout << sizeof(Location) << endl;
+  memset(&Location, 0, 3 * sizeof(float));
+  cout << sizeof(Location) << endl;
+
+  std::string s = "00000";
+  cout << s << ", " << s.size()<< endl;
+  s.resize(8, '0');
+  cout << s << s.size() <<  endl;
+
 }

@@ -9,11 +9,14 @@
 #define AbstractModelDeclare AbstractFunction<F, S>
 AbstractFunctionTemplate class AbstractModel : public AbstractFunctionDeclare {
 public:
-  virtual int output_dim() const override { return this->state_dim(); }
+  int output_dim() const override { return this->state_dim(); }
 };
 
 #define ContinuousDynamicsDeclare ContinuousDynamics<F, S>
-AbstractModelTemplate class ContinuousDynamics : public AbstractModelDeclare {};
+AbstractModelTemplate class ContinuousDynamics : public AbstractModelDeclare {
+public:
+  int output_dim() const override { return this->state_dim(); }
+};
 
 // AbstractKnotPointTemplate auto dynamics(const ContinuousDynamics *model,
 // const AbstractKnotPointDeclare *z) {

@@ -29,6 +29,12 @@ public:
   virtual int control_dim() const = 0;
   virtual int output_dim() const = 0;
 
+  /*Virtual function*/
+  virtual FunctionInputs functioninputs() const {
+    return FunctionInputs::StateControl;
+  }
+
+  /*Function*/
   int errstate_dim(EuclideanState) { return state_dim(); }
   int errstate_dim(RotationState) {
     throw std::runtime_error("not implemented.");
@@ -40,13 +46,6 @@ public:
   }
 
   int errstate_dim() { return errstate_dim(statevectortype()); }
-
-  /*Virtual function*/
-  virtual FunctionInputs functioninputs() const {
-    return FunctionInputs::StateControl;
-  }
-
-  /*Function*/
   std::tuple<int, int, int> dims() {
     return std::make_tuple(state_dim(), control_dim(), output_dim());
   }

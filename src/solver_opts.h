@@ -8,7 +8,7 @@
 
 template <typename T> struct AbstractSolverOptions {};
 
-template <typename T> struct SolverOptions : AbstractSolverOptions<T> {
+template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
   T constraint_tolerance = 1e-6;
   T cost_tolerance = 1e-4;
   T cost_tolerance_intermediate = 1e-4;
@@ -63,7 +63,7 @@ template <typename T> struct SolverOptions : AbstractSolverOptions<T> {
   T r_threshold = 1.1;
 
   FunctionSignature dynamics_funsig = StaticReturn();
-  DiffMethod dynamics_diffmethod = ForwardAD();
+  DiffMethod dynamics_diffmethod = DiffMethod::ForwardAD;
   bool projected_newton = true;
   bool reuse_jacobians = false;
   bool trim_stats = true;
@@ -71,8 +71,9 @@ template <typename T> struct SolverOptions : AbstractSolverOptions<T> {
   bool show_summary = true;
   int verbose = 0;
 };
+using SolverOptionsD = SolverOptions<double>;
 
-template <typename T> struct SolverStats {
+template <typename T=double> struct SolverStats {
   int iterations = 0;
   int iterations_outer = 0;
   int iterations_pn = 0;
@@ -84,5 +85,6 @@ template <typename T> struct SolverStats {
 
   SolverName parent;
 };
+using SolverStatsD = SolverStats<double>;
 
 #endif

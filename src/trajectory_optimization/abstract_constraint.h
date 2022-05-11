@@ -5,21 +5,23 @@
 
 #include "robot_dynamics/functionbase.h"
 
-class AbstractConstraint : AbstractFunction {};
+// AbstractFunctionTemplate class AbstractConstraint : AbstractFunctionDeclare
+// {};
+class AbstractConstraint {};
 
 class StageConstraint : AbstractConstraint {};
 inline auto functioninputs(StageConstraint) {
-  return StateControl();
+  return FunctionInputs::StateControl;
 }
 
 class StateConstraint : StageConstraint {};
 inline auto functioninputs(StateConstraint) {
-  return StateOnly();
+  return FunctionInputs::StateOnly;
 }
 
 class ControlConstraint : StageConstraint {};
 inline auto functioninputs(ControlConstraint) {
-  return ControlOnly();
+  return FunctionInputs::ControlOnly;
 }
 
 inline auto sense(AbstractConstraint) {

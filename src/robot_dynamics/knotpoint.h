@@ -21,7 +21,6 @@ public:
   typedef V vectype;
   typedef T datatype;
 
-
   /*Pure virtual function*/
   virtual int state_dim() = 0;
   virtual int control_dim() = 0;
@@ -32,7 +31,7 @@ public:
   int errstate_dim() { return state_dim(); }
 
   /*Virtual function*/
-  virtual std::tuple<double, double> getparams() = 0;
+  virtual std::tuple<T, T> getparams() = 0;
 
   /*Function*/
   auto getinput(FunctionInputs input) {
@@ -94,7 +93,7 @@ public:
 
   auto time() { return std::get<0>(getparams()); }
   auto timestep() { return std::get<1>(getparams()); }
-  auto is_terminal(const AbstractKnotPointDeclare &z) { timestep() == 0.0; }
+  auto is_terminal() { return timestep() == 0.0; }
 };
 
 template <int Nx, int Nu, typename T>
@@ -159,20 +158,20 @@ public:
     m_ = Nu;
   }
   KnotPoint(const KnotPoint &in) {
-    z_ = in.z;
-    t_ = in.t;
-    dt_ = in.dt;
-    n_ = in.n;
-    m_ = in.m;
+    z_ = in.z_;
+    t_ = in.t_;
+    dt_ = in.dt_;
+    n_ = in.n_;
+    m_ = in.m_;
   }
 
 private:
+  // Members
   V z_;
   T t_;
   T dt_;
   int n_;
   int m_;
 };
-
 
 #endif

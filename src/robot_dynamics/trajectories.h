@@ -12,28 +12,12 @@
 using Eigen::all;
 using Eigen::MatrixX;
 
-struct AbstractTrajectory {};
-
-inline auto getstate(AbstractTrajectory Z, double t) {
-  throw std::runtime_error("Not implemented");
-}
-inline auto getcontrol(AbstractTrajectory Z, double t) {
-  throw std::runtime_error("Not implemented");
-}
-inline auto getinitialtime(AbstractTrajectory Z, double t) {
-  throw std::runtime_error("Not implemented");
-}
-inline auto getfinaltime(AbstractTrajectory Z, double t) {
-  throw std::runtime_error("Not implemented");
-}
-
 struct TrivialParam {
   double t0 = std::numeric_limits<double>::quiet_NaN();
   double tf = std::numeric_limits<double>::quiet_NaN();
   double dt = std::numeric_limits<double>::quiet_NaN();
   int N = std::numeric_limits<int>::quiet_NaN();
 };
-
 inline auto gettimeinfo(double t0 = 0.,
                         double tf = std::numeric_limits<double>::quiet_NaN(),
                         double dt = std::numeric_limits<double>::quiet_NaN(),
@@ -61,11 +45,9 @@ inline auto gettimeinfo(double t0 = 0.,
   }
   return rtn;
 }
-
 inline auto gettimeinfo(TrivialParam param) {
   return gettimeinfo(param.t0, param.tf, param.dt, param.N);
 }
-
 inline auto gettimeinfo(std::vector<double> dt, double t0 = 0.,
                         double tf = std::numeric_limits<double>::quiet_NaN(),
                         int N = 0) {
@@ -82,6 +64,15 @@ inline auto gettimeinfo(std::vector<double> dt, double t0 = 0.,
   return std::partial_sum(dt.begin(), dt.end(), dt.begin());
 }
 
+#define AbstractTrajectoryDeclare AbstractTrajectory<V, T>
+template <typename V, typename T> class AbstractTrajectory {
+public:
+  virtual V getstate(double t) = 0;
+  virtual V getcontrol(double t) = 0;
+  virtual T getinitialtime() = 0;
+  virtual T getfinaltime() = 0;
+};
+
 #define SampledTrajectoryTypeName                                              \
   int n, int m, typename V, typename T, typename KP = KnotPoint<n, m, V, T>
 #define SampledTrajectoryTemplate                                              \
@@ -90,7 +81,7 @@ inline auto gettimeinfo(std::vector<double> dt, double t0 = 0.,
 #define SampledTrajectoryDeclare                                               \
   SampledTrajectory<n, m, V, T, KnotPoint<n, m, V, T>>
 
-SampledTrajectoryTemplate struct SampledTrajectory : AbstractTrajectory {
+SampledTrajectoryTemplate struct SampledTrajectory : AbstractTrajectoryDeclare {
   typedef V vectype;
   typedef V value_type;
   SampledTrajectory() {}
@@ -102,16 +93,33 @@ SampledTrajectoryTemplate struct SampledTrajectory : AbstractTrajectory {
   auto front() { return data.front(); }
   auto back() { return data.back(); }
   auto size() { return data.size(); }
-  const auto &operator[](int i) const { return data[i]; }
+  const KP &operator[](int i) const { return data[i]; }
   KP &operator[](int i) { return data[i]; }
+
+  V getstate(double t) override { return data[getk(t)].state(); }
+  V getcontrol(double t) override { return data[getk(t)].control(); }
+  T getinitialtime() override {
+    assert(!data.empty());
+    return data.front().time();
+  }
+  T getfinaltime() override {
+    assert(!data.empty());
+    return data.back().time();
+  }
+
   std::vector<KP> data;
   std::vector<T> times;
+
+private:
+  int getk(double t) {
+    auto iter = std::lower_bound(times.begin(), times.end(), t);
+    return std::distance(iter, times.begin());
+  }
 };
 
 template <int n, int m, typename T>
 using SampledTrajectoryX =
     SampledTrajectory<n, m, VectorX<T>, T, KnotPointX<n, m, T>>;
-
 template <int n, int m>
 using SampledTrajectoryXd =
     SampledTrajectory<n, m, VectorX<double>, double, KnotPointXd<n, m>>;
@@ -121,7 +129,7 @@ struct SampledTrajectoryHelper {
     SampledTrajectoryX<Nx, Nu, T> traj;
     traj.times.resize(length(Z));
     for (auto k = 0; k < length(Z); ++k) {
-      traj.times[k] = time(Z[k]);
+      traj.times[k] = Z[k].time();
     }
     traj.data = Z;
     return traj;
@@ -175,28 +183,6 @@ struct SampledTrajectoryHelper {
     return init<Nx, Nu, double>(Z);
   }
 };
-
-SampledTrajectoryTemplate auto getk(SampledTrajectoryDeclare Z, double t) {
-  auto iter = std::lower_bound(Z.times.begin(), Z.times.end(), t);
-  return std::distance(iter, Z.times.begin());
-}
-
-SampledTrajectoryTemplate auto getstate(SampledTrajectoryDeclare Z, double t) {
-  return state(Z.data[getk(Z, t)]);
-}
-
-SampledTrajectoryTemplate auto getcontrol(SampledTrajectoryDeclare Z,
-                                          double t) {
-  return control(Z.data[getk(Z, t)]);
-}
-
-SampledTrajectoryTemplate auto getinitialtime(SampledTrajectoryDeclare Z) {
-  return time(Z.data.front());
-}
-
-SampledTrajectoryTemplate auto getfinaltime(SampledTrajectoryDeclare Z) {
-  return time(Z.data.back());
-}
 
 SampledTrajectoryTemplate auto
 has_terminal_control(SampledTrajectoryDeclare Z) {
@@ -391,23 +377,25 @@ SampledTrajectoryTemplate auto setinitialtime(SampledTrajectoryDeclare Z,
   return Z;
 }
 
-SampledTrajectoryTemplate auto rollout(FunctionSignature sig,
-                                       DiscreteDynamics model,
-                                       SampledTrajectoryDeclare Z, V x0) {
+template <SampledTrajectoryTypeName, AbstractModelTypeName>
+auto rollout(FunctionSignature sig, DiscreteDynamicsDeclare model,
+             SampledTrajectoryDeclare Z, V x0) {
   setstate(Z[0], x0);
   for (auto k = 1; k < length(Z); ++k) {
     propagate_dynamics(sig, model, Z[k], Z[k - 1]);
   }
 }
-SampledTrajectoryTemplate auto rollout(Inplace sig, DiscreteDynamics model,
-                                       SampledTrajectoryDeclare Z, V x0) {
+template <SampledTrajectoryTypeName, AbstractModelTypeName>
+auto rollout(Inplace sig, const DiscreteDynamicsDeclare &model,
+             SampledTrajectoryDeclare Z, V x0) {
   setstate(Z[0], x0);
   for (auto k = 1; k < length(Z); ++k) {
     propagate_dynamics(sig, model, Z[k], Z[k - 1]);
   }
 }
-SampledTrajectoryTemplate auto rollout(StaticReturn sig, DiscreteDynamics model,
-                                       SampledTrajectoryDeclare Z, V x0) {
+template <SampledTrajectoryTypeName, AbstractModelTypeName>
+auto rollout(StaticReturn sig, const DiscreteDynamicsDeclare &model,
+             SampledTrajectoryDeclare Z, V x0) {
   setstate(Z[0], x0);
   for (auto k = 1; k < length(Z); ++k) {
     propagate_dynamics(sig, model, Z[k], Z[k - 1]);
