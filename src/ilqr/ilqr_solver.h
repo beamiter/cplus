@@ -62,7 +62,7 @@ public:
   using v_data_type = VectorX<T>;
 
   iLQRSolver(std::vector<const DiscreteDynamicsDeclare *> model_in,
-             AbstractObjective obj_in, std::vector<T> x0_in, T tf_in, int N_in,
+             const AbstractObjective* obj_in, std::vector<T> x0_in, T tf_in, int N_in,
              SolverOptions<T> opts_in, SolverStats<T> stats_in,
              SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_in,
              SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_dot_in,
@@ -81,10 +81,10 @@ public:
              std::vector<T> xdot_in)
       : model(model_in), obj(obj_in), x0(x0_in), tf(tf_in), N(N_in),
         opts(opts_in), stats(stats_in), Z(Z_in), Z_dot(Z_dot_in), dx(dx_in),
-        du(du_in), gains(gains_in), K(K_in), d(d_in), D(D_in), G(G_in),
-        Efull(Efull_in), Eerr(Eerr_in), Q_vec(Q_in), S_vec(S_in), DV(DV_in),
-        Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in), reg(reg_in),
-        grad(grad_in), xdot(xdot_in) {}
+        du(du_in), gains(gains_in), K_vec(K_in), d_vec(d_in), D_vec(D_in),
+        G_vec(G_in), Efull(Efull_in), Eerr(Eerr_in), Q_vec(Q_in), S_vec(S_in),
+        DV(DV_in), Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in),
+        reg(reg_in), grad(grad_in), xdot(xdot_in) {}
 
   iLQRSolver(ProblemDeclare prob, SolverOptions<T> opts, SolverStats<T> stats,
              DiffMethod dynamics_diffmethod, ValBool<USE_STATIC>, ValInt<Ne>) {
@@ -142,18 +142,18 @@ public:
     });
 
     loop(0, gains.size(), [&ne, this](const int k) {
-      K.push_back(gains[k](all, seq(0, last - 1)));
-      d.push_back(gains[k](all, last));
+      K_vec.push_back(gains[k](all, seq(0, last - 1)));
+      d_vec.push_back(gains[k](all, last));
     });
 
     loop(0, N - 1, [&nx, &ne, &nu, this](const int k) {
-      D.push_back(DynamicsExpansion<T>::init(nx[k], ne[k], nu[k]));
+      D_vec.push_back(DynamicsExpansion<T>::init(nx[k], ne[k], nu[k]));
     });
 
     loop(0, N, [&nx, &ne, this](const int k) {
       MatrixX<T> a(nx[k], ne[k]);
       a.diagonal().setOnes();
-      G.push_back(a);
+      G_vec.push_back(a);
     });
 
     Eerr(ne, nu);
@@ -178,7 +178,7 @@ public:
   }
 
   std::vector<const DiscreteDynamicsDeclare *> model;
-  AbstractObjective obj;
+  const AbstractObjective* obj;
 
   std::vector<T> x0;
   T tf;
@@ -187,17 +187,17 @@ public:
   SolverOptions<T> opts;
   SolverStats<T> stats;
 
-  SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z;
-  SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_dot;
+  SampledTrajectory<Nx, Nu, V, T, KnotPointDeclare> Z;
+  SampledTrajectory<Nx, Nu, V, T, KnotPointDeclare> Z_dot;
   std::vector<v_data_type> dx;
   std::vector<v_data_type> du;
 
   std::vector<m_data_type> gains;
-  std::vector<Ref<m_data_type>> K;
-  std::vector<Ref<v_data_type>> d;
+  std::vector<Ref<m_data_type>> K_vec;
+  std::vector<Ref<v_data_type>> d_vec;
 
-  std::vector<DynamicsExpansion<T>> D;
-  std::vector<m_data_type> G;
+  std::vector<DynamicsExpansion<T>> D_vec;
+  std::vector<m_data_type> G_vec;
 
   CostExpansion<T> Efull;
   CostExpansion<T> Eerr;

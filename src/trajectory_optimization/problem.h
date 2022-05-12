@@ -17,7 +17,7 @@
 
 ProblemTemplate struct Problem {
   Problem(std::vector<const DiscreteDynamicsDeclare *> model_in,
-          AbstractObjective obj_in, ConstraintList constraints_in,
+          const AbstractObjective* obj_in, ConstraintList constraints_in,
           std::vector<T> x0_in, std::vector<T> xf_in,
           SampledTrajectoryX<Nx, Nu, T> Z_in, int N_in, T t0, T tf)
       : model(model_in), obj(std::move(obj_in)),
@@ -25,7 +25,7 @@ ProblemTemplate struct Problem {
         x0(std::move(x0_in)), xf(std::move(xf_in)) {}
 
   std::vector<const DiscreteDynamicsDeclare *> model;
-  AbstractObjective obj;
+  const AbstractObjective* obj = nullptr;
   ConstraintList constraints;
   std::vector<T> x0;
   std::vector<T> xf;
@@ -37,7 +37,7 @@ struct ProblemHelper {
   template <int Nx, int Nu, typename T, AbstractModelTypeName>
   static ProblemDeclare
   init(std::vector<const DiscreteDynamicsDeclare *> models,
-       AbstractObjective obj, std::vector<T> x0, double tf) {
+       const AbstractObjective* obj, std::vector<T> x0, double tf) {
     std::vector<T> xf = std::vector<T>(models.back()->state_dim(), 0);
     auto constraints = ConstraintList(models);
     auto t0 = zero(tf);
@@ -58,7 +58,7 @@ struct ProblemHelper {
       U0.push_back(VectorX<T>::Zero(m->control_dim()));
     }
 
-    const auto N = length(obj);
+    const auto N = obj->length();
     TrivialParam param;
     param.tf = 5.0;
     param.dt = 0.1;
@@ -69,7 +69,7 @@ struct ProblemHelper {
 
   template <int Nx, int Nu, typename T, typename C, AbstractModelTypeName>
   static ProblemDeclare init(const DiscreteDynamicsDeclare *model,
-                             Objective<C> obj, std::vector<T> x0, T tf) {
+                             const Objective<C>* obj, std::vector<T> x0, T tf) {
     const auto N = length(obj);
     std::vector<const DiscreteDynamicsDeclare *> models;
     for (auto k = 0; k < N - 1; ++k) {
@@ -80,7 +80,7 @@ struct ProblemHelper {
 
   template <int Nx, int Nu, typename T, typename C, AbstractModelTypeName>
   static ProblemDeclare init(const ContinuousDynamicsDeclare &model,
-                             Objective<C> obj, std::vector<T> x0, T tf) {
+                             const Objective<C>* obj, std::vector<T> x0, T tf) {
     auto discretized_model = DiscretizedDynamicsDeclare(model, RK4());
     return init<Nx, Nu, T, C>(&discretized_model, obj, x0, tf);
   }
