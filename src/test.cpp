@@ -44,7 +44,7 @@ TEST(CostExpansionTest, StateControl) {
   std::vector<double> x0({0, 0, 0, 0, 0, 0});
   std::vector<double> xf({12, 0, 0, 0, 0, 0});
   double tf = 5.0;
-  auto prob = BicycleCar(x0, xf, 51, 0.1); 
+  auto prob = BicycleCar(x0, xf, 51, 0.1);
   // auto solver = iLQRSolver<6, 7, 2, double, VectorXd, Inplace, EuclideanState>(
   //     prob, opts, stats, DiffMethod::UserDefined, ValBool<true>(), ValInt<7>());
 }

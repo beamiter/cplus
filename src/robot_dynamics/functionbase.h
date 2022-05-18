@@ -12,7 +12,8 @@
 #define AbstractFunctionTemplate template <typename F, typename S>
 #define AbstractFunctionDeclare AbstractFunction<F, S>
 
-AbstractFunctionTemplate class AbstractFunction {
+template <typename F = Inplace, typename S = EuclideanState>
+class AbstractFunction {
   static_assert(std::is_base_of<FunctionSignature, F>::value,
                 "T is not derived of FunctionSignature");
   static_assert(std::is_base_of<StateVectorType, S>::value,

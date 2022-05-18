@@ -6,6 +6,7 @@
 
 using Eigen::MatrixXd;
 using Eigen::MatrixXf;
+using Eigen::VectorXcd;
 using Eigen::VectorXd;
 using Eigen::VectorXf;
 
@@ -68,6 +69,34 @@ template <typename Func> void loop(int start, int end, Func f) {
   for (int k = start; k < end; ++k) {
     f(k);
   }
+}
+
+inline bool ispossemedef(MatrixXd A) {
+  VectorXcd eigs = A.eigenvalues();
+  return std::any_of(eigs.real().begin(), eigs.real().end(),
+                     [](const auto val) { return val < 0; });
+}
+
+// https://stackoverflow.com/questions/35227131/eigen-check-if-matrix-is-positive-semi-definite
+template <class MatrixT> bool isPsd(const MatrixT &A) {
+  if (!A.isApprox(A.transpose())) {
+    return false;
+  }
+  const auto ldlt = A.template selfadjointView<Eigen::Upper>().ldlt();
+  if (ldlt.info() == Eigen::NumericalIssue) {
+    return false;
+  }
+  return ldlt.isPositive();
+}
+template <class MatrixT> bool isPd(const MatrixT &A) {
+  if (!A.isApprox(A.transpose())) {
+    return false;
+  }
+  const auto ldlt = A.template selfadjointView<Eigen::Upper>().ldlt();
+  if (ldlt.info() == Eigen::NumericalIssue) {
+    return false;
+  }
+  return !ldlt.isNegative();
 }
 
 #endif
