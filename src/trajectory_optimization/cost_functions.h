@@ -56,8 +56,7 @@ public:
     if (checks) {
       if ((Q_in < 0).any()) {
         throw std::runtime_error("nees to be positive semi-definite");
-      }
-      elseif((R_in <= 0).any() && !terminal) {
+      } else if ((R_in <= 0).any() && !terminal) {
         throw std::runtime_error("nees to be positive definite");
       }
     }

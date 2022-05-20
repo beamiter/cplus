@@ -1,11 +1,15 @@
 #ifndef OBJECTIVE_H
 #define OBJECTIVE_H
 
-#include "base/base.h"
-#include "robot_dynamics/functionbase.h"
 #include <algorithm>
 #include <tuple>
 #include <vector>
+
+#include "base/base.h"
+#include "robot_dynamics/functionbase.h"
+#include "trajectory_optimization/cost_functions.h"
+
+using Eigen::MatrixX;
 
 class AbstractObjective {
 public:
@@ -89,5 +93,29 @@ public:
   std::vector<bool> const_hess;
   std::vector<DiffMethod> diff_method;
 };
+
+template <typename C, typename T>
+Objective<C> LQRObjective(MatrixX<T> Q, MatrixX<T> R, MatrixX<T> Qf,
+                          VectorX<T> xf, VectorX<T> uf, int N,
+                          bool checks = true,
+                          DiffMethod diffmethod = DiffMethod::UserDefined) {
+  assert(Q.size() == xf.size());
+  assert(Qf.size() == xf.size());
+  assert(R.size() == uf.size());
+  const int n = Q.size();
+  const int m = R.size();
+  const auto &H = MatrixX<T>::Zero(m, n);
+  const auto &q = -Q * xf;
+  const auto &r = -R * uf;
+  const double c = 0.5 * xf.adjoint() * Q * xf + 0.5 * uf.adjoint() * uf;
+  const auto &qf = -Qf * xf;
+  const double cf = 0.5 * xf.adjoint() * Qf * xf;
+
+  const auto &l = QuadraticCost<n, m, T, Inplace, EuclideanState>(
+      Q, R, H, q, r, c, checks = checks);
+  const auto &lN = QuadraticCost<n, m, T, Inplace, EuclideanState>(
+      Qf, R, H, qf, r, cf, false, true);
+  return Objective<double>(l, lN, N);
+}
 
 #endif

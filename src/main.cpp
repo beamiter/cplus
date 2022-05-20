@@ -12,14 +12,35 @@
 
 using namespace std;
 
-using Eigen::MatrixXd;
 using Eigen::DiagonalMatrix;
+using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
+enum TE {
+  a,
+  b,
+  c,
+};
+
+class A {
+public:
+  virtual TE get() const = 0;
+};
+
+class B : public A {
+public:
+  TE get() const override { return TE::b; }
+};
+
+class C : public A {
+public:
+  TE get() const override { return TE::c; }
+};
+
+template <TE T> void haha() { cout << "********** " << T << endl; }
+
 int main() {
-  Eigen::Vector4d a(4,6,5,7);
-  Eigen::Vector<double, 5> b(4,6,7,5, 9);
-  cout << b << endl;
-  DiagonalMatrix<double, 5> c(b);
-  cout << c.diagonal() << endl;
+  haha<TE::b>();
+  MatrixXd b;
+  b.size();
 }
