@@ -16,19 +16,15 @@ using Eigen::Matrix;
 using Eigen::MatrixX;
 using Eigen::Vector;
 
-#define CostFunctionTypeName typename F, typename S
-#define CostFunctionTemplate template <typename F, typename S>
-#define CostFunctionDeclare CostFunction<F, S>
-CostFunctionTemplate class CostFunction : public ScalarFunctionDeclare {
+class CostFunction : public ScalarFunction {
 public:
 };
 
-#define QuadraticCostFunctionTypeName typename F, typename S
-#define QuadraticCostFunctionTemplate                                          \
-  template <int n, int m, typename T, CostFunctionTypeName>
-#define QuadraticCostFunctionDeclare QuadraticCostFunction<n, m, T, F, S>
+#define QuadraticCostFunctionTypeName int n, int m, typename T
+#define QuadraticCostFunctionTemplate template <int n, int m, typename T>
+#define QuadraticCostFunctionDeclare QuadraticCostFunction<n, m, T>
 QuadraticCostFunctionTemplate class QuadraticCostFunction
-    : public CostFunctionDeclare {
+    : public CostFunction {
 public:
   virtual bool is_blockdiag() const { return false; }
   int state_dim() const override { return n; }
@@ -37,10 +33,9 @@ public:
   virtual bool is_diag() const { return is_blockdiag(); }
 };
 
-#define DiagonalCostTypeName typename F, typename S
-#define DiagonalCostTemplate                                                   \
-  template <int n, int m, typename T, CostFunctionTypeName>
-#define DiagonalCostDeclare DiagonalCost<n, m, T, F, S>
+#define DiagonalCostTypeName int n, int m, typename T
+#define DiagonalCostTemplate template <int n, int m, typename T>
+#define DiagonalCostDeclare DiagonalCost<n, m, T>
 DiagonalCostTemplate class DiagonalCost : public QuadraticCostFunctionDeclare {
 public:
   DiagonalMatrix<T, n> Q;
@@ -70,10 +65,9 @@ public:
   bool is_diag() const final { return true; }
 };
 
-#define QuadraticCostTypeName typename F, typename S
-#define QuadraticCostTemplate                                                  \
-  template <int n, int m, typename T, CostFunctionTypeName>
-#define QuadraticCostDeclare DianonalCost<n, m, T, F, S>
+#define QuadraticCostTypeName int n, int m, typename T
+#define QuadraticCostTemplate template <int n, int m, typename T>
+#define QuadraticCostDeclare DianonalCost<n, m, T>
 QuadraticCostTemplate class QuadraticCost
     : public QuadraticCostFunctionDeclare {
 public:

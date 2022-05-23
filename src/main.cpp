@@ -14,6 +14,7 @@ using namespace std;
 
 using Eigen::DiagonalMatrix;
 using Eigen::MatrixXd;
+using Eigen::MatrixX;
 using Eigen::VectorXd;
 
 enum TE {

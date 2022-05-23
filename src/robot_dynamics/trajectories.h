@@ -300,28 +300,28 @@ SampledTrajectoryTemplate auto getdata(SampledTrajectoryDeclare Z) {
 template <typename Q, SampledTrajectoryTypeName>
 auto setstates(SampledTrajectoryDeclare Z, Q X) {
   for (int k = 0; k < Z.size(); ++k) {
-    setstate(Z[k], X[k]);
+    Z[k].setstate(X[k]);
   }
 }
 
 SampledTrajectoryTemplate auto setstates(SampledTrajectoryDeclare Z,
                                          MatrixX<T> X) {
   for (int k = 0; k < Z.size(); ++k) {
-    setstate(Z[k], X(all, k));
+    Z[k].setstate(X(all, k));
   }
 }
 
 template <typename Q, SampledTrajectoryTypeName>
 auto setcontrols(SampledTrajectoryDeclare Z, Q U) {
   for (int k = 0; k < Z.size() - 1; ++k) {
-    setcontrol(Z[k], U[k]);
+    Z[k].setcontrol(U[k]);
   }
 }
 
 SampledTrajectoryTemplate auto setcontrols(SampledTrajectoryDeclare Z,
                                            MatrixX<T> U) {
   for (int k = 0; k < Z.size() - 1; ++k) {
-    setcontrol(Z[k], U(all, k));
+    Z[k].setcontrol(U(all, k));
   }
 }
 
@@ -377,26 +377,10 @@ SampledTrajectoryTemplate auto setinitialtime(SampledTrajectoryDeclare Z,
   return Z;
 }
 
-template <SampledTrajectoryTypeName, AbstractModelTypeName>
-auto rollout(FunctionSignature sig, DiscreteDynamicsDeclare model,
-             SampledTrajectoryDeclare Z, V x0) {
-  setstate(Z[0], x0);
-  for (auto k = 1; k < length(Z); ++k) {
-    propagate_dynamics(sig, model, Z[k], Z[k - 1]);
-  }
-}
-template <SampledTrajectoryTypeName, AbstractModelTypeName>
-auto rollout(Inplace sig, const DiscreteDynamicsDeclare &model,
-             SampledTrajectoryDeclare Z, V x0) {
-  setstate(Z[0], x0);
-  for (auto k = 1; k < length(Z); ++k) {
-    propagate_dynamics(sig, model, Z[k], Z[k - 1]);
-  }
-}
-template <SampledTrajectoryTypeName, AbstractModelTypeName>
-auto rollout(StaticReturn sig, const DiscreteDynamicsDeclare &model,
-             SampledTrajectoryDeclare Z, V x0) {
-  setstate(Z[0], x0);
+SampledTrajectoryTemplate void rollout(FunctionSignature sig,
+                                       const DiscreteDynamics *model,
+                                       SampledTrajectoryDeclare Z, V x0) {
+  Z[0].setstate(x0);
   for (auto k = 1; k < length(Z); ++k) {
     propagate_dynamics(sig, model, Z[k], Z[k - 1]);
   }

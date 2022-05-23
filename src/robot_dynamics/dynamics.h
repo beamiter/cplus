@@ -4,16 +4,12 @@
 #include "robot_dynamics/functionbase.h"
 #include "robot_dynamics/knotpoint.h"
 
-#define AbstractModelTypeName typename F, typename S
-#define AbstractModelTemplate template <typename F, typename S>
-#define AbstractModelDeclare AbstractFunction<F, S>
-AbstractFunctionTemplate class AbstractModel : public AbstractFunctionDeclare {
+class AbstractModel : public AbstractFunction {
 public:
   int output_dim() const override { return this->state_dim(); }
 };
 
-#define ContinuousDynamicsDeclare ContinuousDynamics<F, S>
-AbstractModelTemplate class ContinuousDynamics : public AbstractModelDeclare {
+class ContinuousDynamics : public AbstractModel {
 public:
   int output_dim() const override { return this->state_dim(); }
 };

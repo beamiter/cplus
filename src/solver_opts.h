@@ -6,9 +6,9 @@
 #include "robot_dynamics/functionbase.h"
 #include "solver.h"
 
-template <typename T> struct AbstractSolverOptions {};
+template <typename T> struct AbstractSolverDeclareOptions {};
 
-template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
+template <typename T = double> struct SolverOptions : AbstractSolverDeclareOptions<T> {
   T constraint_tolerance = 1e-6;
   T cost_tolerance = 1e-4;
   T cost_tolerance_intermediate = 1e-4;
@@ -62,7 +62,7 @@ template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
   T rho_dual = 1.0e-8;
   T r_threshold = 1.1;
 
-  FunctionSignature dynamics_funsig = StaticReturn();
+  FunctionSignature dynamics_funsig = FunctionSignature::StaticReturn;
   DiffMethod dynamics_diffmethod = DiffMethod::ForwardAD;
   bool projected_newton = true;
   bool reuse_jacobians = false;

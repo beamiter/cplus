@@ -19,7 +19,7 @@ enum class RefPos {
   fg,
 };
 
-AbstractModelTemplate class CarModel : public ContinuousDynamicsDeclare {
+class CarModel : public ContinuousDynamics {
 public:
   CarModel(RefPos ref_in = RefPos::rear, double L_in = 2.7,
            double lr_in = 1.5) {
@@ -35,17 +35,16 @@ public:
   double lr = 0.0;
 };
 
-inline auto BicycleCar(const std::vector<double>& x0, const std::vector<double>& xf,
-		int N, double tf) {
-  auto model = CarModel<Inplace, EuclideanState>();
+inline auto BicycleCar(const std::vector<double> &x0,
+                       const std::vector<double> &xf, int N, double tf) {
   DiagonalMatrix<double, 6> Q(10, 10, 50, 1, 1, 1);
   double rho = 1.0;
   auto R = rho * DiagonalMatrix<double, 2>(1, 1);
-  DiagonalMatrix<double, 6>Qf(10, 10, 60, 1, 1, 1);
+  DiagonalMatrix<double, 6> Qf(10, 10, 60, 1, 1, 1);
 
-  auto car = CarModel<Inplace, EuclideanState>();
-  Objective<double>* obj;
-  /* auto prob = ProblemHelper::init<6, 2>(car, obj, x0, tf); */
+  auto car = CarModel();
+  Objective<double> *obj;
+  auto prob = ProblemHelper::init<6, 2>(&car, obj, x0, tf);
 
   // initial_controls, initial_states, rollout
 

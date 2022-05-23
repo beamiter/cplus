@@ -19,10 +19,11 @@ using Eigen::Ref;
 using Eigen::VectorX;
 using Eigen::VectorXd;
 
-template <bool B, typename T> struct StaticArray {
-  typedef std::vector<T> type;
-};
-template <typename T> struct StaticArray<true, T> { typedef VectorX<T> type; };
+// template <bool B, typename T> struct StaticArray {
+//   typedef std::vector<T> type;
+// };
+// template <typename T> struct StaticArray<true, T> { typedef VectorX<T> type;
+// };
 
 template <typename T> class DynamicRegularization {
 public:
@@ -34,36 +35,45 @@ public:
   T d_rou;
 };
 
-template <bool> auto dynamics_signature() { return Inplace(); }
-template <> inline auto dynamics_signature<true>() { return StaticReturn(); }
-template <bool> auto function_signature() { return Inplace(); }
-template <> inline auto function_signature<true>() { return StaticReturn(); }
-
-// template <typename T>  auto dynamics_signature(T obj) {
-//   return  usestatic(obj) ? StaticReturn() : Inplace();
+// template <bool> auto dynamics_signature() { return
+// FunctionSignature::Inplace; } template <> inline auto
+// dynamics_signature<true>() {
+//   return FunctionSignature::StaticReturn;
 // }
-//
-// template <typename T> auto function_signature(T obj) {
-//   return usestatic(obj) ? StaticReturn() : Inplace();
+// template <bool> auto function_signature() { return
+// FunctionSignature::Inplace; } template <> inline auto
+// function_signature<true>() {
+//   return FunctionSignature::StaticReturn;
 // }
-//
 
-#define ILQR_SOLVER_TYPENAME                                                   \
-  int Nx, int Ne, int Nu, typename T, typename V, AbstractModelTypeName
-#define ILQR_SOLVER_TEMPLATE                                                   \
+template <typename O, typename T> bool usestatic(O) {
+  return std::is_base_of<typename O::veltype, MatrixX<T>>::value;
+}
+template <typename T> auto dynamics_signature(T obj) {
+  return usestatic(obj) ? FunctionSignature::StaticReturn
+                        : FunctionSignature::Inplace;
+}
+template <typename T> auto function_signature(T obj) {
+  return usestatic(obj) ? FunctionSignature::StaticReturn
+                        : FunctionSignature::Inplace;
+}
+
+#define iLQRSolverTypeName                                                     \
+  int Nx, int Ne, int Nu, typename T, typename V, bool USE_STATIC
+#define iLQRSolverTemplate                                                     \
   template <int Nx, int Ne, int Nu, typename T, typename V,                    \
-            AbstractModelTypeName, bool USE_STATIC = true>
-#define ILQR_SOLVER iLQRSolver<Nx, Ne, Nu, T, V, F, S>
+            bool USE_STATIC = true>
+#define iLQRSolverDeclare iLQRSolver<Nx, Ne, Nu, T, V, USE_STATIC>
 
-ILQR_SOLVER_TEMPLATE class iLQRSolver : UnconstrainedSolver<T> {
+iLQRSolverTemplate class iLQRSolver : UnconstrainedSolverDeclare {
 public:
   using vectype = V;
   using m_data_type = MatrixX<T>;
   using v_data_type = VectorX<T>;
 
-  iLQRSolver(std::vector<const DiscreteDynamicsDeclare *> model_in,
-             const AbstractObjective* obj_in, std::vector<T> x0_in, T tf_in, int N_in,
-             SolverOptions<T> opts_in, SolverStats<T> stats_in,
+  iLQRSolver(std::vector<const DiscreteDynamics *> model_in,
+             const AbstractObjective *obj_in, std::vector<T> x0_in, T tf_in,
+             int N_in, SolverOptions<T> opts_in, SolverStats<T> stats_in,
              SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_in,
              SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_dot_in,
              std::vector<v_data_type> dx_in, std::vector<v_data_type> du_in,
@@ -177,8 +187,8 @@ public:
     xdot = std::vector<T>(nx[0], 0);
   }
 
-  std::vector<const DiscreteDynamicsDeclare *> model;
-  const AbstractObjective* obj;
+  std::vector<const DiscreteDynamics *> model;
+  const AbstractObjective *obj;
 
   std::vector<T> x0;
   T tf;
@@ -216,55 +226,56 @@ public:
   std::vector<T> xdot;
 };
 
-ILQR_SOLVER_TEMPLATE
-struct iLQRSolverHelper {};
+iLQRSolverTemplate struct iLQRSolverHelper {};
 
-ILQR_SOLVER_TEMPLATE
-auto dims(ILQR_SOLVER solver) { return dims(solver.Z); }
+iLQRSolverTemplate auto dims(iLQRSolverDeclare solver) {
+  return dims(solver.Z);
+}
 
-ILQR_SOLVER_TEMPLATE
-auto state_dim(ILQR_SOLVER) { return Nx; }
+iLQRSolverTemplate auto state_dim(iLQRSolverDeclare) { return Nx; }
 
-ILQR_SOLVER_TEMPLATE
-auto errstate_dim(ILQR_SOLVER) { return Ne; }
+iLQRSolverTemplate auto errstate_dim(iLQRSolverDeclare) { return Ne; }
 
-ILQR_SOLVER_TEMPLATE
-auto control_dim(ILQR_SOLVER) { return Nu; }
+iLQRSolverTemplate auto control_dim(iLQRSolverDeclare) { return Nu; }
 
-ILQR_SOLVER_TEMPLATE
-auto state_dim(ILQR_SOLVER solver, int k) { return state_dim(solver.model[k]); }
+iLQRSolverTemplate auto state_dim(iLQRSolverDeclare solver, int k) {
+  return state_dim(solver.model[k]);
+}
 
-ILQR_SOLVER_TEMPLATE
-auto errstate_dim(ILQR_SOLVER solver, int k) {
+iLQRSolverTemplate auto errstate_dim(iLQRSolverDeclare solver, int k) {
   return errstate_dim(solver.model[k]);
 }
 
-ILQR_SOLVER_TEMPLATE
-auto control_dim(ILQR_SOLVER solver, int k) {
+iLQRSolverTemplate auto control_dim(iLQRSolverDeclare solver, int k) {
   return control_dim(solver.model[k]);
 }
 
-ILQR_SOLVER_TEMPLATE
-auto get_trajectory(ILQR_SOLVER solver) { return solver.Z; }
+iLQRSolverTemplate auto get_trajectory(iLQRSolverDeclare solver) {
+  return solver.Z;
+}
 
-ILQR_SOLVER_TEMPLATE
-auto get_objective(ILQR_SOLVER solver) { return solver.obj; }
+iLQRSolverTemplate auto get_objective(iLQRSolverDeclare solver) {
+  return solver.obj;
+}
 
-ILQR_SOLVER_TEMPLATE
-auto get_model(ILQR_SOLVER solver) { return solver.model; }
+iLQRSolverTemplate auto get_model(iLQRSolverDeclare solver) {
+  return solver.model;
+}
 
-ILQR_SOLVER_TEMPLATE
-auto get_initial_state(ILQR_SOLVER solver) { return solver.x0; }
+iLQRSolverTemplate auto get_initial_state(iLQRSolverDeclare solver) {
+  return solver.x0;
+}
 
-ILQR_SOLVER_TEMPLATE
-auto solvername(ILQR_SOLVER) { return SolverName::iLQR; }
+iLQRSolverTemplate auto solvername(iLQRSolverDeclare) {
+  return SolverName::iLQR;
+}
 
-ILQR_SOLVER_TEMPLATE
-auto get_feedbackgains(ILQR_SOLVER solver) { return solver.K; }
+iLQRSolverTemplate auto get_feedbackgains(iLQRSolverDeclare solver) {
+  return solver.K;
+}
 
-AbstractFunctionTemplate inline auto
-usestaticdefault(const AbstractFunctionDeclare &model) {
-  return model.default_signature() == StaticReturn();
+inline auto usestaticdefault(const AbstractFunction *model) {
+  return model->default_signature() == FunctionSignature::StaticReturn;
 }
 
 #endif

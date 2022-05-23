@@ -101,26 +101,22 @@ template <typename T, bool B = true> struct CostExpansionHelper {
   }
 };
 
-template <typename T, bool B, AbstractModelTypeName>
+template <typename T, bool B>
 CostExpansion<T, B> FullStateExpansion(const CostExpansion<T, B> &E,
-                                       const DiscreteDynamicsDeclare *model) {
-  return FullStateExpansion(typename AbstractModelDeclare::statevectortype(), E,
-                            model);
-  return FullStateExpansion(S(), E, model);
+                                       const DiscreteDynamics *model) {
+  return FullStateExpansion(model->statevectortype(), E, model);
 }
-template <typename T, bool B, AbstractModelTypeName>
-CostExpansion<T, B> FullStateExpansion(EuclideanState,
+template <typename T, bool B>
+CostExpansion<T, B> FullStateExpansion(StateVectorType type,
                                        const CostExpansion<T, B> &E,
-                                       const DiscreteDynamicsDeclare *) {
-  return E;
-}
-template <typename T, bool B, AbstractModelTypeName>
-CostExpansion<T, B> FullStateExpansion(RotationState,
-                                       const CostExpansion<T, B> &E,
-                                       const DiscreteDynamicsDeclare *model) {
-  const int n = model->state_dim();
-  const int m = model->control_dim();
-  return CostExpansionHelper<T, B>::init(n, m, E.length());
+                                       const DiscreteDynamics *model) {
+  if (type == StateVectorType::EuclideanState) {
+    return E;
+  } else {
+    const int n = model->state_dim();
+    const int m = model->control_dim();
+    return CostExpansionHelper<T, B>::init(n, m, E.length());
+  }
 }
 
 #endif

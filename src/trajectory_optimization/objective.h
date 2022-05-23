@@ -111,10 +111,8 @@ Objective<C> LQRObjective(MatrixX<T> Q, MatrixX<T> R, MatrixX<T> Qf,
   const auto &qf = -Qf * xf;
   const double cf = 0.5 * xf.adjoint() * Qf * xf;
 
-  const auto &l = QuadraticCost<n, m, T, Inplace, EuclideanState>(
-      Q, R, H, q, r, c, checks = checks);
-  const auto &lN = QuadraticCost<n, m, T, Inplace, EuclideanState>(
-      Qf, R, H, qf, r, cf, false, true);
+  const auto &l = QuadraticCost<n, m, T>(Q, R, H, q, r, c, checks = checks);
+  const auto &lN = QuadraticCost<n, m, T>(Qf, R, H, qf, r, cf, false, true);
   return Objective<double>(l, lN, N);
 }
 

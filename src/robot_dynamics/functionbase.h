@@ -8,24 +8,22 @@
 #include "base/base.h"
 #include "robot_dynamics/knotpoint.h"
 
-#define AbstractFunctionTypeName typename F, typename S
-#define AbstractFunctionTemplate template <typename F, typename S>
-#define AbstractFunctionDeclare AbstractFunction<F, S>
-
-template <typename F = Inplace, typename S = EuclideanState>
 class AbstractFunction {
-  static_assert(std::is_base_of<FunctionSignature, F>::value,
-                "T is not derived of FunctionSignature");
-  static_assert(std::is_base_of<StateVectorType, S>::value,
-                "P is not derived of StateVectorType");
+  // For template type check.
+  // static_assert(std::is_base_of<FunctionSignature, F>::value,
+  //               "T is not derived of FunctionSignature");
+  // static_assert(std::is_base_of<StateVectorType, S>::value,
+  //               "P is not derived of StateVectorType");
 
 public:
   // typedef F default_signature;
   // typedef S statevectortype;
-  typedef typename std::enable_if<std::is_base_of<FunctionSignature, F>::value,
-                                  F>::type default_signature;
-  typedef typename std::enable_if<std::is_base_of<StateVectorType, S>::value,
-                                  S>::type statevectortype;
+  // For template type check.
+  // typedef typename std::enable_if<std::is_base_of<FunctionSignature,
+  // F>::value,
+  //                                 F>::type default_signature;
+  // typedef typename std::enable_if<std::is_base_of<StateVectorType, S>::value,
+  //                                 S>::type statevectortype;
   ~AbstractFunction() = default;
   /*Pure virtual function*/
   virtual int state_dim() const = 0;
@@ -36,29 +34,27 @@ public:
   virtual FunctionInputs functioninputs() const {
     return FunctionInputs::StateControl;
   }
+  virtual DiffMethod default_diffmethod() const {
+    return DiffMethod::UserDefined;
+  }
+  virtual FunctionSignature default_signature() const {
+    return FunctionSignature::StaticReturn;
+  }
+  virtual StateVectorType statevectortype() const {
+    return StateVectorType::EuclideanState;
+  }
+  // Default for EuclideanState
+  virtual int errstate_dim(StateVectorType type) const {
+    assert(type == StateVectorType::EuclideanState);
+    return state_dim();
+  }
 
   /*Function*/
-  int errstate_dim(EuclideanState) const { return state_dim(); }
-  int errstate_dim(RotationState) const {
-    throw std::runtime_error("not implemented.");
-    return -1;
-  }
-  int errstate_dim(StateVectorType) const {
-    throw std::runtime_error("not implemented.");
-    return -1;
-  }
-
   int errstate_dim() const { return errstate_dim(statevectortype()); }
   std::tuple<int, int, int> dims() {
     return std::make_tuple(state_dim(), control_dim(), output_dim());
   }
-  DiffMethod default_diffmethod() { return DiffMethod::UserDefined; }
-
-  // FunctionSignature default_signature() {
-  // return StaticReturn();
-  //}
   int jacobian_width() { return errstate_dim() + control_dim(); }
-
   int input_dim() {
     if (functioninputs() == FunctionInputs::StateOnly) {
       return state_dim();
@@ -73,107 +69,103 @@ private:
 };
 
 // TODO: need support vadiatic parameters
-template <typename P, AbstractKnotPointTypeName, AbstractFunctionTypeName>
-auto evaluate(FunctionInputs inputtype, const AbstractFunctionDeclare &fun, P y,
+template <typename P, AbstractKnotPointTypeName>
+auto evaluate(FunctionInputs inputtype, const AbstractFunction *fun, P y,
               const AbstractKnotPointDeclare &z) {
   evaluate(fun, y, getargs(inputtype, z));
 }
 
-template <typename P, AbstractKnotPointTypeName, AbstractFunctionTypeName>
-auto evaluate(FunctionInputs inputtype, const AbstractFunctionDeclare &fun,
+template <typename P, AbstractKnotPointTypeName>
+auto evaluate(FunctionInputs inputtype, const AbstractFunction &fun,
               const AbstractKnotPointDeclare &z) {
   evaluate(fun, getargs(inputtype, z));
 }
 
-template <typename T, typename P, AbstractFunctionTypeName>
-auto evaluate(const AbstractFunctionDeclare &fun, T y, T x, T u, P p) {
+template <typename T, typename P>
+auto evaluate(const AbstractFunction &fun, T y, T x, T u, P p) {
   evaluate(fun, y, x, u);
 }
 
-template <typename T, typename P, AbstractFunctionTypeName>
-auto evaluate(const AbstractFunctionDeclare &fun, T x, T u, P p) {
+template <typename T, typename P>
+auto evaluate(const AbstractFunction &fun, T x, T u, P p) {
   evaluate(fun, x, u);
 }
 
-// template <typename T, typename... Args>
-// auto evaluate(StaticReturn, AbstractFunction fun, T y, Args... args) {
-//   evaluate(fun, args...);
-// }
-// template <typename T, typename... Args>
-// auto evaluate(Inplace, AbstractFunction fun, T y, Args... args) {
-//   evaluate(fun, y, args...);
-// }
-//
-template <typename T, AbstractFunctionTypeName>
-auto evaluate(const AbstractFunctionDeclare &fun, T y, T x, T u) {
+template <typename T, typename... Args>
+auto evaluate(FunctionSignature sig, const AbstractFunction *fun, T y,
+              Args... args) {
+  if (sig == FunctionSignature::StaticReturn) {
+    return evaluate(fun, args...);
+  }
+  evaluate(fun, y, args...);
+}
+
+template <typename T>
+auto evaluate(const AbstractFunction *fun, T y, T x, T u) {
   throw std::runtime_error("Not implemented");
 }
-template <typename T, AbstractFunctionTypeName>
-auto evaluate(const AbstractFunctionDeclare &fun, T x, T u) {
+template <typename T> auto evaluate(const AbstractFunction *fun, T x, T u) {
   throw std::runtime_error("Not implemented");
 }
-//
-// template <typename P, AbstractKnotPointTypeName>
-// auto evaluate(StaticReturn, AbstractFunction fun, P y,
-//               const AbstractKnotPointDeclare & z) {
-//   y = evaluate(fun, z);
-// }
-// template <typename P, AbstractKnotPointTypeName>
-// auto evaluate(Inplace, AbstractFunction fun, P y,
-//               const AbstractKnotPointDeclare & z) {
-//   evaluate(fun, y, z);
-// }
-//
-template <typename P, AbstractKnotPointTypeName, AbstractFunctionTypeName>
-auto jacobian(FunctionSignature, DiffMethod, const AbstractFunctionDeclare &fun,
-              P J, P y, const AbstractKnotPointDeclare &z) {
+
+template <typename P, AbstractKnotPointTypeName>
+void evaluate(FunctionSignature sig, const AbstractFunction *fun, P y,
+              const AbstractKnotPointDeclare &z) {
+  if (sig == FunctionSignature::StaticReturn) {
+
+    y = evaluate(fun, z);
+  } else {
+
+    evaluate(fun, y, z);
+  }
+}
+
+template <typename P, AbstractKnotPointTypeName>
+auto jacobian(FunctionSignature, DiffMethod, const AbstractFunction *fun, P J,
+              P y, const AbstractKnotPointDeclare &z) {
   jacobian(fun, J, y, z);
 }
 
-template <typename P, AbstractKnotPointTypeName, AbstractFunctionTypeName>
-auto jacobian(const AbstractFunctionDeclare &fun, P J, P y,
+template <typename P, AbstractKnotPointTypeName>
+auto jacobian(const AbstractFunction *fun, P J, P y,
               const AbstractKnotPointDeclare &z) {
-  jacobian(fun.functioninputs(), fun, J, y, z);
+  jacobian(fun->functioninputs(), fun, J, y, z);
 }
 
-template <typename P, AbstractKnotPointTypeName, AbstractFunctionTypeName>
-auto jacobian(FunctionInputs inputtype, const AbstractFunctionDeclare &fun, P J,
-              P y, const AbstractKnotPointDeclare &z) {
+template <typename P, AbstractKnotPointTypeName>
+auto jacobian(FunctionInputs inputtype, const AbstractFunction *fun, P J, P y,
+              const AbstractKnotPointDeclare &z) {
   jacobian(fun, J, y, getargs(inputtype, z));
 }
 
-template <typename T, typename P, AbstractFunctionTypeName>
-auto jacobian(const AbstractFunctionDeclare &fun, T J, T y, T x, T u, P p) {
+template <typename T, typename P>
+auto jacobian(const AbstractFunction *fun, T J, T y, T x, T u, P p) {
   jacobian(fun, J, y, x, u);
 }
-template <typename T, AbstractFunctionTypeName>
-auto jacobian(const AbstractFunctionDeclare &fun, T J, T y, T x, T u) {
+template <typename T>
+auto jacobian(const AbstractFunction *fun, T J, T y, T x, T u) {
   throw std::runtime_error("User-defined jacobian not implemented");
 }
-//
-// template <typename P, AbstractKnotPointTypeName>
-// auto d_jacobian(FunctionSignature, UserDefined, AbstractFunction fun, P H, P
-// b,
-//                 P y, const AbstractKnotPointDeclare & z) {
-//   d_jacobian(fun, H, b, y, state(z), control(z), getparams(z));
-// }
-//
-template <typename T, typename Q, AbstractFunctionTypeName>
-auto d_jacobian(const AbstractFunctionDeclare &fun, T H, T b, T y, T x, T u,
-                Q p) {
+template <typename P, AbstractKnotPointTypeName>
+auto d_jacobian(FunctionSignature, DiffMethod, const AbstractFunction *fun, P H,
+                P b, P y, const AbstractKnotPointDeclare &z) {
+  d_jacobian(fun, H, b, y, state(z), control(z), getparams(z));
+}
+
+template <typename T, typename Q>
+auto d_jacobian(const AbstractFunction *fun, T H, T b, T y, T x, T u, Q p) {
   d_jacobian(fun, H, b, y, x, u);
 }
 
-template <typename P, AbstractKnotPointTypeName, AbstractFunctionTypeName>
-auto evaluate(const AbstractFunctionDeclare &fun, P y,
+template <typename P, AbstractKnotPointTypeName>
+auto evaluate(const AbstractFunction *fun, P y,
               const AbstractKnotPointDeclare &z) {
-  evaluate(fun.functioninputs(), fun, y, z);
+  evaluate(fun->functioninputs(), fun, y, z);
 }
 
-template <AbstractKnotPointTypeName, AbstractFunctionTypeName>
-auto evaluate(const AbstractFunctionDeclare &fun,
-              const AbstractKnotPointDeclare &z) {
-  evaluate(fun.functioninputs(), fun, z);
+template <AbstractKnotPointTypeName>
+auto evaluate(const AbstractFunction *fun, const AbstractKnotPointDeclare &z) {
+  evaluate(fun->functioninputs(), fun, z);
 }
 
 #endif

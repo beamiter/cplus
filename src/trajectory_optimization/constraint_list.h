@@ -30,8 +30,7 @@ struct ConstraintList : AbstractConstraintSet {
     this->nu = std::vector<int>(m, N);
     ConstraintList(this->nx, this->nu);
   }
-  AbstractModelTemplate
-  ConstraintList(std::vector<const DiscreteDynamicsDeclare *> models) {
+  ConstraintList(std::vector<const DiscreteDynamics *> models) {
     std::cout << "here\n";
     std::tie(this->nx, this->nu) = dims(models);
     ConstraintList(this->nx, this->nu);
