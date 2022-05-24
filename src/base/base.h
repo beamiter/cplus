@@ -2,7 +2,11 @@
 #define BASE_H
 
 #include <Eigen/Dense>
+#include <exception>
 #include <vector>
+#include <glog/logging.h>
+
+using namespace google;
 
 using Eigen::MatrixXd;
 using Eigen::MatrixXf;
@@ -36,7 +40,10 @@ enum class DiffMethod {
   UserDefined,
 };
 
-template <typename T> auto length(T) { return -1; }
+template <typename T> auto length(T) {
+  throw std::runtime_error("length not implemented!");
+  return -1;
+}
 template <> inline auto length(VectorXd t) { return t.size(); }
 template <> inline auto length<std::vector<double>>(std::vector<double> t) {
   return t.size();

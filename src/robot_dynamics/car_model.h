@@ -12,6 +12,7 @@
 
 using Eigen::DiagonalMatrix;
 using Eigen::Dynamic;
+using Eigen::Map;
 
 enum class RefPos {
   rear,
@@ -21,6 +22,8 @@ enum class RefPos {
 
 class CarModel : public ContinuousDynamics {
 public:
+  static constexpr int N = 6;
+  static constexpr int M = 2;
   CarModel(RefPos ref_in = RefPos::rear, double L_in = 2.7,
            double lr_in = 1.5) {
     this->ref = ref_in;
@@ -35,21 +38,30 @@ public:
   double lr = 0.0;
 };
 
-inline auto BicycleCar(const std::vector<double> &x0,
-                       const std::vector<double> &xf, int N, double tf) {
-  DiagonalMatrix<double, 6> Q(10, 10, 50, 1, 1, 1);
+template <int n = CarModel::N, int m = CarModel::M, typename T = double>
+inline Problem<n, m, T> BicycleCar(const VectorX<T> &x0, const VectorX<T> &xf,
+                                   const VectorX<T> &uf, int N, double tf) {
+  DiagonalMatrix<double, n> Q(10, 10, 50, 1, 1, 1);
   double rho = 1.0;
-  auto R = rho * DiagonalMatrix<double, 2>(1, 1);
-  DiagonalMatrix<double, 6> Qf(10, 10, 60, 1, 1, 1);
+  auto R = rho * DiagonalMatrix<double, m>(1, 1);
+  DiagonalMatrix<double, n> Qf(10, 10, 60, 1, 1, 1);
 
   auto car = CarModel();
-  Objective<double> *obj;
-  auto prob = ProblemHelper::init<6, 2>(&car, obj, x0, tf);
+  auto obj = LQRObjective<n, m, T>(Q, R, Qf, xf, uf, N);
+  auto prob = ProblemHelper::init<n, m>(&car, &obj, x0, tf);
 
   // initial_controls, initial_states, rollout
 
-  // return prob;
-  return -1;
+  return prob;
+}
+
+template <int n = CarModel::N, int m = CarModel::M, typename T = double>
+inline Problem<n, m, T> BicycleCar(std::vector<T> x0_in, std::vector<T> xf_in,
+                                   std::vector<T> uf_in, int N, double tf) {
+  VectorXd x0 = Map<VectorXd>(x0_in.data(), x0_in.size());
+  VectorXd xf = Map<VectorXd>(xf_in.data(), xf_in.size());
+  VectorXd uf = Map<VectorXd>(uf_in.data(), uf_in.size());
+  return BicycleCar(x0, xf, uf, N, tf);
 }
 
 #endif

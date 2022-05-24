@@ -72,7 +72,7 @@ public:
   using v_data_type = VectorX<T>;
 
   iLQRSolver(std::vector<const DiscreteDynamics *> model_in,
-             const AbstractObjective *obj_in, std::vector<T> x0_in, T tf_in,
+             const AbstractObjective *obj_in, VectorX<T> x0_in, T tf_in,
              int N_in, SolverOptions<T> opts_in, SolverStats<T> stats_in,
              SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_in,
              SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_dot_in,
@@ -190,7 +190,7 @@ public:
   std::vector<const DiscreteDynamics *> model;
   const AbstractObjective *obj;
 
-  std::vector<T> x0;
+  VectorX<T> x0;
   T tf;
   int N;
 

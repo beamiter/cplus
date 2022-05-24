@@ -5,16 +5,19 @@
 #include <type_traits>
 #include <vector>
 
-#include "robot_dynamics/car_model.h"
-#include "robot_dynamics/discrete_dynamics.h"
-#include "robot_dynamics/dynamics.h"
-#include "robot_dynamics/functionbase.h"
+#include <glog/logging.h>
+using namespace google;
+
+// #include "robot_dynamics/car_model.h"
+// #include "robot_dynamics/discrete_dynamics.h"
+// #include "robot_dynamics/dynamics.h"
+// #include "robot_dynamics/functionbase.h"
 
 using namespace std;
 
 using Eigen::DiagonalMatrix;
-using Eigen::MatrixXd;
 using Eigen::MatrixX;
+using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
 enum TE {
@@ -38,10 +41,24 @@ public:
   TE get() const override { return TE::c; }
 };
 
-template <TE T> void haha() { cout << "********** " << T << endl; }
+template <TE T> void haha() { LOG(INFO) << "********** " << T << endl; }
 
-int main() {
-  haha<TE::b>();
-  MatrixXd b;
-  b.size();
+int main(int argc, char **argv) {
+  google::InitGoogleLogging(argv[0]);
+
+  // Set logging level
+  google::SetStderrLogging(google::GLOG_INFO);
+
+  MatrixXd f(3, 3);
+  VectorXd b(3), u(3);
+  b << 1, 2, 3;
+  u << 4, 5, 6;
+  f << 1, 2, 3, 4, 5, 6, 7, 8, 9;
+  double cf = 0.5 * b.adjoint() * f * b;
+  cf += 0.5 * u.adjoint() * u;
+  LOG(INFO) << cf << endl;
+  LOG(INFO) << f.size();
+  LOG(INFO) << f.rows() << f.cols();
+
+  google::ShutdownGoogleLogging();
 }

@@ -2,6 +2,7 @@
 #define OBJECTIVE_H
 
 #include <algorithm>
+#include <iostream>
 #include <tuple>
 #include <vector>
 
@@ -25,7 +26,11 @@ public:
 //   return length(obj.cost);
 // }
 
-template <typename C> class Objective : AbstractObjective {
+template <typename C> class Objective : public AbstractObjective {
+  // For template type check.
+  static_assert(std::is_base_of<CostFunction, C>::value,
+                "T is not derived of CostFunction");
+
 public:
   // Constructors
   Objective(std::vector<C> cost_in, DiffMethod diff_method_in) {
@@ -36,6 +41,7 @@ public:
     const_hess.resize(N, false);
     diff_method.resize(N, diff_method_in);
   }
+
   Objective(std::vector<C> cost_in, std::vector<DiffMethod> diff_method_in) {
     cost = cost_in;
     int N = cost.size();
@@ -44,11 +50,15 @@ public:
     const_hess.resize(N, false);
     diff_method = diff_method_in;
   }
+
   Objective(C cost_in, int N, ...) { cost.resize(N, cost_in); }
+
   Objective(C cost_in, C cost_terminal, int N, ...) {
     cost.resize(N - 1, cost_in);
     cost.push_back(cost_terminal);
+    LOG(INFO) << cost.size();
   }
+
   Objective(std::vector<C> cost_in, C cost_terminal, ...) {
     int N = cost.size() + 1;
     cost = cost_in;
@@ -94,26 +104,27 @@ public:
   std::vector<DiffMethod> diff_method;
 };
 
-template <typename C, typename T>
-Objective<C> LQRObjective(MatrixX<T> Q, MatrixX<T> R, MatrixX<T> Qf,
-                          VectorX<T> xf, VectorX<T> uf, int N,
-                          bool checks = true,
-                          DiffMethod diffmethod = DiffMethod::UserDefined) {
-  assert(Q.size() == xf.size());
-  assert(Qf.size() == xf.size());
-  assert(R.size() == uf.size());
-  const int n = Q.size();
-  const int m = R.size();
+template <int n, int m, typename T>
+Objective<QuadraticCost<n, m, T>>
+LQRObjective(MatrixX<T> Q, MatrixX<T> R, MatrixX<T> Qf, VectorX<T> xf,
+             VectorX<T> uf, int N, bool checks = true,
+             DiffMethod diffmethod = DiffMethod::UserDefined) {
+  assert(Q.rows() == xf.size());
+  assert(Qf.rows() == xf.size());
+  assert(R.rows() == uf.size());
+  assert(n == Q.rows());
+  assert(m == R.rows());
   const auto &H = MatrixX<T>::Zero(m, n);
   const auto &q = -Q * xf;
   const auto &r = -R * uf;
-  const double c = 0.5 * xf.adjoint() * Q * xf + 0.5 * uf.adjoint() * uf;
+  double c = 0.5 * xf.adjoint() * Q * xf;
+  c += 0.5 * uf.adjoint() * uf;
   const auto &qf = -Qf * xf;
   const double cf = 0.5 * xf.adjoint() * Qf * xf;
 
-  const auto &l = QuadraticCost<n, m, T>(Q, R, H, q, r, c, checks = checks);
+  const auto &l = QuadraticCost<n, m, T>(Q, R, H, q, r, c, checks, false);
   const auto &lN = QuadraticCost<n, m, T>(Qf, R, H, qf, r, cf, false, true);
-  return Objective<double>(l, lN, N);
+  return Objective<QuadraticCost<n, m, T>>(l, lN, N);
 }
 
 #endif

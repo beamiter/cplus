@@ -31,7 +31,7 @@ public:
         xx(data(ix, ix)), x(grad(ix)), iu(n, m), ux(data(iu, ix)),
         uu(data(iu, iu)), u(grad(iu)) {
     assert(n > 0 && m > 0);
-    std::cout << "Initialize finished\n";
+    LOG(INFO) << "Initialize finished\n";
   }
 #else
   // m is not essential
@@ -40,7 +40,7 @@ public:
         hess(data(all, seq(0, last - 1))), grad(data(all, last)),
         xx(data(ix, ix)), x(grad(ix)) {
     assert(n > 0);
-    std::cout << "Specialization finished\n";
+    LOG(INFO) << "Specialization finished\n";
   }
 #endif
 
@@ -115,7 +115,7 @@ CostExpansion<T, B> FullStateExpansion(StateVectorType type,
   } else {
     const int n = model->state_dim();
     const int m = model->control_dim();
-    return CostExpansionHelper<T, B>::init(n, m, E.length());
+    return CostExpansionHelper<T, B>()(n, m, E.length());
   }
 }
 

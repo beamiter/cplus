@@ -11,11 +11,21 @@ find_package (Eigen3 3.4 REQUIRED NO_MODULE)
 
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
+
+find_package(Gflags REQUIRED)
+include_directories(${GFLAGS_INCLUDE_DIRS})
+
+find_package(Glog REQUIRED)
+include_directories(${GLOG_INCLUDE_DIRS})
+
 include_directories(src)
 
+set(GLOG_LIBRARIES /usr/local/lib/libglog.a)
 
 add_executable(t src/test.cpp)
-add_executable(m src/main.cpp)
+target_link_libraries(t Eigen3::Eigen ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES} pthread)
 
-target_link_libraries(t Eigen3::Eigen ${GTEST_LIBRARIES}  pthread)
-target_link_libraries(m Eigen3::Eigen ${GTEST_LIBRARIES}  pthread)
+message(ERROR ${GLOG_LIBRARIES})
+
+add_executable(m src/main.cpp)
+target_link_libraries(m Eigen3::Eigen ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES} pthread)
