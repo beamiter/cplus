@@ -2,6 +2,7 @@
 #define ProblemDeclare_H
 
 #include <Eigen/Dense>
+#include <glog/logging.h>
 
 #include "robot_dynamics/discrete_dynamics.h"
 #include "robot_dynamics/integration.h"
@@ -37,6 +38,7 @@ struct ProblemHelper {
   static ProblemDeclare init(std::vector<const DiscreteDynamics *> models,
                              const AbstractObjective *obj, VectorX<T> x0,
                              double tf) {
+    LOG(INFO) << models.back()->state_dim();
     VectorX<T> xf = VectorX<T>::Zero(models.back()->state_dim());
     auto constraints = ConstraintList(models);
     auto t0 = zero(tf);
@@ -71,6 +73,7 @@ struct ProblemHelper {
                              const Objective<C> *obj, VectorX<T> x0, T tf) {
     const auto N = obj->length();
     LOG(INFO) << N;
+    LOG(INFO) << model->state_dim();
     std::vector<const DiscreteDynamics *> models;
     for (auto k = 0; k < N - 1; ++k) {
       models.push_back(model);
@@ -82,6 +85,7 @@ struct ProblemHelper {
   static ProblemDeclare init(const ContinuousDynamics *model,
                              const Objective<C> *obj, VectorX<T> x0, T tf) {
     auto discretized_model = DiscretizedDynamics(model, RK4());
+    LOG(INFO) << discretized_model.state_dim();
     return init<Nx, Nu, T, C>(&discretized_model, obj, x0, tf);
   }
 };

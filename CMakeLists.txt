@@ -25,7 +25,5 @@ set(GLOG_LIBRARIES /usr/local/lib/libglog.a)
 add_executable(t src/test.cpp)
 target_link_libraries(t Eigen3::Eigen ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES} pthread)
 
-message(ERROR ${GLOG_LIBRARIES})
-
 add_executable(m src/main.cpp)
 target_link_libraries(m Eigen3::Eigen ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES} pthread)

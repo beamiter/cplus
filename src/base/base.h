@@ -3,8 +3,8 @@
 
 #include <Eigen/Dense>
 #include <exception>
-#include <vector>
 #include <glog/logging.h>
+#include <vector>
 
 using namespace google;
 
@@ -41,13 +41,11 @@ enum class DiffMethod {
 };
 
 template <typename T> auto length(T) {
-  throw std::runtime_error("length not implemented!");
+  CHECK(0);
   return -1;
 }
 template <> inline auto length(VectorXd t) { return t.size(); }
-template <> inline auto length<std::vector<double>>(std::vector<double> t) {
-  return t.size();
-}
+template <> inline auto length(const std::vector<double>& t) { return t.size(); }
 
 template <typename T> auto zero(T) { return -1; }
 template <> inline auto zero(double) { return 0.0; }

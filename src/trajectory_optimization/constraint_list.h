@@ -21,7 +21,7 @@ struct ConstraintList : AbstractConstraintSet {
   ConstraintList(std::vector<int> nx_in, std::vector<int> nu_in)
       : nx(std::move(nx_in)), nu(std::move(nu_in)) {
     LOG(INFO) << "here\n";
-    auto N = length(nx);
+    const auto N = nx.size();
     this->p = std::vector<int>(N, 0);
   }
   ConstraintList(int n, int m, int N) {
