@@ -26,8 +26,20 @@ ProblemTemplate struct Problem {
         xf(std::move(xf_in)), Z(std::move(Z_in)), N(N_in) {
     LOG(INFO) << model.back()->state_dim();
   }
+  explicit Problem(const ProblemDeclare &prob)
+      : obj(prob.obj), constraints(prob.constraints), x0(prob.x0), xf(prob.xf),
+        Z(prob.Z), N(prob.N) {
+    std::copy(prob.model.begin(), prob.model.end(),
+              std::back_inserter(this->model));
+  }
+  explicit Problem(ProblemDeclare &&prob)
+      : obj(prob.obj), constraints(prob.constraints), x0(prob.x0), xf(prob.xf),
+        Z(prob.Z), N(prob.N) {
+    std::copy(prob.model.begin(), prob.model.end(),
+              std::back_inserter(this->model));
+  }
 
-  const std::vector<const DiscreteDynamics *> &model;
+  std::vector<const DiscreteDynamics *> model;
   const AbstractObjective *obj = nullptr;
   ConstraintList constraints;
   VectorX<T> x0;
@@ -104,57 +116,67 @@ struct ProblemHelper {
 };
 
 ProblemTemplate std::tuple<std::vector<int>, std::vector<int>>
-dims(ProblemDeclare prob) {
+dims(const ProblemDeclare &prob) {
   return dims(prob.model);
 }
 
-ProblemTemplate auto dims(ProblemDeclare prob, int i) {
+ProblemTemplate auto dims(const ProblemDeclare &prob, int i) {
   int n = 0, m = 0;
   std::tie(n, m) = dims(prob.model[i]);
   return std::make_tuple(n, m, prob.N);
 }
 
-ProblemTemplate int state_dim(ProblemDeclare prob, int k) {
+ProblemTemplate int state_dim(const ProblemDeclare &prob, int k) {
   return state_dim(prob.model[k]);
 }
-ProblemTemplate int control_dim(ProblemDeclare prob, int k) {
+ProblemTemplate int control_dim(const ProblemDeclare &prob, int k) {
   return control_dim(prob.model[k]);
 }
 
-ProblemTemplate int horizonlength(ProblemDeclare prob) { return prob.N; }
+ProblemTemplate int horizonlength(const ProblemDeclare &prob) { return prob.N; }
 
 template <ProblemTypeName, typename... Args>
-auto controls(ProblemDeclare prob, Args... args) {
+auto controls(const ProblemDeclare &prob, Args... args) {
   return controls(get_trajectory(prob), args...);
 }
 template <ProblemTypeName, typename... Args>
-auto states(ProblemDeclare prob, Args... args) {
+auto states(const ProblemDeclare &prob, Args... args) {
   return states(get_trajectory(prob), args...);
 }
-ProblemTemplate auto gettimes(ProblemDeclare prob) {
+ProblemTemplate auto gettimes(const ProblemDeclare &prob) {
   return gettimes(get_trajectory(prob));
 }
 
-ProblemTemplate auto get_initial_time(ProblemDeclare prob) {
+ProblemTemplate auto get_initial_time(const ProblemDeclare &prob) {
   return get_trajectory(prob).front().time();
 }
-ProblemTemplate T get_final_time(ProblemDeclare prob) {
+ProblemTemplate T get_final_time(const ProblemDeclare &prob) {
   return get_trajectory(prob).back().time();
 }
-ProblemTemplate auto get_constraints(ProblemDeclare prob) {
+ProblemTemplate auto get_constraints(const ProblemDeclare &prob) {
   return prob.constraints;
 }
-ProblemTemplate auto num_constraints(ProblemDeclare prob) {
+ProblemTemplate auto num_constraints(const ProblemDeclare &prob) {
   return get_constraints(prob).p;
 }
 
-ProblemTemplate auto get_model(ProblemDeclare prob) { return prob.model; }
-ProblemTemplate auto get_model(ProblemDeclare prob, int k) {
+ProblemTemplate auto get_model(const ProblemDeclare &prob) {
+  return prob.model;
+}
+ProblemTemplate auto get_model(const ProblemDeclare &prob, int k) {
   return prob.model[k];
 }
-ProblemTemplate auto get_objective(ProblemDeclare prob) { return prob.obj; }
-ProblemTemplate auto get_trajectory(ProblemDeclare prob) { return prob.Z; }
-ProblemTemplate auto get_initial_state(ProblemDeclare prob) { return prob.x0; }
-ProblemTemplate auto get_final_state(ProblemDeclare prob) { return prob.xf; }
+ProblemTemplate auto get_objective(const ProblemDeclare &prob) {
+  return prob.obj;
+}
+ProblemTemplate auto get_trajectory(const ProblemDeclare &prob) {
+  return prob.Z;
+}
+ProblemTemplate auto get_initial_state(const ProblemDeclare &prob) {
+  return prob.x0;
+}
+ProblemTemplate auto get_final_state(const ProblemDeclare &prob) {
+  return prob.xf;
+}
 
 #endif

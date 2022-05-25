@@ -96,22 +96,23 @@ public:
         DV(DV_in), Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in),
         reg(reg_in), grad(grad_in), xdot(xdot_in) {}
 
-  iLQRSolver(ProblemDeclare prob, SolverOptions<T> opts, SolverStats<T> stats,
-             DiffMethod dynamics_diffmethod, ValBool<USE_STATIC>, ValInt<Ne>) {
-    model = prob.model;
+  iLQRSolver(const std::unique_ptr<ProblemDeclare> &prob, SolverOptions<T> opts,
+             SolverStats<T> stats, DiffMethod dynamics_diffmethod,
+             ValBool<USE_STATIC>, ValInt<Ne>) {
+    model = prob->model;
     LOG(INFO) << model.front()->state_dim();
-    obj = prob.obj;
-    x0 = prob.x0;
-    tf = get_final_time(prob);
-    N = horizonlength(prob);
+    obj = prob->obj;
+    x0 = prob->x0;
+    tf = get_final_time(*prob);
+    N = horizonlength(*prob);
     opts = opts;
     stats = stats;
-    Z = prob.Z;
+    Z = prob->Z;
     Z_dot = Z;
 
     std::vector<int> nx, nu, ne;
-    std::tie(nx, nu) = dims(prob);
-    for (const auto &m : prob.model) {
+    std::tie(nx, nu) = dims(*prob);
+    for (const auto &m : prob->model) {
       ne.push_back(m->errstate_dim());
     }
     ne.push_back(ne.back());
@@ -134,12 +135,12 @@ public:
     if (std::any_of(Z[0].state().begin(), Z[0].state().end(),
                     [](const auto &s) { return std::isnan(s); })) {
       // Change std vector to Eigen Vector;
-      VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
+      VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
       // rollout(dynamics_signature<UseStatic<
       // typename SampledTrajectoryX<Nx, Nu, T>::value_type>::val>(),
       // prob.model[0], Z, v);
     }
-    VectorX<T> v = Map<Eigen::VectorX<T>>(prob.x0.data(), prob.x0.size());
+    VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
     Z[0].setstate(v);
 
     loop(0, N,
@@ -168,7 +169,7 @@ public:
     });
 
     Eerr(ne, nu);
-    Efull = FullStateExpansion(Eerr, prob.model.front());
+    Efull = FullStateExpansion(Eerr, prob->model.front());
 
     loop(0, N, [&ne, &nu, this](const int k) {
       Q_vec.push_back(StateControlExpansionHelper<T>()(ne[k], nu[k]));

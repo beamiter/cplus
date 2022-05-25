@@ -8,9 +8,13 @@
 #include "abstract_constraint.h"
 #include "robot_dynamics/discrete_dynamics.h"
 
-struct AbstractConstraintSet {};
+class AbstractConstraintSet {
+public:
+  virtual ~AbstractConstraintSet() = default;
+};
 
-struct ConstraintList : AbstractConstraintSet {
+class ConstraintList : public AbstractConstraintSet {
+public:
   std::vector<int> nx;
   std::vector<int> nu;
   std::vector<AbstractConstraint> constraints;

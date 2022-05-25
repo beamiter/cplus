@@ -40,8 +40,9 @@ public:
 };
 
 template <int n = CarModel::N, int m = CarModel::M, typename T = double>
-inline Problem<n, m, T> BicycleCar(const VectorX<T> &x0, const VectorX<T> &xf,
-                                   const VectorX<T> &uf, int N, double tf) {
+inline std::unique_ptr<Problem<n, m, T>>
+BicycleCar(const VectorX<T> &x0, const VectorX<T> &xf, const VectorX<T> &uf,
+           int N, double tf) {
   DiagonalMatrix<double, n> Q(10, 10, 50, 1, 1, 1);
   double rho = 1.0;
   auto R = rho * DiagonalMatrix<double, m>(1, 1);
@@ -56,12 +57,13 @@ inline Problem<n, m, T> BicycleCar(const VectorX<T> &x0, const VectorX<T> &xf,
 
   // initial_controls, initial_states, rollout
 
-  return *prob;
+  return prob;
 }
 
 template <int n = CarModel::N, int m = CarModel::M, typename T = double>
-inline Problem<n, m, T> BicycleCar(std::vector<T> x0_in, std::vector<T> xf_in,
-                                   std::vector<T> uf_in, int N, double tf) {
+inline std::unique_ptr<Problem<n, m, T>>
+BicycleCar(std::vector<T> x0_in, std::vector<T> xf_in, std::vector<T> uf_in,
+           int N, double tf) {
   VectorXd x0 = Map<VectorXd>(x0_in.data(), x0_in.size());
   VectorXd xf = Map<VectorXd>(xf_in.data(), xf_in.size());
   VectorXd uf = Map<VectorXd>(uf_in.data(), uf_in.size());
