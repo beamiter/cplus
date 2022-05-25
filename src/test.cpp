@@ -15,12 +15,12 @@ TEST(CostExpansionTest, StateControl) {
   auto de = DynamicsExpansion<double>::init(6, 7, 2);
   de.A(2, 2) = 56;
   de.A(4, 3) = 56;
-  LOG(INFO) << de.A.size() << std::endl;
-  LOG(INFO) << de.A << std::endl;
+  LOG(INFO) << de.A.size();
+  LOG(INFO) << de.A;
   de.B(0, 1) = 156;
-  LOG(INFO) << de.B << std::endl;
-  LOG(INFO) << de.B.size() << std::endl;
-  LOG(INFO) << de.Df << std::endl;
+  LOG(INFO) << de.B;
+  LOG(INFO) << de.B.size();
+  LOG(INFO) << de.Df;
 
   MatrixXd d(3, 4);
   d.setRandom();

@@ -22,6 +22,7 @@ enum class RefPos {
 
 class CarModel : public ContinuousDynamics {
 public:
+  virtual ~CarModel() = default;
   static constexpr int N = 6;
   static constexpr int M = 2;
   CarModel(RefPos ref_in = RefPos::rear, double L_in = 2.7,
@@ -49,6 +50,8 @@ inline Problem<n, m, T> BicycleCar(const VectorX<T> &x0, const VectorX<T> &xf,
   auto car = CarModel();
   auto obj = LQRObjective<n, m, T>(Q, R, Qf, xf, uf, N);
   auto prob = ProblemHelper::init<n, m>(&car, &obj, x0, tf);
+
+  LOG(INFO) << prob.model->front()->state_dim();
 
   // initial_controls, initial_states, rollout
 

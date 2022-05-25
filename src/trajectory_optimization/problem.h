@@ -16,15 +16,17 @@
 #define ProblemDeclare Problem<Nx, Nu, T>
 
 ProblemTemplate struct Problem {
-  Problem(std::vector<const DiscreteDynamics *> model_in,
+  Problem(const std::vector<const DiscreteDynamics *> *model_in,
           const AbstractObjective *obj_in, ConstraintList constraints_in,
           VectorX<T> x0_in, VectorX<T> xf_in,
           SampledTrajectoryX<Nx, Nu, T> Z_in, int N_in, T t0, T tf)
       : model(model_in), obj(std::move(obj_in)),
-        constraints(std::move(constraints_in)), Z(std::move(Z_in)),
-        x0(std::move(x0_in)), xf(std::move(xf_in)) {}
+        constraints(std::move(constraints_in)), x0(std::move(x0_in)),
+        xf(std::move(xf_in)), Z(std::move(Z_in)), N(N_in) {
+    LOG(INFO) << model->back()->state_dim();
+  }
 
-  std::vector<const DiscreteDynamics *> model;
+  const std::vector<const DiscreteDynamics *> *model = nullptr;
   const AbstractObjective *obj = nullptr;
   ConstraintList constraints;
   VectorX<T> x0;
@@ -35,11 +37,10 @@ ProblemTemplate struct Problem {
 
 struct ProblemHelper {
   template <int Nx, int Nu, typename T>
-  static ProblemDeclare init(std::vector<const DiscreteDynamics *> models,
-                             const AbstractObjective *obj, VectorX<T> x0,
-                             double tf) {
-    LOG(INFO) << models.back()->state_dim();
-    VectorX<T> xf = VectorX<T>::Zero(models.back()->state_dim());
+  static ProblemDeclare
+  init(const std::vector<const DiscreteDynamics *> *models,
+       const AbstractObjective *obj, VectorX<T> x0, double tf) {
+    VectorX<T> xf = VectorX<T>::Zero(models->back()->state_dim());
     auto constraints = ConstraintList(models);
     auto t0 = zero(tf);
 
@@ -55,7 +56,7 @@ struct ProblemHelper {
     for (auto d : nx) {
       X0.push_back(VectorX<T>::Zero(d));
     }
-    for (const auto &m : models) {
+    for (const auto &m : *models) {
       U0.push_back(VectorX<T>::Zero(m->control_dim()));
     }
 
@@ -65,6 +66,7 @@ struct ProblemHelper {
     param.dt = 0.1;
     param.N = N;
     auto Z = SampledTrajectoryHelper::init<Nx, Nu>(X0, U0, param);
+    LOG(INFO) << models->back()->state_dim();
     return ProblemDeclare(models, obj, constraints, x0, xf, Z, N, t0, tf);
   }
 
@@ -78,7 +80,7 @@ struct ProblemHelper {
     for (auto k = 0; k < N - 1; ++k) {
       models.push_back(model);
     }
-    return init<Nx, Nu, T>(models, obj, x0, tf);
+    return init<Nx, Nu, T>(&models, obj, x0, tf);
   }
 
   template <int Nx, int Nu, typename T, typename C>

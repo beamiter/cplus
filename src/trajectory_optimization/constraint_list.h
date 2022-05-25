@@ -20,18 +20,15 @@ struct ConstraintList : AbstractConstraintSet {
   std::vector<int> p;
   ConstraintList(std::vector<int> nx_in, std::vector<int> nu_in)
       : nx(std::move(nx_in)), nu(std::move(nu_in)) {
-    LOG(INFO) << "here\n";
     const auto N = nx.size();
     this->p = std::vector<int>(N, 0);
   }
   ConstraintList(int n, int m, int N) {
-    LOG(INFO) << "here\n";
     this->nx = std::vector<int>(n, N);
     this->nu = std::vector<int>(m, N);
     ConstraintList(this->nx, this->nu);
   }
-  ConstraintList(std::vector<const DiscreteDynamics *> models) {
-    LOG(INFO) << "here\n";
+  ConstraintList(const std::vector<const DiscreteDynamics *>* models) {
     std::tie(this->nx, this->nu) = dims(models);
     ConstraintList(this->nx, this->nu);
   }

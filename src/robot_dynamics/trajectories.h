@@ -13,10 +13,16 @@ using Eigen::all;
 using Eigen::MatrixX;
 
 struct TrivialParam {
-  double t0 = std::numeric_limits<double>::quiet_NaN();
+  TrivialParam() {
+    N = 0;
+    t0 = 0.0;
+    tf = std::numeric_limits<double>::quiet_NaN();
+    dt = std::numeric_limits<double>::quiet_NaN();
+  }
+  int N = 0;
+  double t0 = 0.0;
   double tf = std::numeric_limits<double>::quiet_NaN();
   double dt = std::numeric_limits<double>::quiet_NaN();
-  int N = std::numeric_limits<int>::quiet_NaN();
 };
 inline auto gettimeinfo(double t0 = 0.,
                         double tf = std::numeric_limits<double>::quiet_NaN(),
@@ -67,6 +73,7 @@ inline auto gettimeinfo(std::vector<double> dt, double t0 = 0.,
 #define AbstractTrajectoryDeclare AbstractTrajectory<V, T>
 template <typename V, typename T> class AbstractTrajectory {
 public:
+  virtual ~AbstractTrajectory() = default;
   virtual V getstate(double t) = 0;
   virtual V getcontrol(double t) = 0;
   virtual T getinitialtime() = 0;
@@ -136,10 +143,10 @@ struct SampledTrajectoryHelper {
   }
 
   template <int Nx, int Nu>
-  static auto init(int n, int m, TrivialParam param = TrivialParam(),
-                   bool equal = false) {
+  static auto init(int n, int m, TrivialParam param, bool equal = false) {
     auto times = gettimeinfo(param);
     std::vector<double> dt_vec;
+    dt_vec.reserve(times.size() + 1);
     std::adjacent_difference(times.begin(), times.end(), dt_vec.begin());
     dt_vec.push_back(0.0);
     std::vector<KnotPointXd<Nx, Nu>> Z;
@@ -151,31 +158,33 @@ struct SampledTrajectoryHelper {
 
   template <int Nx, int Nu>
   static auto init(const std::vector<VectorXd> &X,
-                   const std::vector<VectorXd> &U,
-                   TrivialParam param = TrivialParam()) {
+                   const std::vector<VectorXd> &U, TrivialParam param) {
     auto N = X.size();
     if (std::isnan(param.tf) && std::isnan(param.dt)) {
-      assert(0);
+      CHECK(0);
     }
     if (!std::isnan(param.N) && param.N != N) {
-      assert(0);
+      CHECK(0);
     }
     auto times = gettimeinfo(param);
     std::vector<double> dt_vec;
+    dt_vec.reserve(times.size());
     std::adjacent_difference(times.begin(), times.end(), dt_vec.begin());
     std::vector<KnotPointXd<Nx, Nu>> Z;
     for (int k = 0; k < N - 1; ++k) {
-      VectorXd joined;
+      VectorXd joined(X[k].size() + U[k].size());
+      //LOG(INFO) << X[k] << ", " << U[k] << ", " << dt_vec[k];
       joined << X[k], U[k];
+      //LOG(INFO) << joined;
       Z.emplace_back(length(X[k]), length(U[k]), joined, times[k], dt_vec[k]);
     }
     if (length(X) == length(U)) {
-      VectorXd joined;
+      VectorXd joined(X.back().size() + U.back().size());
       joined << X.back(), U.back();
       Z.emplace_back(length(X.back()), length(U.back()), joined, times.back(),
                      std::numeric_limits<double>::infinity());
     } else {
-      VectorXd joined;
+      VectorXd joined(X.back().size() + U.back().size());
       joined << X.back(), U.back() * 0.0;
       Z.emplace_back(length(X.back()), length(U.back()), joined, times.back(),
                      0.0);

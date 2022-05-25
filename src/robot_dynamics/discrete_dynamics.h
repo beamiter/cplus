@@ -109,20 +109,21 @@ dynamics_error_jacobian(const DiscreteDynamics *model, V J2, V J1, V y2, V y1,
   assert(0);
 }
 
-inline auto dims(std::vector<const DiscreteDynamics *> models) {
+inline auto dims(const std::vector<const DiscreteDynamics *> *models) {
   std::vector<int> nx, nu;
-  if (models.empty()) {
+  if (models->empty()) {
     return std::make_tuple(nx, nu);
   }
 
-  std::for_each(models.begin(), models.end(), [&nx, &nu](const auto model) {
-    nx.push_back(model->state_dim());
-    nu.push_back(model->control_dim());
-  });
+  std::for_each(models->begin(), models->end(),
+                [&nx, &nu](const DiscreteDynamics *model) {
+                  nx.push_back(model->state_dim());
+                  nu.push_back(model->control_dim());
+                });
   nx.push_back(nx.back());
   nu.push_back(nu.back());
-  for (auto i = 0; i < models.size(); ++i) {
-    const auto ny = models[i]->output_dim();
+  for (auto i = 0; i < models->size(); ++i) {
+    const auto ny = models->at(i)->output_dim();
     const auto nx_next = nx[i + 1];
     if (nx_next != ny) {
       throw std::runtime_error("Model mismatch at time step");
