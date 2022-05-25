@@ -3,6 +3,7 @@
 
 #include <Eigen/Dense>
 #include <glog/logging.h>
+#include <memory>
 
 #include "robot_dynamics/discrete_dynamics.h"
 #include "robot_dynamics/integration.h"
@@ -16,17 +17,17 @@
 #define ProblemDeclare Problem<Nx, Nu, T>
 
 ProblemTemplate struct Problem {
-  Problem(const std::vector<const DiscreteDynamics *> *model_in,
+  Problem(const std::vector<const DiscreteDynamics *> &model_in,
           const AbstractObjective *obj_in, ConstraintList constraints_in,
           VectorX<T> x0_in, VectorX<T> xf_in,
           SampledTrajectoryX<Nx, Nu, T> Z_in, int N_in, T t0, T tf)
       : model(model_in), obj(std::move(obj_in)),
         constraints(std::move(constraints_in)), x0(std::move(x0_in)),
         xf(std::move(xf_in)), Z(std::move(Z_in)), N(N_in) {
-    LOG(INFO) << model->back()->state_dim();
+    LOG(INFO) << model.back()->state_dim();
   }
 
-  const std::vector<const DiscreteDynamics *> *model = nullptr;
+  const std::vector<const DiscreteDynamics *> &model;
   const AbstractObjective *obj = nullptr;
   ConstraintList constraints;
   VectorX<T> x0;
@@ -37,10 +38,10 @@ ProblemTemplate struct Problem {
 
 struct ProblemHelper {
   template <int Nx, int Nu, typename T>
-  static ProblemDeclare
-  init(const std::vector<const DiscreteDynamics *> *models,
+  static std::unique_ptr<ProblemDeclare>
+  init(const std::vector<const DiscreteDynamics *> &models,
        const AbstractObjective *obj, VectorX<T> x0, double tf) {
-    VectorX<T> xf = VectorX<T>::Zero(models->back()->state_dim());
+    VectorX<T> xf = VectorX<T>::Zero(models.back()->state_dim());
     auto constraints = ConstraintList(models);
     auto t0 = zero(tf);
 
@@ -56,7 +57,7 @@ struct ProblemHelper {
     for (auto d : nx) {
       X0.push_back(VectorX<T>::Zero(d));
     }
-    for (const auto &m : *models) {
+    for (const auto &m : models) {
       U0.push_back(VectorX<T>::Zero(m->control_dim()));
     }
 
@@ -66,29 +67,39 @@ struct ProblemHelper {
     param.dt = 0.1;
     param.N = N;
     auto Z = SampledTrajectoryHelper::init<Nx, Nu>(X0, U0, param);
-    LOG(INFO) << models->back()->state_dim();
-    return ProblemDeclare(models, obj, constraints, x0, xf, Z, N, t0, tf);
+    LOG(INFO) << models.back()->state_dim();
+    std::unique_ptr<ProblemDeclare> rtn(
+        new ProblemDeclare(models, obj, constraints, x0, xf, Z, N, t0, tf));
+    LOG(INFO) << rtn.get()->model.back()->state_dim();
+    return rtn;
   }
 
   template <int Nx, int Nu, typename T, typename C>
-  static ProblemDeclare init(const DiscreteDynamics *model,
-                             const Objective<C> *obj, VectorX<T> x0, T tf) {
+  static std::unique_ptr<ProblemDeclare> init(const DiscreteDynamics *model,
+                                              const Objective<C> *obj,
+                                              VectorX<T> x0, T tf) {
     const auto N = obj->length();
-    LOG(INFO) << N;
     LOG(INFO) << model->state_dim();
+    // models will be invalid out of this scope.
     std::vector<const DiscreteDynamics *> models;
     for (auto k = 0; k < N - 1; ++k) {
       models.push_back(model);
     }
-    return init<Nx, Nu, T>(&models, obj, x0, tf);
+    auto rtn = init<Nx, Nu, T>(models, obj, x0, tf);
+    LOG(INFO) << rtn.get()->model.back()->state_dim();
+    return rtn;
   }
 
   template <int Nx, int Nu, typename T, typename C>
-  static ProblemDeclare init(const ContinuousDynamics *model,
-                             const Objective<C> *obj, VectorX<T> x0, T tf) {
+  static std::unique_ptr<ProblemDeclare> init(const ContinuousDynamics *model,
+                                              const Objective<C> *obj,
+                                              VectorX<T> x0, T tf) {
     auto discretized_model = DiscretizedDynamics(model, RK4());
     LOG(INFO) << discretized_model.state_dim();
-    return init<Nx, Nu, T, C>(&discretized_model, obj, x0, tf);
+    auto rtn = init<Nx, Nu, T, C>(&discretized_model, obj, x0, tf);
+    LOG(INFO) << rtn.get()->N;
+    LOG(INFO) << rtn.get()->model.back()->state_dim();
+    return rtn;
   }
 };
 

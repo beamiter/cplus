@@ -71,7 +71,7 @@ public:
   using m_data_type = MatrixX<T>;
   using v_data_type = VectorX<T>;
 
-  iLQRSolver(const std::vector<const DiscreteDynamics *>* model_in,
+  iLQRSolver(const std::vector<const DiscreteDynamics *> &model_in,
              const AbstractObjective *obj_in, VectorX<T> x0_in, T tf_in,
              int N_in, SolverOptions<T> opts_in, SolverStats<T> stats_in,
              SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_in,
@@ -99,7 +99,7 @@ public:
   iLQRSolver(ProblemDeclare prob, SolverOptions<T> opts, SolverStats<T> stats,
              DiffMethod dynamics_diffmethod, ValBool<USE_STATIC>, ValInt<Ne>) {
     model = prob.model;
-    LOG(INFO) << model->front()->state_dim();
+    LOG(INFO) << model.front()->state_dim();
     obj = prob.obj;
     x0 = prob.x0;
     tf = get_final_time(prob);
@@ -111,7 +111,7 @@ public:
 
     std::vector<int> nx, nu, ne;
     std::tie(nx, nu) = dims(prob);
-    for (const auto &m : *prob.model) {
+    for (const auto &m : prob.model) {
       ne.push_back(m->errstate_dim());
     }
     ne.push_back(ne.back());
@@ -168,7 +168,7 @@ public:
     });
 
     Eerr(ne, nu);
-    Efull = FullStateExpansion(Eerr, prob.model->front());
+    Efull = FullStateExpansion(Eerr, prob.model.front());
 
     loop(0, N, [&ne, &nu, this](const int k) {
       Q_vec.push_back(StateControlExpansionHelper<T>()(ne[k], nu[k]));
@@ -188,7 +188,7 @@ public:
     xdot = std::vector<T>(nx[0], 0);
   }
 
-  const std::vector<const DiscreteDynamics *> *model;
+  std::vector<const DiscreteDynamics *> model;
   const AbstractObjective *obj;
 
   VectorX<T> x0;

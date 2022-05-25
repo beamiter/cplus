@@ -14,6 +14,7 @@ using Eigen::MatrixX;
 
 class AbstractObjective {
 public:
+  virtual ~AbstractObjective() = default;
   // Pure Virtual Function
   virtual int length() const = 0;
   virtual int state_dim(int k) const = 0;

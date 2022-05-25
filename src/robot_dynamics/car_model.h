@@ -49,13 +49,14 @@ inline Problem<n, m, T> BicycleCar(const VectorX<T> &x0, const VectorX<T> &xf,
 
   auto car = CarModel();
   auto obj = LQRObjective<n, m, T>(Q, R, Qf, xf, uf, N);
-  auto prob = ProblemHelper::init<n, m>(&car, &obj, x0, tf);
+  std::unique_ptr<Problem<n, m, T>> prob =
+      ProblemHelper::init<n, m>(&car, &obj, x0, tf);
 
-  LOG(INFO) << prob.model->front()->state_dim();
+  LOG(INFO) << prob->model.front()->state_dim();
 
   // initial_controls, initial_states, rollout
 
-  return prob;
+  return *prob;
 }
 
 template <int n = CarModel::N, int m = CarModel::M, typename T = double>
