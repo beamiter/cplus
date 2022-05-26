@@ -39,35 +39,36 @@ public:
   double lr = 0.0;
 };
 
-template <int n = CarModel::N, int m = CarModel::M, typename T = double>
-inline std::unique_ptr<Problem<n, m, T>>
-BicycleCar(const VectorX<T> &x0, const VectorX<T> &xf, const VectorX<T> &uf,
-           int N, double tf) {
-  DiagonalMatrix<double, n> Q(10, 10, 50, 1, 1, 1);
-  double rho = 1.0;
-  auto R = rho * DiagonalMatrix<double, m>(1, 1);
-  DiagonalMatrix<double, n> Qf(10, 10, 60, 1, 1, 1);
+ProblemTemplate class CarProblem : public ProblemDeclare {
+public:
+  CarProblem(std::vector<T> x0_in, std::vector<T> xf_in, std::vector<T> uf_in,
+             int N, double tf)
+      : ProblemDeclare() {
+    // Model initialize.
+    car_ = CarModel();
+    discretized_car_ = DiscretizedDynamics(&car_, RK4());
 
-  auto car = CarModel();
-  auto obj = LQRObjective<n, m, T>(Q, R, Qf, xf, uf, N);
-  std::unique_ptr<Problem<n, m, T>> prob =
-      ProblemHelper::init<n, m>(&car, &obj, x0, tf);
+    VectorXd x0 = Map<VectorXd>(x0_in.data(), x0_in.size());
+    VectorXd xf = Map<VectorXd>(xf_in.data(), xf_in.size());
+    VectorXd uf = Map<VectorXd>(uf_in.data(), uf_in.size());
+    init(x0, xf, uf, N, tf);
+  }
+  void init(const VectorX<T> &x0, const VectorX<T> &xf, const VectorX<T> &uf,
+            int N, double tf) {
+    DiagonalMatrix<double, Nx> Q(10, 10, 50, 1, 1, 1);
+    double rho = 1.0;
+    auto R = rho * DiagonalMatrix<double, Nu>(1, 1);
+    DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-  LOG(INFO) << prob->model.front()->state_dim();
+    auto obj = LQRObjective<Nx, Nu, T>(Q, R, Qf, xf, uf, N);
+    ProblemDeclare::init(&discretized_car_, &obj, x0, tf);
 
-  // initial_controls, initial_states, rollout
+    // initial_controls, initial_states, rollout
+  }
 
-  return prob;
-}
-
-template <int n = CarModel::N, int m = CarModel::M, typename T = double>
-inline std::unique_ptr<Problem<n, m, T>>
-BicycleCar(std::vector<T> x0_in, std::vector<T> xf_in, std::vector<T> uf_in,
-           int N, double tf) {
-  VectorXd x0 = Map<VectorXd>(x0_in.data(), x0_in.size());
-  VectorXd xf = Map<VectorXd>(xf_in.data(), xf_in.size());
-  VectorXd uf = Map<VectorXd>(uf_in.data(), uf_in.size());
-  return BicycleCar(x0, xf, uf, N, tf);
-}
+  // Members.
+  CarModel car_;
+  DiscretizedDynamics discretized_car_;
+};
 
 #endif

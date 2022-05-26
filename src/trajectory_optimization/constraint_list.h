@@ -22,6 +22,7 @@ public:
   std::vector<FunctionSignature> sigs;
   std::vector<DiffMethod> diffs;
   std::vector<int> p;
+  ConstraintList() = default;
   ConstraintList(std::vector<int> nx_in, std::vector<int> nu_in)
       : nx(std::move(nx_in)), nu(std::move(nu_in)) {
     const auto N = nx.size();

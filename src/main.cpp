@@ -15,20 +15,19 @@ using namespace google;
 
 using namespace std;
 
-using Eigen::DiagonalMatrix;
 using Eigen::MatrixX;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-enum TE {
-  a,
+enum class TE : uint8_t {
+  a = 0,
   b,
   c,
 };
 
 class A {
 public:
-  virtual TE get() const = 0;
+  virtual TE get() const { return TE::a; }
 };
 
 class B : public A {
@@ -38,27 +37,39 @@ public:
 
 class C : public A {
 public:
+  C() = default;
+  C(int x0, int y0) {
+    x = x0;
+    y = y0;
+  }
+  void init(int x0, int y0) { *this = C(x0, y0); }
   TE get() const override { return TE::c; }
+  int x = 0;
+  int y = 0;
 };
 
-template <TE T> void haha() { LOG(INFO) << "********** " << T << endl; }
+struct Pose2D {
+  float x;
+  float y;
+  float yaw;
+
+  Pose2D() : x(0), y(0), yaw(0) {}
+  Pose2D(float x, float y, float yaw) : x(x), y(y), yaw(yaw) {}
+  Pose2D operator=(const Pose2D &from) {
+    Pose2D a(from.x, from.y, from.yaw);
+    return a;
+  }
+};
 
 int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
-
   // Set logging level
   google::SetStderrLogging(google::GLOG_INFO);
 
-  MatrixXd f(3, 3);
-  VectorXd b(3), u(3);
-  b << 1, 2, 3;
-  u << 4, 5, 6;
-  f << 1, 2, 3, 4, 5, 6, 7, 8, 9;
-  double cf = 0.5 * b.adjoint() * f * b;
-  cf += 0.5 * u.adjoint() * u;
-  LOG(INFO) << cf << endl;
-  LOG(INFO) << f.size();
-  LOG(INFO) << f.rows() << f.cols();
+  Pose2D p;
+  Pose2D p1(1, 2, 3);
+  p = p1;
+  LOG(INFO) << p1.x << ", " << p.x;
 
   google::ShutdownGoogleLogging();
 }

@@ -96,17 +96,17 @@ public:
         DV(DV_in), Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in),
         reg(reg_in), grad(grad_in), xdot(xdot_in) {}
 
-  iLQRSolver(const std::unique_ptr<ProblemDeclare> &prob, SolverOptions<T> opts,
-             SolverStats<T> stats, DiffMethod dynamics_diffmethod,
-             ValBool<USE_STATIC>, ValInt<Ne>) {
+  iLQRSolver(const std::unique_ptr<ProblemDeclare> &prob,
+             SolverOptions<T> opts_in, SolverStats<T> stats_in,
+             DiffMethod dynamics_diffmethod, ValBool<USE_STATIC>, ValInt<Ne>) {
     model = prob->model;
     LOG(INFO) << model.front()->state_dim();
     obj = prob->obj;
     x0 = prob->x0;
     tf = get_final_time(*prob);
     N = horizonlength(*prob);
-    opts = opts;
-    stats = stats;
+    opts = opts_in;
+    stats = stats_in;
     Z = prob->Z;
     Z_dot = Z;
 

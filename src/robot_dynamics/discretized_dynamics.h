@@ -9,6 +9,8 @@ struct Implicit : QuadratureRule {};
 
 class DiscretizedDynamics : public DiscreteDynamics {
 public:
+  DiscretizedDynamics() = default;
+  virtual ~DiscretizedDynamics() = default;
   // Constructors
   DiscretizedDynamics(const ContinuousDynamics *dynamics_in,
                       QuadratureRule rule)

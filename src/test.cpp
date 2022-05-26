@@ -46,9 +46,14 @@ TEST(CostExpansionTest, StateControl) {
   std::vector<double> xf({12, 0, 0, 0, 0, 0});
   std::vector<double> uf({0, 0});
   double tf = 5.0;
-  auto prob = BicycleCar(x0, xf, uf, 51, 0.1);
-  auto solver = iLQRSolver<6, 7, 2, double, VectorXd>(
-      prob, opts, stats, DiffMethod::UserDefined, ValBool<true>(), ValInt<7>());
+  auto prob = CarProblem<6, 2, double>(x0, xf, uf, 51, 0.1);
+  LOG(INFO) << prob.N;
+  LOG(INFO) << prob.car_.state_dim();
+  LOG(INFO) << prob.model.size();
+  LOG(INFO) << prob.model.front()->state_dim();
+  // auto solver = iLQRSolver<6, 7, 2, double, VectorXd>(
+  //     prob, opts, stats, DiffMethod::UserDefined, ValBool<true>(),
+  //     ValInt<7>());
 }
 
 int main(int argc, char **argv) {
