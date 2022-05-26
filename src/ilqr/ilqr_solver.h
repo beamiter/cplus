@@ -96,9 +96,9 @@ public:
         DV(DV_in), Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in),
         reg(reg_in), grad(grad_in), xdot(xdot_in) {}
 
-  iLQRSolver(const std::unique_ptr<ProblemDeclare> &prob,
-             SolverOptions<T> opts_in, SolverStats<T> stats_in,
-             DiffMethod dynamics_diffmethod, ValBool<USE_STATIC>, ValInt<Ne>) {
+  iLQRSolver(ProblemDeclare *prob, SolverOptions<T> opts_in,
+             SolverStats<T> stats_in, DiffMethod dynamics_diffmethod,
+             ValBool<USE_STATIC>, ValInt<Ne>) {
     model = prob->model;
     LOG(INFO) << model.front()->state_dim();
     obj = prob->obj;

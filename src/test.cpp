@@ -51,9 +51,9 @@ TEST(CostExpansionTest, StateControl) {
   LOG(INFO) << prob.car_.state_dim();
   LOG(INFO) << prob.model.size();
   LOG(INFO) << prob.model.front()->state_dim();
-  // auto solver = iLQRSolver<6, 7, 2, double, VectorXd>(
-  //     prob, opts, stats, DiffMethod::UserDefined, ValBool<true>(),
-  //     ValInt<7>());
+  auto solver = iLQRSolver<6, 6, 2, double, VectorXd>(
+      &prob, opts, stats, DiffMethod::UserDefined, ValBool<true>(),
+      ValInt<6>());
 }
 
 int main(int argc, char **argv) {
