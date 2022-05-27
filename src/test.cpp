@@ -41,7 +41,6 @@ TEST(CostExpansionTest, StateControl) {
   auto stats = SolverStatsD();
   auto traj = SampledTrajectoryX<6, 2, double>();
   traj.data.push_back(KnotPointX<6, 2, double>());
-  LOG(INFO) << "*******************";
   std::vector<double> x0({0, 0, 0, 0, 0, 0});
   std::vector<double> xf({12, 0, 0, 0, 0, 0});
   std::vector<double> uf({0, 0});

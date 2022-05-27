@@ -29,8 +29,8 @@ template <typename T> class DynamicRegularization {
 public:
   DynamicRegularization() = default;
   DynamicRegularization(T rou_in, T d_rou_in) : rou(rou_in), d_rou(d_rou_in) {}
-
-  void operator=(const DynamicRegularization &rhs) { *this = rhs; }
+  DynamicRegularization(const DynamicRegularization &in)
+      : rou(in.rou), d_rou(in.d_rou) {}
   T rou;
   T d_rou;
 };
@@ -181,7 +181,8 @@ public:
 
     DV = std::vector<T>(2, 0);
 
-    *Qtmp = StateControlExpansionHelper<T>()(ne[0], nu[0]);
+    Qtmp = std::make_unique<StateControlExpansion<T, true>>(
+        StateControlExpansionHelper<T>()(ne[0], nu[0]));
     Quu_reg = MatrixX<T>::Zero(nu[0], nu[0]);
     Qux_reg = MatrixX<T>::Zero(nu[0], ne[0]);
     reg = DynamicRegularization<T>(opts.bp_reg_initial, 0);
@@ -219,7 +220,7 @@ public:
 
   std::vector<T> DV;
 
-  StateControlExpansion<T, true> *Qtmp = nullptr;
+  std::unique_ptr<StateControlExpansion<T, true>> Qtmp = nullptr;
   m_data_type Quu_reg;
   m_data_type Qux_reg;
   DynamicRegularization<T> reg;

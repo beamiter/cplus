@@ -54,6 +54,7 @@ struct Pose2D {
   float yaw;
 
   Pose2D() : x(0), y(0), yaw(0) {}
+  Pose2D(const Pose2D &pose) : x(pose.x), y(pose.y), yaw(pose.yaw) {}
   Pose2D(float x, float y, float yaw) : x(x), y(y), yaw(yaw) {}
   Pose2D operator=(const Pose2D &from) {
     Pose2D a(from.x, from.y, from.yaw);
@@ -66,10 +67,10 @@ int main(int argc, char **argv) {
   // Set logging level
   google::SetStderrLogging(google::GLOG_INFO);
 
-  Pose2D p;
   Pose2D p1(1, 2, 3);
-  p = p1;
-  LOG(INFO) << p1.x << ", " << p.x;
+  // Pose2D p(p1);
+  Pose2D p2 = p1;
+  LOG(INFO) << p1.x << ", " << p2.x;
 
   google::ShutdownGoogleLogging();
 }
