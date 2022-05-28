@@ -20,7 +20,8 @@ include_directories(${GLOG_INCLUDE_DIRS})
 
 include_directories(src)
 
-set(GLOG_LIBRARIES /usr/local/lib/libglog.so)
+#set(GLOG_LIBRARIES /usr/local/lib/libglog.so)
+set(GLOG_LIBRARIES glog::glog)
 
 add_executable(t src/test.cpp)
 target_link_libraries(t Eigen3::Eigen ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES} pthread)
