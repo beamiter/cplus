@@ -85,7 +85,7 @@ public:
              CostExpansion<T> Eerr_in,
              std::vector<StateControlExpansion<T, true>> Q_in,
              std::vector<StateControlExpansion<T, false>> S_in,
-             std::vector<T> DV_in, StateControlExpansion<T> Qtmp_in,
+             std::vector<T> DV_in, StateControlExpansion<T, true> Qtmp_in,
              m_data_type Quu_reg_in, m_data_type Qux_reg_in,
              DynamicRegularization<T> reg_in, std::vector<T> grad_in,
              std::vector<T> xdot_in)
@@ -168,21 +168,22 @@ public:
       G_vec.push_back(a);
     });
 
-    Eerr(ne, nu);
-    Efull = FullStateExpansion(Eerr, prob->model.front());
+    Eerr = std::make_unique<CostExpansion<T>>(CostExpansion<T>(ne, nu));
+    Efull = std::make_unique<CostExpansion<T>>(
+        FullStateExpansion(*Eerr.get(), prob->model.front()));
 
     loop(0, N, [&ne, &nu, this](const int k) {
-      Q_vec.push_back(StateControlExpansionHelper<T>()(ne[k], nu[k]));
+      Q_vec.push_back(StateControlExpansion<T, true>(ne[k], nu[k]));
     });
 
     loop(0, N, [&ne, this](const int k) {
-      S_vec.push_back(StateControlExpansionHelper<T>()(ne[k]));
+      S_vec.push_back(StateControlExpansion<T, false>(ne[k]));
     });
 
     DV = std::vector<T>(2, 0);
 
     Qtmp = std::make_unique<StateControlExpansion<T, true>>(
-        StateControlExpansionHelper<T>()(ne[0], nu[0]));
+        StateControlExpansion<T, true>(ne[0], nu[0]));
     Quu_reg = MatrixX<T>::Zero(nu[0], nu[0]);
     Qux_reg = MatrixX<T>::Zero(nu[0], ne[0]);
     reg = DynamicRegularization<T>(opts.bp_reg_initial, 0);
@@ -212,8 +213,8 @@ public:
   std::vector<DynamicsExpansion<T>> D_vec;
   std::vector<m_data_type> G_vec;
 
-  CostExpansion<T> Efull;
-  CostExpansion<T> Eerr;
+  std::unique_ptr<CostExpansion<T>> Efull;
+  std::unique_ptr<CostExpansion<T>> Eerr;
 
   std::vector<StateControlExpansion<T, true>> Q_vec;
   std::vector<StateControlExpansion<T, false>> S_vec;

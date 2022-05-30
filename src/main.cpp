@@ -4,6 +4,7 @@
 #include <iostream>
 #include <type_traits>
 #include <vector>
+#include <memory>
 
 #include <glog/logging.h>
 using namespace google;
@@ -27,6 +28,9 @@ enum class TE : uint8_t {
 
 class A {
 public:
+  operator bool() {
+    return true;
+  }
   virtual TE get() const { return TE::a; }
 };
 
@@ -66,6 +70,21 @@ int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
   // Set logging level
   google::SetStderrLogging(google::GLOG_INFO);
+
+  std::shared_ptr<int> pp;
+  if (pp) {
+    LOG(INFO) << "HEHE;;";
+  }
+  A a;
+  double aa = a;
+  int aaa = a;
+  float aaaa = a;
+  if (a) {
+    LOG(INFO) << "HEHE;;";
+  }
+  if (&a) {
+    LOG(INFO) << "HEHE;;";
+  }
 
   Pose2D p1(1, 2, 3);
   // Pose2D p(p1);

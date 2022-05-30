@@ -18,13 +18,14 @@ using Eigen::seq;
 using Eigen::VectorX;
 
 // State and control
-template <typename T, bool B = true> class StateControlExpansion {
+template <typename T, bool B> class StateControlExpansion {};
+template <typename T> class StateControlExpansion<T, true> {
 public:
-  static constexpr bool state_control = B;
+  static constexpr bool state_control = true;
   typedef MatrixX<T> m_data_type;
   typedef VectorX<T> v_data_type;
+  static_assert(state_control, "For state and control!!!");
 
-#if B
   StateControlExpansion(int n, int m)
       : ix(0, n), data(MatrixX<T>::Zero(n + m, n + m + 1)),
         hess(data(all, seq(0, last - 1))), grad(data(all, last)),
@@ -32,15 +33,6 @@ public:
         uu(data(iu, iu)), u(grad(iu)) {
     assert(n > 0 && m > 0);
   }
-#else
-  // m is not essential
-  StateControlExpansion(int n, int m = 0)
-      : ix(0, n), data(MatrixX<T>::Zero(n, n + 1)),
-        hess(data(all, seq(0, last - 1))), grad(data(all, last)),
-        xx(data(ix, ix)), x(grad(ix)) {
-    assert(n > 0);
-  }
-#endif
 
   Eigen::ArithmeticSequence<int, int> ix;
   m_data_type data;
@@ -48,41 +40,51 @@ public:
   Ref<v_data_type> grad;
   Ref<m_data_type> xx;
   Ref<v_data_type> x;
-#if B
   Eigen::ArithmeticSequence<int, int> iu;
   Ref<m_data_type> ux;
   Ref<m_data_type> uu;
   Ref<v_data_type> u;
-#endif
 };
-
-template <typename T> class StateControlExpansionHelper {
+template <typename T> class StateControlExpansion<T, false> {
 public:
-  StateControlExpansion<T, true> operator()(int n, int m) {
-    return StateControlExpansion<T, true>(n, m);
+  static constexpr bool state_control = false;
+  typedef MatrixX<T> m_data_type;
+  typedef VectorX<T> v_data_type;
+  static_assert(!state_control, "For only state!!!");
+
+  // m is not essential
+  StateControlExpansion(int n, int m = -1)
+      : ix(0, n), data(MatrixX<T>::Zero(n, n + 1)),
+        hess(data(all, seq(0, last - 1))), grad(data(all, last)),
+        xx(data(ix, ix)), x(grad(ix)) {
+    assert(n > 0);
   }
-  StateControlExpansion<T, false> operator()(int n) {
-    return StateControlExpansion<T, false>(n);
-  }
+
+  Eigen::ArithmeticSequence<int, int> ix;
+  m_data_type data;
+  Ref<m_data_type> hess;
+  Ref<v_data_type> grad;
+  Ref<m_data_type> xx;
+  Ref<v_data_type> x;
 };
 
 template <typename T, bool B = true> class CostExpansion {
 public:
   static const bool state_control = B;
 
-  CostExpansion() = default;
   CostExpansion(const std::vector<int> &nx, const std::vector<int> &nu = {}) {
     const auto N = nx.size();
-    const_hess.resize(N);
-    const_grad.resize(N);
+    const_hess.resize(N, false);
+    const_grad.resize(N, false);
     for (auto k = 0; k < N; ++k) {
       data.push_back(StateControlExpansion<T, B>(nx[k], nu[k]));
     }
   }
-
-  void operator()(const std::vector<int> &nx, const std::vector<int> &nu = {}) {
-    CostExpansion(nx, nu);
-  }
+  // Delegating constructors
+  CostExpansion(int n, int m, int N)
+      : CostExpansion(std::vector<int>(N, n), std::vector<int>(N, m)) {}
+  CostExpansion(const CostExpansion &in)
+      : data(in.data), const_hess(in.const_hess), const_grad(in.const_grad) {}
 
   const auto &operator[](int i) const { return data[i]; }
   int size() const { return data.size(); }
@@ -91,12 +93,6 @@ public:
   std::vector<StateControlExpansion<T, B>> data;
   std::vector<bool> const_hess;
   std::vector<bool> const_grad;
-};
-
-template <typename T, bool B = true> struct CostExpansionHelper {
-  CostExpansion<T, B> operator()(int n, int m, int N) {
-    return CostExpansion<T, B>(std::vector<int>(N, n), std::vector<int>(N, m));
-  }
 };
 
 template <typename T, bool B>
@@ -113,7 +109,7 @@ CostExpansion<T, B> FullStateExpansion(StateVectorType type,
   } else {
     const int n = model->state_dim();
     const int m = model->control_dim();
-    return CostExpansionHelper<T, B>()(n, m, E.length());
+    return CostExpansion<T, B>(n, m, E.length());
   }
 }
 
