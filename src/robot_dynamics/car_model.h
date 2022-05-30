@@ -42,12 +42,7 @@ public:
 ProblemTemplate class CarProblem : public ProblemDeclare {
 public:
   CarProblem(std::vector<T> x0_in, std::vector<T> xf_in, std::vector<T> uf_in,
-             int N, double tf)
-      : ProblemDeclare() {
-    // Model initialize.
-    car_ = CarModel();
-    discretized_car_ = DiscretizedDynamics(&car_, RK4());
-
+             int N, double tf) {
     VectorXd x0 = Map<VectorXd>(x0_in.data(), x0_in.size());
     VectorXd xf = Map<VectorXd>(xf_in.data(), xf_in.size());
     VectorXd uf = Map<VectorXd>(uf_in.data(), uf_in.size());
@@ -61,14 +56,15 @@ public:
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
     auto obj = LQRObjective<Nx, Nu, T>(Q, R, Qf, xf, uf, N);
-    ProblemDeclare::init(&discretized_car_, &obj, x0, tf);
+    // Model initialize.
+    car_ = std::make_unique<CarModel>(CarModel());
+    ProblemDeclare::init(car_.get(), &obj, x0, tf);
 
     // initial_controls, initial_states, rollout
   }
 
   // Members.
-  CarModel car_;
-  DiscretizedDynamics discretized_car_;
+  std::unique_ptr<CarModel> car_;
 };
 
 #endif

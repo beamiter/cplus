@@ -20,7 +20,7 @@ ProblemTemplate class Problem {
 public:
   // Constructors
   Problem() = default;
-  Problem(const std::vector<const DiscreteDynamics *> &model_in,
+  Problem(const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
           const AbstractObjective *obj_in, ConstraintList constraints_in,
           VectorX<T> x0_in, VectorX<T> xf_in,
           SampledTrajectoryX<Nx, Nu, T> Z_in, int N_in)
@@ -38,7 +38,7 @@ public:
   }
 
   // Initializer
-  void init(const std::vector<const DiscreteDynamics *> &models,
+  void init(std::vector<std::shared_ptr<DiscreteDynamics>> models,
             const AbstractObjective *obj_in, VectorX<T> x0_in, double tf_in) {
     this->N = obj_in->length();
     this->x0 = x0_in;
@@ -71,15 +71,22 @@ public:
     LOG(INFO) << models.back()->state_dim();
   }
 
-  void init(const DiscreteDynamics *model, const AbstractObjective *obj,
-            VectorX<T> x0, T tf) {
+  void init(const std::shared_ptr<DiscreteDynamics> &model,
+            const AbstractObjective *obj, VectorX<T> x0, T tf) {
     const auto N = obj->length();
     LOG(INFO) << model->state_dim();
-    std::vector<const DiscreteDynamics *> models;
+    std::vector<std::shared_ptr<DiscreteDynamics>> models;
     for (auto k = 0; k < N - 1; ++k) {
       models.push_back(model);
     }
     init(models, obj, x0, tf);
+  }
+
+  void init(const ContinuousDynamics *model, const AbstractObjective *obj,
+            VectorX<T> x0, T tf) {
+    std::shared_ptr<DiscreteDynamics> discretized_car(
+        new DiscretizedDynamics(model, RK4()));
+    init(discretized_car, obj, x0, tf);
   }
 
   // Members
@@ -87,7 +94,7 @@ public:
   VectorX<T> x0;
   VectorX<T> xf;
   SampledTrajectoryX<Nx, Nu, T> Z;
-  std::vector<const DiscreteDynamics *> model;
+  std::vector<std::shared_ptr<DiscreteDynamics>> model;
   const AbstractObjective *obj = nullptr;
   ConstraintList constraints;
 };

@@ -71,7 +71,7 @@ public:
   using m_data_type = MatrixX<T>;
   using v_data_type = VectorX<T>;
 
-  iLQRSolver(const std::vector<const DiscreteDynamics *> &model_in,
+  iLQRSolver(const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
              const AbstractObjective *obj_in, VectorX<T> x0_in, T tf_in,
              int N_in, SolverOptions<T> opts_in, SolverStats<T> stats_in,
              SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_in,
@@ -170,7 +170,7 @@ public:
 
     Eerr = std::make_unique<CostExpansion<T>>(CostExpansion<T>(ne, nu));
     Efull = std::make_unique<CostExpansion<T>>(
-        FullStateExpansion(*Eerr.get(), prob->model.front()));
+        FullStateExpansion(*Eerr.get(), prob->model.front().get()));
 
     loop(0, N, [&ne, &nu, this](const int k) {
       Q_vec.push_back(StateControlExpansion<T, true>(ne[k], nu[k]));
@@ -191,7 +191,7 @@ public:
     xdot = std::vector<T>(nx[0], 0);
   }
 
-  std::vector<const DiscreteDynamics *> model;
+  std::vector<std::shared_ptr<DiscreteDynamics>> model;
   const AbstractObjective *obj;
 
   VectorX<T> x0;

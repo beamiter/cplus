@@ -47,7 +47,7 @@ TEST(CostExpansionTest, StateControl) {
   double tf = 5.0;
   auto prob = CarProblem<6, 2, double>(x0, xf, uf, 51, 0.1);
   LOG(INFO) << prob.N;
-  LOG(INFO) << prob.car_.state_dim();
+  LOG(INFO) << prob.car_->state_dim();
   LOG(INFO) << prob.model.size();
   LOG(INFO) << prob.model.front()->state_dim();
   auto solver = iLQRSolver<6, 6, 2, double, VectorXd>(

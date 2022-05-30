@@ -33,7 +33,7 @@ public:
     this->nu = std::vector<int>(m, N);
     ConstraintList(this->nx, this->nu);
   }
-  ConstraintList(const std::vector<const DiscreteDynamics *> &models) {
+  template <typename Ptr> ConstraintList(const std::vector<Ptr> &models) {
     std::tie(this->nx, this->nu) = dims(models);
     ConstraintList(this->nx, this->nu);
   }
