@@ -27,7 +27,6 @@ public:
       : model(model_in), obj(std::move(obj_in)),
         constraints(std::move(constraints_in)), x0(std::move(x0_in)),
         xf(std::move(xf_in)), Z(std::move(Z_in)), N(N_in) {
-    LOG(INFO) << model.back()->state_dim();
   }
 
   explicit Problem(const ProblemDeclare &prob)
@@ -68,13 +67,11 @@ public:
     param.dt = 0.1;
     param.N = N;
     this->Z = SampledTrajectoryHelper::init<Nx, Nu>(X0, U0, param);
-    LOG(INFO) << models.back()->state_dim();
   }
 
   void init(const std::shared_ptr<DiscreteDynamics> &model,
             const AbstractObjective *obj, VectorX<T> x0, T tf) {
     const auto N = obj->length();
-    LOG(INFO) << model->state_dim();
     std::vector<std::shared_ptr<DiscreteDynamics>> models;
     for (auto k = 0; k < N - 1; ++k) {
       models.push_back(model);

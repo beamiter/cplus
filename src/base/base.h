@@ -58,21 +58,32 @@ template <> inline auto zero(int) { return 0; }
 template <typename T, typename U> struct is_same_type {
   const static bool value = false;
 };
+template <typename T> struct is_same_type<T, T> {
+  constexpr static bool value = true;
+};
+template <typename T> struct is_same_type<std::vector<T>, std::vector<T>> {
+  const static bool value = true;
+};
+template <typename T> struct is_same_type<VectorX<T>, VectorX<T>> {
+  const static bool value = true;
+};
+template <typename T> struct is_same_type<MatrixX<T>, MatrixX<T>> {
+  const static bool value = true;
+};
+
 template <typename T> struct UseStatic { static constexpr bool val = false; };
 template <> struct UseStatic<MatrixXd> { static constexpr bool val = true; };
 template <> struct UseStatic<MatrixXf> { static constexpr bool val = true; };
 template <> struct UseStatic<VectorXd> { static constexpr bool val = true; };
 template <> struct UseStatic<VectorXf> { static constexpr bool val = true; };
 
-template <> struct is_same_type<VectorXd, VectorXd> {
-  const static bool value = true;
-};
-template <> struct is_same_type<MatrixXd, MatrixXd> {
-  const static bool value = true;
-};
+#define VAL(type)                                                              \
+  template <type T> struct Val##type {};
+VAL(bool);
+VAL(int);
 
-template <bool T> struct ValBool {};
-template <int T> struct ValInt {};
+// template <bool T> struct ValBool {};
+// template <int T> struct ValInt {};
 
 template <typename Func> void loop(int start, int end, Func f) {
   for (int k = start; k < end; ++k) {

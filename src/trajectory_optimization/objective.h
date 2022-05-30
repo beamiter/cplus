@@ -57,7 +57,6 @@ public:
   Objective(C cost_in, C cost_terminal, int N, ...) {
     cost.resize(N - 1, cost_in);
     cost.push_back(cost_terminal);
-    LOG(INFO) << cost.size();
   }
 
   Objective(std::vector<C> cost_in, C cost_terminal, ...) {

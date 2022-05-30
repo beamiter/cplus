@@ -58,12 +58,10 @@ template <typename T> auto function_signature(T obj) {
                         : FunctionSignature::Inplace;
 }
 
-#define iLQRSolverTypeName                                                     \
-  int Nx, int Ne, int Nu, typename T, typename V, bool USE_STATIC
+#define iLQRSolverTypeName int Nx, int Nu, typename T, typename V, bool B
 #define iLQRSolverTemplate                                                     \
-  template <int Nx, int Ne, int Nu, typename T, typename V,                    \
-            bool USE_STATIC = true>
-#define iLQRSolverDeclare iLQRSolver<Nx, Ne, Nu, T, V, USE_STATIC>
+  template <int Nx, int Nu, typename T, typename V, bool B = true>
+#define iLQRSolverDeclare iLQRSolver<Nx, Nu, T, V, B>
 
 iLQRSolverTemplate class iLQRSolver : UnconstrainedSolverDeclare {
 public:
@@ -98,9 +96,8 @@ public:
 
   iLQRSolver(ProblemDeclare *prob, SolverOptions<T> opts_in,
              SolverStats<T> stats_in, DiffMethod dynamics_diffmethod,
-             ValBool<USE_STATIC>, ValInt<Ne>) {
+             Valbool<B>) {
     model = prob->model;
-    LOG(INFO) << model.front()->state_dim();
     obj = prob->obj;
     x0 = prob->x0;
     tf = get_final_time(*prob);
@@ -118,18 +115,18 @@ public:
     ne.push_back(ne.back());
 
     const bool samestatedim = std::all_of(
-        nx.begin(), nx.end(), [&nx](const auto x) { return x == nx[0]; });
+        nx.begin(), nx.end(), [&nx](const auto x) { return x == nx.front(); });
     const bool samecontroldim = std::all_of(
-        nu.begin(), nu.end(), [&nu](const auto u) { return u == nu[0]; });
-    if (USE_STATIC) {
+        nu.begin(), nu.end(), [&nu](const auto u) { return u == nu.front(); });
+    if constexpr (B) {
       assert(samecontroldim && samestatedim);
-      assert(Nx == nx[0]);
-      assert(Nu == nu[0]);
-      assert(Ne == ne[0]);
+      assert(Nx == nx.front());
+      assert(Nu == nu.front());
+      this->Ne = ne.front();
     } else {
-      assert(Nx == samestatedim ? nx[0] : Nx);
-      assert(Nu == samestatedim ? nu[0] : Nu);
-      assert(Ne == samecontroldim ? ne[0] : 0);
+      assert(Nx == (samestatedim ? nx.front() : Nx));
+      assert(Nu == (samecontroldim ? nu.front() : Nu));
+      this->Ne = samestatedim ? ne.front() : 0;
     }
 
     if (std::any_of(Z[0].state().begin(), Z[0].state().end(),
@@ -197,6 +194,7 @@ public:
   VectorX<T> x0;
   T tf;
   int N;
+  int Ne;
 
   SolverOptions<T> opts;
   SolverStats<T> stats;
@@ -229,6 +227,12 @@ public:
   std::vector<T> grad;
   std::vector<T> xdot;
 };
+template <int Nx, int Nu, typename V>
+using iLQRSolverD = iLQRSolver<Nx, Nu, double, V>;
+template <int Nx, int Nu>
+using iLQRSolverXd = iLQRSolver<Nx, Nu, double, VectorXd>;
+template <int Nx, int Nu, typename T>
+using iLQRSolverX = iLQRSolver<Nx, Nu, T, VectorX<T>>;
 
 iLQRSolverTemplate struct iLQRSolverHelper {};
 
@@ -238,7 +242,9 @@ iLQRSolverTemplate auto dims(iLQRSolverDeclare solver) {
 
 iLQRSolverTemplate auto state_dim(iLQRSolverDeclare) { return Nx; }
 
-iLQRSolverTemplate auto errstate_dim(iLQRSolverDeclare) { return Ne; }
+iLQRSolverTemplate auto errstate_dim(const iLQRSolverDeclare &ilqr) {
+  return ilqr.Ne;
+}
 
 iLQRSolverTemplate auto control_dim(iLQRSolverDeclare) { return Nu; }
 
@@ -278,7 +284,7 @@ iLQRSolverTemplate auto get_feedbackgains(iLQRSolverDeclare solver) {
   return solver.K;
 }
 
-inline auto usestaticdefault(const AbstractFunction *model) {
+inline bool usestaticdefault(const AbstractFunction *model) {
   return model->default_signature() == FunctionSignature::StaticReturn;
 }
 
