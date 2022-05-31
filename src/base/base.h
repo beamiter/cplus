@@ -8,9 +8,11 @@
 
 using namespace google;
 
+using Eigen::Matrix;
 using Eigen::MatrixX;
 using Eigen::MatrixXd;
 using Eigen::MatrixXf;
+using Eigen::Vector;
 using Eigen::VectorX;
 using Eigen::VectorXcd;
 using Eigen::VectorXd;
@@ -49,6 +51,10 @@ template <typename T> auto length(T) {
 template <typename T> auto length(std::vector<T> t) { return t.size(); }
 template <typename T> auto length(MatrixX<T> t) { return t.size(); }
 template <typename T> auto length(VectorX<T> t) { return t.size(); }
+template <typename T, int N> auto length(Vector<T, N> t) { return N; }
+template <typename T, int N, int M> auto length(Matrix<T, N, M> t) {
+  return N * M;
+}
 
 template <typename T> auto zero(T) { return -1; }
 template <> inline auto zero(double) { return 0.0; }

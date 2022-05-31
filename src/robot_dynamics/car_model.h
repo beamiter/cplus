@@ -55,16 +55,18 @@ public:
     auto R = rho * DiagonalMatrix<double, Nu>(1, 1);
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-    auto obj = LQRObjective<Nx, Nu, T>(Q, R, Qf, xf, uf, N);
+    obj_ = std::make_unique<Objective<QuadraticCost<Nx, Nu, T>>>(
+        LQRObjective<Nx, Nu, T>(Q, R, Qf, xf, uf, N));
     // Model initialize.
     car_ = std::make_unique<CarModel>(CarModel());
-    ProblemDeclare::init(car_.get(), &obj, x0, tf);
+    ProblemDeclare::init(car_.get(), obj_.get(), x0, tf);
 
     // initial_controls, initial_states, rollout
   }
 
   // Members.
   std::unique_ptr<CarModel> car_;
+  std::unique_ptr<Objective<QuadraticCost<Nx, Nu, T>>> obj_;
 };
 
 #endif

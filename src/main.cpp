@@ -18,45 +18,63 @@ using namespace std;
 
 using Eigen::MatrixX;
 using Eigen::MatrixXd;
+using Eigen::seq;
+using Eigen::Vector;
 using Eigen::VectorXd;
 
-enum class TE : uint8_t {
-  a = 0,
-  b,
-  c,
+template <template <typename, typename> class V, typename T, typename P>
+struct A {
+  static constexpr int flag = 6;
+  typedef int value_type;
+  typedef float value_type1;
+  typedef double value_type2;
+  using VV = V<T, P>;
+  VV a;
+};
+template <typename T> struct B {
+  typename T::value_type1 b1;
+  typename T::value_type2 b2;
+  int N = T::flag;
 };
 
-class A {
-public:
-  operator bool() { return true; }
-  virtual TE get() const { return TE::a; }
-};
-
-class B : public A {
-public:
-  TE get() const override { return TE::b; }
-};
-
-class C : public A {
-public:
-  C() = default;
-  C(int x0, int y0) {
-    x = x0;
-    y = y0;
-  }
-  void init(int x0, int y0) { *this = C(x0, y0); }
-  TE get() const override { return TE::c; }
-  int x = 0;
-  int y = 0;
-};
+Eigen::Ref<Vector<double, 5>> test(Vector<double, 8> &in) {
+  return in(seq(0, 4));
+}
 
 int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
   // Set logging level
   google::SetStderrLogging(google::GLOG_INFO);
 
-  std::shared_ptr<A> a_ptr(new B);
-  LOG(INFO) << (int)a_ptr->get();
+  Vector<double, 8> in;
+  in << 1,2,3,4,5,6,7,8;
+  auto rtn = test(in);
+  rtn(3) = 190;
+  Vector<double, 5> other = rtn;
+  other(3) = 210;
+  LOG(INFO) << "************ " << rtn;
+  LOG(INFO) << "************ " << in;
+  LOG(INFO) << "************ " << other;
+
+  A<std::pair, int, int> tmp;
+  A<std::pair, int, int>::value_type b = 8;
+  tmp.a.first = 10;
+  LOG(INFO) << tmp.a.first << ", " << b;
+
+  B<A<std::pair, int, int>> btmp;
+  LOG(INFO) << btmp.b1 << ", " << btmp.b2 << ", " << btmp.N;
+
+  Vector<double, 4> d4, d5;
+  d4 << 1, 2, 3, 4;
+  VectorXd xd = d4;
+  // xd << 5;
+  d5 = xd;
+  LOG(INFO) << xd;
+  LOG(INFO) << d5;
+  LOG(INFO) << std::is_base_of<VectorXd, Vector<double, 4>>::value;
+  LOG(INFO) << std::is_base_of<Vector<double, 4>, Vector<double, 4>>::value;
+  LOG(INFO) << std::is_base_of<Vector<double, 3>, Vector<double, 4>>::value;
+  LOG(INFO) << std::is_base_of<VectorXd, VectorXd>::value;
 
   google::ShutdownGoogleLogging();
 }

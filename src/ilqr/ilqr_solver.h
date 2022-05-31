@@ -2,6 +2,7 @@
 #define ILQR_SOLVER_H
 
 #include <Eigen/Dense>
+#include <type_traits>
 
 #include "base/base.h"
 #include "cost_expansion.h"
@@ -69,24 +70,21 @@ public:
   using m_data_type = MatrixX<T>;
   using v_data_type = VectorX<T>;
 
-  iLQRSolver(const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
-             const AbstractObjective *obj_in, VectorX<T> x0_in, T tf_in,
-             int N_in, SolverOptions<T> opts_in, SolverStats<T> stats_in,
-             SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_in,
-             SampledTrajectory<Nx, Nu, V, T, KnotPoint<Nx, Nu, V, T>> Z_dot_in,
-             std::vector<v_data_type> dx_in, std::vector<v_data_type> du_in,
-             std::vector<m_data_type> gains_in,
-             std::vector<Ref<m_data_type>> K_in,
-             std::vector<Ref<v_data_type>> d_in,
-             std::vector<DynamicsExpansion<T>> D_in,
-             std::vector<m_data_type> G_in, CostExpansion<T> Efull_in,
-             CostExpansion<T> Eerr_in,
-             std::vector<StateControlExpansion<T, true>> Q_in,
-             std::vector<StateControlExpansion<T, false>> S_in,
-             std::vector<T> DV_in, StateControlExpansion<T, true> Qtmp_in,
-             m_data_type Quu_reg_in, m_data_type Qux_reg_in,
-             DynamicRegularization<T> reg_in, std::vector<T> grad_in,
-             std::vector<T> xdot_in)
+  iLQRSolver(
+      const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
+      const AbstractObjective *obj_in, VectorX<T> x0_in, T tf_in, int N_in,
+      SolverOptions<T> opts_in, SolverStats<T> stats_in,
+      SampledTrajectoryS<Nx, Nu, T> Z_in,
+      SampledTrajectoryS<Nx, Nu, T> Z_dot_in, std::vector<v_data_type> dx_in,
+      std::vector<v_data_type> du_in, std::vector<m_data_type> gains_in,
+      std::vector<Ref<m_data_type>> K_in, std::vector<Ref<v_data_type>> d_in,
+      std::vector<DynamicsExpansion<T>> D_in, std::vector<m_data_type> G_in,
+      CostExpansion<T> Efull_in, CostExpansion<T> Eerr_in,
+      std::vector<StateControlExpansion<T, true>> Q_in,
+      std::vector<StateControlExpansion<T, false>> S_in, std::vector<T> DV_in,
+      StateControlExpansion<T, true> Qtmp_in, m_data_type Quu_reg_in,
+      m_data_type Qux_reg_in, DynamicRegularization<T> reg_in,
+      std::vector<T> grad_in, std::vector<T> xdot_in)
       : model(model_in), obj(obj_in), x0(x0_in), tf(tf_in), N(N_in),
         opts(opts_in), stats(stats_in), Z(Z_in), Z_dot(Z_dot_in), dx(dx_in),
         du(du_in), gains(gains_in), K_vec(K_in), d_vec(d_in), D_vec(D_in),
@@ -191,7 +189,7 @@ public:
   std::vector<std::shared_ptr<DiscreteDynamics>> model;
   const AbstractObjective *obj;
 
-  VectorX<T> x0;
+  Vector<T, Nx> x0;
   T tf;
   int N;
   int Ne;
@@ -199,8 +197,8 @@ public:
   SolverOptions<T> opts;
   SolverStats<T> stats;
 
-  SampledTrajectory<Nx, Nu, V, T, KnotPointDeclare> Z;
-  SampledTrajectory<Nx, Nu, V, T, KnotPointDeclare> Z_dot;
+  SampledTrajectoryS<Nx, Nu, T> Z;
+  SampledTrajectoryS<Nx, Nu, T> Z_dot;
   std::vector<v_data_type> dx;
   std::vector<v_data_type> du;
 

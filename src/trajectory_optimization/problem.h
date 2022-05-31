@@ -23,7 +23,7 @@ public:
   Problem(const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
           const AbstractObjective *obj_in, ConstraintList constraints_in,
           VectorX<T> x0_in, VectorX<T> xf_in,
-          SampledTrajectoryX<Nx, Nu, T> Z_in, int N_in)
+          SampledTrajectoryS<Nx, Nu, T> Z_in, int N_in)
       : model(model_in), obj(std::move(obj_in)),
         constraints(std::move(constraints_in)), x0(std::move(x0_in)),
         xf(std::move(xf_in)), Z(std::move(Z_in)), N(N_in) {
@@ -87,10 +87,11 @@ public:
   }
 
   // Members
+  // Object length.
   int N = 0;
-  VectorX<T> x0;
-  VectorX<T> xf;
-  SampledTrajectoryX<Nx, Nu, T> Z;
+  Vector<T, Nx> x0;
+  Vector<T, Nx> xf;
+  SampledTrajectoryS<Nx, Nu, T> Z;
   std::vector<std::shared_ptr<DiscreteDynamics>> model;
   const AbstractObjective *obj = nullptr;
   ConstraintList constraints;
