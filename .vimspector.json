@@ -1,0 +1,88 @@
+{
+  "adapters": {
+    "CodeLLDB - StopOnEntry": {
+      "extends": "CodeLLDB",
+      "name": "CoHostingLLDB"
+    }
+  },
+  "configurations": {
+    "CodeLLDB": {
+      "adapter": "CodeLLDB",
+      "breakpoints": {
+           "exception": {
+           "cpp_throw": "Y",
+           "cpp_catch": "N"
+         }
+      },
+      "variables": {
+        "BUILDME": {
+          "shell": "make -C ${workspaceRoot}/build"
+        }
+      },
+      "configuration": {
+        "request": "launch",
+        "program": "${workspaceRoot}/build/t"
+      }
+    },
+    "CodeLLDB-StopOnEntryFalse": {
+      "extends": "CodeLLDB",
+      "adapter": "CodeLLDB - StopOnEntry",
+      "breakpoints": {
+           "exception": {
+           "cpp_throw": "Y",
+           "cpp_catch": "N"
+         }
+      },
+      "configuration": {
+        "stopOnEntry": false
+      }
+    },
+    "CodeLLDB-StopOnEntryTrue": {
+      "extends": "CodeLLDB-StopOnEntryFalse",
+      "configuration": {
+        "stopOnEntry": true
+      }
+    },
+    "lldb-vscode": {
+      "adapter": "lldb-vscode",
+      "breakpoints": {
+           "exception": {
+           "cpp_throw": "Y",
+           "cpp_catch": "N"
+         }
+      },
+      "variables": {
+        "BUILDME": {
+          "shell": "make -C ${workspaceRoot}/build"
+        }
+      },
+      "configuration": {
+        "request": "launch",
+        "program": "${workspaceRoot}/build/t",
+        "stopAtEntry": true
+      }
+    },
+    "cpptools": {
+      "adapter": "vscode-cpptools",
+      "breakpoints": {
+           "exception": {
+           "cpp_throw": "Y",
+           "cpp_catch": "N"
+         }
+      },
+      "variables": {
+        "BUILDME": {
+          "shell": "make -C ${workspaceRoot}/build"
+        }
+      },
+      "configuration": {
+        "request": "launch",
+        "type": "cppdbg",
+        "program": "${workspaceRoot}/build/t",
+        "MIDebuggerPath": "/usr/bin/lldb",
+        "stopOnEntry": true,
+        "MIMode": "lldb"
+      }
+    }
+  }
+}
