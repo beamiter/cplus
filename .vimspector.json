@@ -1,10 +1,4 @@
 {
-  "adapters": {
-    "CodeLLDB - StopOnEntry": {
-      "extends": "CodeLLDB",
-      "name": "CoHostingLLDB"
-    }
-  },
   "configurations": {
     "CodeLLDB": {
       "adapter": "CodeLLDB",
@@ -21,7 +15,8 @@
       },
       "configuration": {
         "request": "launch",
-        "program": "${workspaceRoot}/build/t"
+        "program": "${workspaceRoot}/build/${target}",
+        "cwd": "${workspaceRoot}"
       }
     },
     "CodeLLDB-StopOnEntryFalse": {
@@ -37,51 +32,53 @@
         "stopOnEntry": false
       }
     },
-    "CodeLLDB-StopOnEntryTrue": {
-      "extends": "CodeLLDB-StopOnEntryFalse",
-      "configuration": {
-        "stopOnEntry": true
-      }
-    },
-    "lldb-vscode": {
-      "adapter": "lldb-vscode",
-      "breakpoints": {
-           "exception": {
-           "cpp_throw": "Y",
-           "cpp_catch": "N"
-         }
-      },
-      "variables": {
-        "BUILDME": {
-          "shell": "make -C ${workspaceRoot}/build"
-        }
-      },
-      "configuration": {
-        "request": "launch",
-        "program": "${workspaceRoot}/build/t",
-        "stopAtEntry": true
-      }
-    },
-    "cpptools": {
+    "Launch": {
       "adapter": "vscode-cpptools",
+      "filetypes": [ "cpp", "c", "objc", "rust" ],
       "breakpoints": {
-           "exception": {
-           "cpp_throw": "Y",
-           "cpp_catch": "N"
-         }
-      },
-      "variables": {
-        "BUILDME": {
-          "shell": "make -C ${workspaceRoot}/build"
+        "exception": {
+          "all": "Y",
+          "uncaught": "N"
         }
       },
       "configuration": {
         "request": "launch",
-        "type": "cppdbg",
-        "program": "${workspaceRoot}/build/t",
-        "MIDebuggerPath": "/usr/bin/lldb",
-        "stopOnEntry": true,
-        "MIMode": "lldb"
+        "program": "${workspaceRoot}/build/${target}",
+        "args": [ ],
+        "cwd": "${workspaceRoot}",
+        "environment": [ ],
+        "externalConsole": true,
+        "stopAtEntry": true,
+        "MIMode": "lldb",
+        "setupCommands": [
+          {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+          }
+        ]
+      }
+    },
+    "Attach": {
+      "adapter": "vscode-cpptools",
+      "filetypes": [ "cpp", "c", "objc", "rust" ],
+      "breakpoints": {
+        "exception": {
+          "all": "N",
+          "uncaught": "N"
+        }
+      },
+      "configuration": {
+        "request": "attach",
+        "program": "",
+        "MIMode": "lldb",
+        "setupCommands": [
+          {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+          }
+        ]
       }
     }
   }

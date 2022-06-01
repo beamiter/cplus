@@ -11,7 +11,6 @@
 #include "robot_dynamics/scalar_function.h"
 
 using Eigen::DiagonalMatrix;
-using Eigen::Dynamic;
 using Eigen::Matrix;
 using Eigen::MatrixX;
 using Eigen::Vector;
@@ -44,16 +43,16 @@ public:
   Vector<T, m> r;
   T c;
   bool terminal;
-  DiagonalCost(Vector<T, n> Q_in, Vector<T, m> R_in, Vector<T, n> q_in,
-               Vector<T, m> r_in, T c_in, bool terminal = false,
-               bool checks = true)
+  DiagonalCost(DiagonalMatrix<T, n> Q_in, DiagonalMatrix<T, m> R_in,
+               Vector<T, n> q_in, Vector<T, m> r_in, T c_in,
+               bool terminal = false, bool checks = true)
       : Q(Q_in), R(R_in), q(q_in), r(r_in), c(c_in) {
     if (checks) {
-      if ((Q_in < 0).any()) {
-        throw std::runtime_error("nees to be positive semi-definite");
-      } else if ((R_in <= 0).any() && !terminal) {
-        throw std::runtime_error("nees to be positive definite");
-      }
+//      if ((Q_in.diagonal() < 0).any()) {
+//        throw std::runtime_error("nees to be positive semi-definite");
+//      } else if ((R_in.diagonal() <= 0).any() && !terminal) {
+//        throw std::runtime_error("nees to be positive definite");
+//      }
     }
   }
   DiagonalCost(Vector<T, n> Q_in, Vector<T, m> R_in, MatrixXd H,

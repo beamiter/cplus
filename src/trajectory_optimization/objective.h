@@ -1,6 +1,7 @@
 #ifndef OBJECTIVE_H
 #define OBJECTIVE_H
 
+#include <Eigen/src/Core/DiagonalMatrix.h>
 #include <algorithm>
 #include <iostream>
 #include <tuple>
@@ -10,6 +11,7 @@
 #include "robot_dynamics/functionbase.h"
 #include "trajectory_optimization/cost_functions.h"
 
+using Eigen::DiagonalMatrix;
 using Eigen::MatrixX;
 
 class AbstractObjective {
@@ -106,8 +108,9 @@ public:
 
 template <int n, int m, typename T>
 Objective<QuadraticCost<n, m, T>>
-LQRObjective(MatrixX<T> Q, MatrixX<T> R, MatrixX<T> Qf, VectorX<T> xf,
-             VectorX<T> uf, int N, bool checks = true,
+LQRObjective(const MatrixX<T> &Q, const MatrixX<T> &R, const MatrixX<T> &Qf,
+             const VectorX<T> &xf, const VectorX<T> &uf, int N,
+             bool checks = true,
              DiffMethod diffmethod = DiffMethod::UserDefined) {
   assert(Q.rows() == xf.size());
   assert(Qf.rows() == xf.size());
@@ -115,16 +118,38 @@ LQRObjective(MatrixX<T> Q, MatrixX<T> R, MatrixX<T> Qf, VectorX<T> xf,
   assert(n == Q.rows());
   assert(m == R.rows());
   const auto &H = MatrixX<T>::Zero(m, n);
-  const auto &q = -Q * xf;
-  const auto &r = -R * uf;
+  const auto &q = -1.0 * Q * xf;
+  const auto &r = -1.0 * R * uf;
   double c = 0.5 * xf.adjoint() * Q * xf;
-  c += 0.5 * uf.adjoint() * uf;
-  const auto &qf = -Qf * xf;
+  c += 0.5 * uf.adjoint() * R * uf;
+  const auto &qf = -1.0 * Qf * xf;
   const double cf = 0.5 * xf.adjoint() * Qf * xf;
 
   const auto &l = QuadraticCost<n, m, T>(Q, R, H, q, r, c, checks, false);
   const auto &lN = QuadraticCost<n, m, T>(Qf, R, H, qf, r, cf, false, true);
   return Objective<QuadraticCost<n, m, T>>(l, lN, N);
+}
+template <int n, int m, typename T>
+Objective<DiagonalCost<n, m, T>>
+LQRObjective(const DiagonalMatrix<T, n> &Q, const DiagonalMatrix<T, m> &R,
+             const DiagonalMatrix<T, n> &Qf, const VectorX<T> &xf,
+             const VectorX<T> &uf, int N, bool checks = true,
+             DiffMethod diffmethod = DiffMethod::UserDefined) {
+  assert(Q.rows() == xf.size());
+  assert(Qf.rows() == xf.size());
+  assert(R.rows() == uf.size());
+  assert(n == Q.rows());
+  assert(m == R.rows());
+  const auto &q = -1.0 * Q * xf;
+  const auto &r = -1.0 * R * uf;
+  double c = 0.5 * xf.adjoint() * Q * xf;
+  c += 0.5 * uf.adjoint() * R * uf;
+  const auto &qf = -1.0 * Qf * xf;
+  const auto &cf = 0.5 * xf.adjoint() * Qf * xf;
+
+  const auto &l = DiagonalCost<n, m, T>(Q, R, q, r, c, checks, false);
+  const auto &lN = DiagonalCost<n, m, T>(Qf, R, qf, r, cf, false, true);
+  return Objective<DiagonalCost<n, m, T>>(l, lN, N);
 }
 
 #endif
