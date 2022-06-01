@@ -96,6 +96,7 @@ public:
              SolverStats<T> stats_in, DiffMethod dynamics_diffmethod,
              Valbool<B>) {
     model = prob->model;
+    // TODO: Many empty item.
     obj = prob->obj;
     x0 = prob->x0;
     tf = get_final_time(*prob);

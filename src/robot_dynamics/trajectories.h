@@ -160,6 +160,8 @@ struct SampledTrajectoryHelper {
     std::vector<double> dt_vec;
     dt_vec.reserve(times.size() + 1);
     std::adjacent_difference(times.begin(), times.end(), dt_vec.begin());
+    // Since the first value is not adjacent_difference.
+    dt_vec[0] = dt_vec[1];
     dt_vec.push_back(0.0);
     std::vector<KnotPointSd<Nx, Nu>> Z;
     for (int k = 0; k < Z.size(); ++k) {
@@ -182,6 +184,8 @@ struct SampledTrajectoryHelper {
     std::vector<double> dt_vec;
     dt_vec.reserve(times.size());
     std::adjacent_difference(times.begin(), times.end(), dt_vec.begin());
+    // Since the first value is not adjacent_difference.
+    dt_vec[0] = dt_vec[1];
     std::vector<KnotPointSd<Nx, Nu>> Z;
     for (int k = 0; k < N - 1; ++k) {
       VectorXd joined(X[k].size() + U[k].size());

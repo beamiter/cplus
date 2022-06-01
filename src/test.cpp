@@ -14,7 +14,7 @@ using namespace google;
 TEST(CostExpansionTest, StateControl) {
   auto opts = SolverOptionsD();
   auto stats = SolverStatsD();
-  std::vector<double> x0({0, 0, 0, 0, 0, 0});
+  std::vector<double> x0({0, 0, 0, 0, 4.0, 0});
   std::vector<double> xf({12, 0, 0, 0, 0, 0});
   std::vector<double> uf({0, 0});
   double tf = 5.0;

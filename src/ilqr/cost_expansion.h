@@ -3,6 +3,8 @@
 
 #include <Eigen/Dense>
 
+#include <Eigen/src/Core/DiagonalMatrix.h>
+#include <Eigen/src/Core/Matrix.h>
 #include <iostream>
 #include <vector>
 
@@ -31,6 +33,7 @@ public:
         hess(data(all, seq(0, last - 1))), grad(data(all, last)),
         xx(data(ix, ix)), x(grad(ix)), iu(n, m), ux(data(iu, ix)),
         uu(data(iu, iu)), u(grad(iu)) {
+    hess.setIdentity();
     assert(n > 0 && m > 0);
   }
 
@@ -57,6 +60,7 @@ public:
       : ix(0, n), data(MatrixX<T>::Zero(n, n + 1)),
         hess(data(all, seq(0, last - 1))), grad(data(all, last)),
         xx(data(ix, ix)), x(grad(ix)) {
+    hess.setIdentity();
     assert(n > 0);
   }
 
