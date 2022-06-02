@@ -36,7 +36,8 @@ template <typename C> class Objective : public AbstractObjective {
 
 public:
   // Constructors
-  Objective(std::vector<C> cost_in, DiffMethod diff_method_in) {
+  Objective(std::vector<C> cost_in,
+            DiffMethod diff_method_in = DiffMethod::UserDefined) {
     cost = cost_in;
     int N = cost.size();
     J.resize(N, 0);
@@ -54,17 +55,21 @@ public:
     diff_method = diff_method_in;
   }
 
-  Objective(C cost_in, int N, ...) { cost.resize(N, cost_in); }
-
-  Objective(C cost_in, C cost_terminal, int N, ...) {
-    cost.resize(N - 1, cost_in);
-    cost.push_back(cost_terminal);
+  static Objective<C> init(C cost_in, int N) {
+    return Objective<C>(std::vector<C>(N, cost_in));
   }
 
-  Objective(std::vector<C> cost_in, C cost_terminal, ...) {
-    int N = cost.size() + 1;
-    cost = cost_in;
-    cost.push_back(cost_terminal);
+  static Objective<C> init(C cost_in, C cost_terminal, int N) {
+    std::vector<C> cost_tmp;
+    cost_tmp.resize(N - 1, cost_in);
+    cost_tmp.push_back(cost_terminal);
+    return Objective<C>(cost_tmp);
+  }
+
+  static Objective<C> init(std::vector<C> cost_in, C cost_terminal) {
+    std::vector<C> cost_tmp(cost_in);
+    cost_tmp.push_back(cost_terminal);
+    return Objective<C>(cost_tmp);
   }
 
   auto begin() { return cost.begin(); }
@@ -127,7 +132,7 @@ LQRObjective(const MatrixX<T> &Q, const MatrixX<T> &R, const MatrixX<T> &Qf,
 
   const auto &l = QuadraticCost<n, m, T>(Q, R, H, q, r, c, checks, false);
   const auto &lN = QuadraticCost<n, m, T>(Qf, R, H, qf, r, cf, false, true);
-  return Objective<QuadraticCost<n, m, T>>(l, lN, N);
+  return Objective<QuadraticCost<n, m, T>>::init(l, lN, N);
 }
 template <int n, int m, typename T>
 Objective<DiagonalCost<n, m, T>>
@@ -149,7 +154,7 @@ LQRObjective(const DiagonalMatrix<T, n> &Q, const DiagonalMatrix<T, m> &R,
 
   const auto &l = DiagonalCost<n, m, T>(Q, R, q, r, c, checks, false);
   const auto &lN = DiagonalCost<n, m, T>(Qf, R, qf, r, cf, false, true);
-  return Objective<DiagonalCost<n, m, T>>(l, lN, N);
+  return Objective<DiagonalCost<n, m, T>>::init(l, lN, N);
 }
 
 #endif

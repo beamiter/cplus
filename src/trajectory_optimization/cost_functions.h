@@ -5,6 +5,7 @@
 #include <Eigen/src/Core/DiagonalMatrix.h>
 #include <Eigen/src/Core/Matrix.h>
 #include <Eigen/src/Core/util/Constants.h>
+#include <algorithm>
 #include <stdexcept>
 
 #include "base/base.h"
@@ -42,17 +43,22 @@ public:
   Vector<T, n> q;
   Vector<T, m> r;
   T c;
-  bool terminal;
+  bool terminal = false;
   DiagonalCost(DiagonalMatrix<T, n> Q_in, DiagonalMatrix<T, m> R_in,
                Vector<T, n> q_in, Vector<T, m> r_in, T c_in,
                bool terminal = false, bool checks = true)
       : Q(Q_in), R(R_in), q(q_in), r(r_in), c(c_in) {
     if (checks) {
-//      if ((Q_in.diagonal() < 0).any()) {
-//        throw std::runtime_error("nees to be positive semi-definite");
-//      } else if ((R_in.diagonal() <= 0).any() && !terminal) {
-//        throw std::runtime_error("nees to be positive definite");
-//      }
+      if (std::any_of(Q_in.diagonal().begin(), Q_in.diagonal().end(),
+                      [](const auto &p) { return p < 0; })) {
+        CHECK(0);
+        // throw std::runtime_error("nees to be positive semi-definite");
+      } else if (std::any_of(Q_in.diagonal().begin(), Q_in.diagonal().end(),
+                             [](const auto &p) { return p <= 0.0001; }) &&
+                 !terminal) {
+        // throw std::runtime_error("nees to be positive definite");
+        CHECK(0);
+      }
     }
   }
   DiagonalCost(Vector<T, n> Q_in, Vector<T, m> R_in, MatrixXd H,
@@ -76,7 +82,7 @@ public:
   Vector<T, n> q;
   Vector<T, m> r;
   T c;
-  bool terminal;
+  bool terminal = false;
   bool zeroH;
   // A copy of r.
   Vector<T, m> tmpu;
@@ -119,7 +125,7 @@ DiagonalCostTemplate DiagonalCostDeclare LQRCost(DiagonalMatrix<T, n> Q,
                                                  Vector<T, m> uf) {
   auto q = -Q * xf;
   auto r = -R * xf;
-  double c = xf.adjoint() * Q * xf + 0.5 * uf.adjoint * uf;
+  double c = 0.5 * xf.adjoint() * Q * xf + 0.5 * uf.adjoint * uf;
   return DiagonalCostDeclare(Q, R, q, r, c);
 }
 

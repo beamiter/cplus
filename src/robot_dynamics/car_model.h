@@ -51,8 +51,9 @@ public:
   void init(const VectorX<T> &x0, const VectorX<T> &xf, const VectorX<T> &uf,
             int N, double tf) {
     DiagonalMatrix<double, Nx> Q(10, 10, 50, 1, 1, 1);
-    double rho = 1.0;
-    auto R = rho * DiagonalMatrix<double, Nu>(1, 1);
+    auto R = DiagonalMatrix<double, Nu>(1, 1);
+    const double rho = 1.0;
+    R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
     obj_ = std::make_unique<Objective<DiagonalCost<Nx, Nu, T>>>(
