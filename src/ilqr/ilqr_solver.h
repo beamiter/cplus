@@ -10,8 +10,8 @@
 #include "robot_dynamics/functionbase.h"
 #include "robot_dynamics/knotpoint.h"
 #include "robot_dynamics/trajectories.h"
-#include "solver.h"
 #include "solver_opts.h"
+#include "solvers.h"
 #include "trajectory_optimization/problem.h"
 
 using Eigen::Map;
@@ -36,25 +36,14 @@ public:
   T d_rou;
 };
 
-// template <bool> auto dynamics_signature() { return
-// FunctionSignature::Inplace; } template <> inline auto
-// dynamics_signature<true>() {
-//   return FunctionSignature::StaticReturn;
-// }
-// template <bool> auto function_signature() { return
-// FunctionSignature::Inplace; } template <> inline auto
-// function_signature<true>() {
-//   return FunctionSignature::StaticReturn;
-// }
-
-template <typename O, typename T> bool usestatic(O) {
-  return std::is_base_of<typename O::veltype, MatrixX<T>>::value;
+template <typename O> bool usestatic(O) {
+  return !std::is_base_of<std::vector<double>, typename O::veltype>::value;
 }
-template <typename T> auto dynamics_signature(T obj) {
+template <typename T> FunctionSignature dynamics_signature(T obj) {
   return usestatic(obj) ? FunctionSignature::StaticReturn
                         : FunctionSignature::Inplace;
 }
-template <typename T> auto function_signature(T obj) {
+template <typename T> FunctionSignature function_signature(T obj) {
   return usestatic(obj) ? FunctionSignature::StaticReturn
                         : FunctionSignature::Inplace;
 }
@@ -130,11 +119,7 @@ public:
 
     if (std::any_of(Z[0].state().begin(), Z[0].state().end(),
                     [](const auto &s) { return std::isnan(s); })) {
-      // Change std vector to Eigen Vector;
-      VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
-      // rollout(dynamics_signature<UseStatic<
-      // typename SampledTrajectoryX<Nx, Nu, T>::value_type>::val>(),
-      // prob.model[0], Z, v);
+      // rollout(dynamics_signature(Z), prob->model[0].get(), Z, prob->x0);
     }
     VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
     Z[0].setstate(v);
@@ -185,7 +170,11 @@ public:
     reg = DynamicRegularization<T>(opts.bp_reg_initial, 0);
     grad = std::vector<T>(N - 1, 0);
     xdot = std::vector<T>(nx[0], 0);
+
+    reset(*this);
   }
+
+  SolverName solvername() override { return SolverName::iLQR; }
 
   std::vector<std::shared_ptr<DiscreteDynamics>> model;
   const AbstractObjective *obj;
@@ -275,16 +264,18 @@ iLQRSolverTemplate auto get_initial_state(iLQRSolverDeclare solver) {
   return solver.x0;
 }
 
-iLQRSolverTemplate auto solvername(iLQRSolverDeclare) {
-  return SolverName::iLQR;
-}
-
 iLQRSolverTemplate auto get_feedbackgains(iLQRSolverDeclare solver) {
   return solver.K;
 }
 
 inline bool usestaticdefault(const AbstractFunction *model) {
   return model->default_signature() == FunctionSignature::StaticReturn;
+}
+
+iLQRSolverTemplate void reset(iLQRSolverDeclare &solver) {
+  reset(solver.stats, solver.opts.iterations, solver.solvername());
+  solver.reg.rou = solver.opts.bp_reg_initial;
+  solver.reg.d_rou = 0.0;
 }
 
 #endif

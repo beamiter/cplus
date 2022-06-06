@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "ilqr/cost_expansion.h"
+#include "ilqr/ilqr_solve.h"
 #include "ilqr/ilqr_solver.h"
 #include "robot_dynamics/car_model.h"
 #include "robot_dynamics/knotpoint.h"
@@ -14,6 +15,7 @@ using namespace google;
 TEST(CostExpansionTest, StateControl) {
   auto opts = SolverOptionsD();
   auto stats = SolverStatsD();
+  stats.parent = SolverName::iLQR;
   std::vector<double> x0({0, 0, 0, 0, 4, 0});
   std::vector<double> xf({13, -1.0, 0, 0, 1.0, 0});
   std::vector<double> uf({0, 0});

@@ -1,14 +1,36 @@
 #ifndef SOLVER_OPTS_H
 #define SOLVER_OPTS_H
 
+#include <bits/types/clock_t.h>
+#include <bits/types/time_t.h>
+#include <ctime>
+#include <limits>
 #include <vector>
 
 #include "robot_dynamics/functionbase.h"
-#include "solver.h"
 
-template <typename T> struct AbstractSolverDeclareOptions {};
+enum class SolverName {
+  ALTRO,
+  AugmentedLagrangian,
+  iLQR,
+  ProjectedNewton,
+};
+enum class TerminationStatus {
+  UNSOLVED,
+  LINESEARCH_FAIL,
+  SOLVE_SUCCEEDED,
+  MAX_ITERATIONS,
+  MAX_ITERATIONS_OUTER,
+  MAXIMUM_COST,
+  STATE_LIMIT,
+  CONTROL_LIMIT,
+  NO_PROGRESS,
+  COST_INCREASE,
+};
 
-template <typename T = double> struct SolverOptions : AbstractSolverDeclareOptions<T> {
+template <typename T> struct AbstractSolverOptions {};
+
+template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
   T constraint_tolerance = 1e-6;
   T cost_tolerance = 1e-4;
   T cost_tolerance_intermediate = 1e-4;
@@ -73,7 +95,7 @@ template <typename T = double> struct SolverOptions : AbstractSolverDeclareOptio
 };
 using SolverOptionsD = SolverOptions<double>;
 
-template <typename T=double> struct SolverStats {
+template <typename T = double> struct SolverStats {
   int iterations = 0;
   int iterations_outer = 0;
   int iterations_pn = 0;
@@ -82,9 +104,55 @@ template <typename T=double> struct SolverStats {
   std::vector<int> iteration_outer;
   std::vector<bool> iteration_pn;
   std::vector<T> cost;
+  std::vector<T> dJ;
+  std::vector<T> c_max;
+  std::vector<T> gradient;
+  std::vector<T> penalty_max;
 
+  int dJ_zero_counter = 0;
+  bool ls_failed = false;
+
+  clock_t tstart = clock();
+  time_t tsolve = clock();
+  // TimerOutput to;
+  TerminationStatus status = TerminationStatus::UNSOLVED;
+  bool is_reset = false;
+
+  // Which solver is the top-level solver and responsible for resetting and
+  // trimming.
   SolverName parent;
 };
 using SolverStatsD = SolverStats<double>;
+
+template <typename T>
+void reset(SolverStats<T> &stats, int N, SolverName parent) {
+  if (parent == stats.parent) {
+    stats.is_reset = false;
+    reset(stats, N);
+  }
+}
+
+template <typename T> void reset(SolverStats<T> &stats, int N = 0) {
+  if (stats.is_reset) {
+    return;
+  }
+  stats.iterations = 0;
+  stats.iterations_outer = 0;
+  stats.iterations_pn = 0;
+  auto reset_func = [](auto &v, int N) { v.resize(N, 0); };
+  reset_func(stats.iteration, N);
+  reset_func(stats.iteration_outer, N);
+  reset_func(stats.iteration_pn, N);
+  reset_func(stats.cost, N);
+  reset_func(stats.dJ, N);
+  reset_func(stats.c_max, N);
+  reset_func(stats.gradient, N);
+  reset_func(stats.penalty_max, N);
+  stats.tstart = clock();
+  stats.tsolve = clock();
+  stats.dJ_zero_counter = 0;
+  stats.is_reset = true;
+  stats.status = TerminationStatus::UNSOLVED;
+}
 
 #endif

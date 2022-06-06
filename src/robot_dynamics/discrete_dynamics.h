@@ -16,47 +16,42 @@ public:
   }
 };
 
-// using DiscreteDynamicsRef = std::reference_wrapper<DiscreteDynamics>;
-// using DiscreteDynamicsConstRef = std::reference_wrapper<const
-// DiscreteDynamics>; using DiscreteDynamicsRefVec =
-// std::vector<std::reference_wrapper<DiscreteDynamics>>;
-// using DiscreteDynamicsConstRefVec =
-// std::vector<std::reference_wrapper<const DiscreteDynamics>>;
-
 AbstractKnotPointTemplate auto evaluate(const DiscreteDynamics *model,
                                         const AbstractKnotPointDeclare *z) {
   return discrete_dynamics(model, z);
 }
 template <typename P, AbstractKnotPointTypeName>
-auto evaluate(const DiscreteDynamics *model, P *xn,
+void evaluate(const DiscreteDynamics *model, P *xn,
               const AbstractKnotPointDeclare *z) {
-  return discrete_dynamics(model, xn, z);
+  discrete_dynamics(model, xn, z);
 }
 
-template <AbstractKnotPointTypeName>
-V discrete_dynamics(const DiscreteDynamics *model,
-                    const AbstractKnotPointDeclare *z) {
+// This method is called when using the 'StaticReturn'
+AbstractKnotPointTemplate V discrete_dynamics(
+    const DiscreteDynamics *model, const AbstractKnotPointDeclare *z) {
   return discrete_dynamics(model, z->state(), z->control(), z->time(),
                            z->timestep());
 }
-template <AbstractKnotPointTypeName>
-V discrete_dynamics(const DiscreteDynamics *model, V x, V u, double t,
-                    double dt) {
-  throw std::runtime_error("discrete dynamics not defined yet");
+template <typename Vx, typename Vu>
+auto discrete_dynamics(const DiscreteDynamics *model, Vx x, Vu u, double t,
+                       double dt) {
+  CHECK(0);
 }
 
-template <typename P, AbstractKnotPointTypeName>
-auto discrete_dynamics(const DiscreteDynamics *model, P *xn,
+// This method is called when using the 'InPlace'
+template <typename Vx, AbstractKnotPointTypeName>
+void discrete_dynamics(const DiscreteDynamics *model, Vx *xn,
                        const AbstractKnotPointDeclare *z) {
   discrete_dynamics(model, xn, z->state(), z->control(), z->time(),
                     z->timestep());
 }
 template <typename P, AbstractKnotPointTypeName>
-void discrete_dynamics(const DiscreteDynamics *model, P *xn, V x, V u, double t,
-                       double dt) {
+void discrete_dynamics(const DiscreteDynamics *model, P *xn, V x, V u, T t,
+                       T dt) {
   throw std::runtime_error("discrete dynamics not defined yet");
   assert(0);
 }
+
 template <typename P, AbstractKnotPointTypeName>
 void discrete_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
                        P *xn, const AbstractKnotPointDeclare *z) {
@@ -67,17 +62,21 @@ void discrete_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
   }
 }
 
-// Function not support partial specialization
-AbstractKnotPointTemplate auto
+// Function not support partial specialization yet
+AbstractKnotPointTemplate void
 propagate_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
-                   const AbstractKnotPointDeclare *z2,
+                   AbstractKnotPointDeclare *z2,
                    const AbstractKnotPointDeclare *z1) {
   if (sig == FunctionSignature::Inplace) {
-    discrete_dynamics(model, z2->state(), z1);
+    discrete_dynamics(model, &z2->state(), z1);
   } else {
     z2->setstate(discrete_dynamics(model, z1));
   }
 }
+
+// TODO: jacobian
+// TODO: dynamics_error
+// TODO: dynamics_error_jacobian
 
 template <typename V, typename T, typename P>
 void jacobian(const DiscreteDynamics *model, V J, V y, V x, V u, P p) {

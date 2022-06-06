@@ -97,6 +97,7 @@ SampledTrajectoryTemplate class SampledTrajectory
   using base_type = typename KP::base_type;
 
 public:
+  using veltype = value_type;
   SampledTrajectory() = default;
   SampledTrajectory(std::vector<KP> data_in, std::vector<base_type> times_in)
       : data(std::move(data_in)), times(std::move(times_in)) {}
@@ -404,11 +405,11 @@ SampledTrajectoryTemplate auto setinitialtime(SampledTrajectoryDeclare Z,
 
 SampledTrajectoryTemplate void rollout(FunctionSignature sig,
                                        const DiscreteDynamics *model,
-                                       SampledTrajectoryDeclare Z,
+                                       SampledTrajectoryDeclare &Z,
                                        typename KP::state_type x0) {
   Z[0].setstate(x0);
   for (auto k = 1; k < length(Z); ++k) {
-    propagate_dynamics(sig, model, Z[k], Z[k - 1]);
+    propagate_dynamics(sig, model, &Z[k], &Z[k - 1]);
   }
 }
 
