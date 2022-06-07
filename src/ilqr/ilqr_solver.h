@@ -36,14 +36,14 @@ public:
   T d_rou;
 };
 
-template <typename O> bool usestatic(O) {
-  return !std::is_base_of<std::vector<double>, typename O::veltype>::value;
+template <typename O> bool usestatic(const O &) {
+  return !std::is_base_of<std::vector<double>, typename O::vectype>::value;
 }
-template <typename T> FunctionSignature dynamics_signature(T obj) {
+template <typename T> FunctionSignature dynamics_signature(const T &obj) {
   return usestatic(obj) ? FunctionSignature::StaticReturn
                         : FunctionSignature::Inplace;
 }
-template <typename T> FunctionSignature function_signature(T obj) {
+template <typename T> FunctionSignature function_signature(const T &obj) {
   return usestatic(obj) ? FunctionSignature::StaticReturn
                         : FunctionSignature::Inplace;
 }

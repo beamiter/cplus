@@ -25,6 +25,7 @@ TEST(CostExpansionTest, StateControl) {
   auto prob = CarProblem<6, 2, double>(x0, xf, uf, N, dt);
   auto solver = iLQRSolverXd<6, 2>(&prob, opts, stats, DiffMethod::UserDefined,
                                    Valbool<true>());
+  solve(solver);
   LOG(INFO) << "come to here!";
 }
 

@@ -21,7 +21,7 @@ AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
 evaluate(const DiscreteDynamics *model, const AbstractKnotPointDeclare &z) {
   return discrete_dynamics(model, z);
 }
-// Evaluate for inplace.
+// Evaluate for in-place.
 AbstractKnotPointTemplate void
 evaluate(const DiscreteDynamics *model,
          typename AbstractKnotPointDeclare::state_type *xn,
@@ -39,9 +39,9 @@ discrete_dynamics(const DiscreteDynamics *model,
 
 AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
 discrete_dynamics(const DiscreteDynamics *model,
-                  const typename AbstractKnotPointDeclare::state_type *x,
-                  const typename AbstractKnotPointDeclare::control_type &u,
-                  double t, double dt) {
+                  const typename AbstractKnotPointDeclare::state_type &x,
+                  const typename AbstractKnotPointDeclare::control_type &u, T t,
+                  T dt) {
   CHECK(0);
 }
 

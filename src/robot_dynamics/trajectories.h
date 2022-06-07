@@ -72,12 +72,13 @@ inline auto gettimeinfo(std::vector<double> dt, double t0 = 0.,
 
 #define AbstractTrajectoryDeclare AbstractTrajectory<KP>
 template <typename KP> class AbstractTrajectory {
+public:
   using state_type = typename KP::state_type;
   using control_type = typename KP::control_type;
   using value_type = typename KP::value_type;
   using base_type = typename KP::base_type;
+  using vectype = value_type;
 
-public:
   virtual ~AbstractTrajectory() = default;
   virtual const state_type &getstate(double t) const = 0;
   virtual const control_type &getcontrol(double t) const = 0;
@@ -91,13 +92,13 @@ public:
 
 SampledTrajectoryTemplate class SampledTrajectory
     : public AbstractTrajectoryDeclare {
+public:
   using state_type = typename KP::state_type;
   using control_type = typename KP::control_type;
   using value_type = typename KP::value_type;
   using base_type = typename KP::base_type;
+  using vectype = value_type;
 
-public:
-  using veltype = value_type;
   SampledTrajectory() = default;
   SampledTrajectory(std::vector<KP> data_in, std::vector<base_type> times_in)
       : data(std::move(data_in)), times(std::move(times_in)) {}
@@ -410,6 +411,10 @@ SampledTrajectoryTemplate auto setinitialtime(SampledTrajectoryDeclare Z,
     settime(z, t + Dt);
   }
   return Z;
+}
+
+SampledTrajectoryTemplate int length(const SampledTrajectoryDeclare &z) {
+  return length(z.data);
 }
 
 SampledTrajectoryTemplate void rollout(FunctionSignature sig,
