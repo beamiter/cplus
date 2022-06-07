@@ -23,10 +23,21 @@ using Eigen::seq;
 using Eigen::Vector;
 using Eigen::VectorXd;
 
+enum class Sig {
+  none,
+  inplace,
+  st,
+};
+struct Type {};
+struct Eucl : Type {};
+struct Rote : Type {};
+
 class A {
 public:
   static constexpr int a = 12;
   void test() { LOG(INFO) << "HEHE;"; }
+  virtual Sig default_sig() { return Sig::none; }
+  virtual Type default_type() { return Type(); }
 };
 class B : public A {
 public:
@@ -34,15 +45,38 @@ public:
     LOG(INFO) << A::a;
     test();
   }
+  Sig default_sig() override { return Sig::inplace; }
 };
+class C : public A {
+public:
+  Sig default_sig() override { return Sig::st; }
+};
+
+template <typename T> void test(T) { LOG(INFO) << "default!"; }
+template <> void test<A>(A) { LOG(INFO) << "A!"; }
+template <> void test<B>(B) { LOG(INFO) << "B!"; }
+template <> void test<C>(C) { LOG(INFO) << "C!"; }
+
+template <Sig s> void test(Sig) { LOG(INFO) << "default!"; }
+template <> void test<Sig::none>(Sig) { LOG(INFO) << "none!"; }
+template <> void test<Sig::inplace>(Sig) { LOG(INFO) << "inplace!"; }
+template <> void test<Sig::st>(Sig) { LOG(INFO) << "st!"; }
 
 int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
   // Set logging level
   google::SetStderrLogging(google::GLOG_INFO);
 
+  A a;
   B b;
   b.func();
+  C c;
+  test(a);
+  test(b);
+  test(c);
+  test<Sig::none>(Sig::none);
+  test(Sig::inplace);
+  test(Sig::st);
 
   google::ShutdownGoogleLogging();
 }

@@ -39,7 +39,7 @@ discrete_dynamics(const DiscreteDynamics *model,
 
 AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
 discrete_dynamics(const DiscreteDynamics *model,
-                  const typename AbstractKnotPointDeclare::state_type &x,
+                  const typename AbstractKnotPointDeclare::state_type *x,
                   const typename AbstractKnotPointDeclare::control_type &u,
                   double t, double dt) {
   CHECK(0);
