@@ -79,10 +79,10 @@ template <typename KP> class AbstractTrajectory {
 
 public:
   virtual ~AbstractTrajectory() = default;
-  virtual state_type getstate(double t) = 0;
-  virtual control_type getcontrol(double t) = 0;
-  virtual base_type getinitialtime() = 0;
-  virtual base_type getfinaltime() = 0;
+  virtual const state_type &getstate(double t) const = 0;
+  virtual const control_type &getcontrol(double t) const = 0;
+  virtual base_type getinitialtime() const = 0;
+  virtual base_type getfinaltime() const = 0;
 };
 
 #define SampledTrajectoryTypeName typename KP
@@ -118,14 +118,20 @@ public:
   const KP &operator[](int i) const { return data[i]; }
   KP &operator[](int i) { return data[i]; }
 
-  state_type getstate(double t) override { return data[getk(t)].state(); }
-  control_type getcontrol(double t) override { return data[getk(t)].control(); }
-  base_type getinitialtime() override {
-    assert(!data.empty());
+  const state_type &getstate(double t) const override {
+    CHECK(!data.empty());
+    return data[getk(t)].state();
+  }
+  const control_type &getcontrol(double t) const override {
+    CHECK(!data.empty());
+    return data[getk(t)].control();
+  }
+  base_type getinitialtime() const override {
+    CHECK(!data.empty());
     return data.front().time();
   }
-  base_type getfinaltime() override {
-    assert(!data.empty());
+  base_type getfinaltime() const override {
+    CHECK(!data.empty());
     return data.back().time();
   }
 
@@ -133,8 +139,11 @@ public:
   std::vector<base_type> times;
 
 private:
-  int getk(double t) {
+  int getk(double t) const {
     auto iter = std::lower_bound(times.begin(), times.end(), t);
+    if (iter == times.end()) {
+      return times.size() - 1;
+    }
     return std::distance(iter, times.begin());
   }
 };

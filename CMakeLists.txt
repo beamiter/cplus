@@ -23,8 +23,8 @@ include_directories(src)
 #set(GLOG_LIBRARIES /usr/local/lib/libglog.so)
 set(GLOG_LIBRARIES glog::glog)
 
-add_executable(t src/test.cpp)
-target_link_libraries(t Eigen3::Eigen ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES} pthread)
-
 add_executable(m src/main.cpp)
 target_link_libraries(m Eigen3::Eigen ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES} pthread)
+
+add_executable(t src/test.cpp)
+target_link_libraries(t Eigen3::Eigen ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES} pthread)

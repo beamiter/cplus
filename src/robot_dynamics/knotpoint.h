@@ -8,7 +8,6 @@
 
 #include <base/base.h>
 
-using Eigen::Ref;
 using Eigen::seqN;
 using Eigen::Vector;
 using Eigen::VectorX;
@@ -21,7 +20,7 @@ using Eigen::VectorX;
 AbstractKnotPointTemplate class AbstractKnotPoint {
   static constexpr bool static_vector =
       std::is_base_of<Vector<T, Nx + Nu>, V>::value;
-  static_assert(static_vector, "not static vector!!!");
+  static_assert(static_vector, "Not static vector!!!");
 
 public:
   ~AbstractKnotPoint() = default;
@@ -33,84 +32,74 @@ public:
       value_type;
   typedef T base_type;
 
-  /*Pure virtual function*/
-  virtual int state_dim() = 0;
-  virtual int control_dim() = 0;
-  virtual value_type &getdata() = 0;
-  virtual void settime(double t) = 0;
-  virtual void settimestep(double dt) = 0;
+  // Pure virtual functions.
+  // virtual value_type &getdata() = 0;
+  // virtual value_type &getstate() = 0;
+  // virtual value_type &getcontrol() = 0;
+  virtual void settime(T t) = 0;
+  virtual void settimestep(T dt) = 0;
 
-  int errstate_dim() { return state_dim(); }
+  virtual std::tuple<T, T> getparams() const = 0;
 
-  /*Virtual function*/
-  virtual std::tuple<T, T> getparams() = 0;
+  virtual state_type *state() = 0;
+  virtual const state_type &state() const = 0;
+  virtual void setstate(const state_type &x) = 0;
 
-  /*Function*/
+  // TODO: check is_terminal()
+  virtual control_type *control() = 0;
+  virtual const control_type &control() const = 0;
+  virtual void setcontrol(const control_type &u) = 0;
+
+  virtual value_type *data() = 0;
+  virtual const value_type &data() const = 0;
+  virtual void setdata(const value_type &v) = 0;
+
+  // Operators.
+  const auto &operator[](int i) const { return data()[i]; }
+  auto &operator[](int i) { return data()[i]; }
+  auto &operator*(T c) {
+    data() *= c;
+    return *this;
+  }
+
+  // Functions.
   auto getinput(FunctionInputs input) {
     if (input == FunctionInputs::StateOnly) {
       return state();
     } else if (input == FunctionInputs::ControlOnly) {
       return control();
     } else {
-      return getdata();
+      return data();
     }
   }
-
   auto getargs(FunctionInputs) {
     return std::make_tuple(state(), control(), getparams());
   }
 
-  auto size() const { return std::make_tuple(state_dim() + control_dim()); }
-
-  const auto &operator[](int i) const { return getdata()[i]; }
-  auto &operator[](int i) { return getdata()[i]; }
-
-  const auto &operator*(T c) const {
-    getdata() *= c;
-    return *this;
-  }
-  auto &operator*(T c) {
-    getdata() *= c;
-    return *this;
-  }
-
+  int state_dim() const { return Nx; };
+  int control_dim() const { return Nu; };
+  int errstate_dim() { return state_dim(); }
+  int size() const { return state_dim() + control_dim(); }
   std::tuple<int, int> dims() {
     return std::make_tuple(state_dim(), control_dim());
   }
-  Ref<state_type> getstate(value_type &v) { return v(seqN(0, state_dim())); }
-  Ref<state_type> state() { return getstate(getdata()); }
-  Ref<control_type> getcontrol(value_type &v) {
-    // if (is_terminal()) {
-    //   return VectorX<T>::Zero(std::get<1>(dims()));
-    // } else {
-    //   int n = 0, m = 0;
-    //   std::tie(n, m) = dims();
-    //   return v(seqN(n, m));
-    // }
-    // TODO: Check is_terminal() when using this function!
-    int n = 0, m = 0;
-    std::tie(n, m) = dims();
-    return v(seqN(n, m));
-  }
-  Ref<control_type> control() { return getcontrol(getdata()); }
 
-  void setdata(const VectorX<T> &v) { getdata() = v; }
-  void setstate(const VectorX<T> &x) { state() = x; }
-  void setcontrol(const VectorX<T> &u) { control() = u; }
-
-  base_type time() { return std::get<0>(getparams()); }
-  base_type timestep() { return std::get<1>(getparams()); }
-  bool is_terminal() { return timestep() == 0.0; }
+  base_type time() const { return std::get<0>(getparams()); }
+  base_type timestep() const { return std::get<1>(getparams()); }
+  bool is_terminal() const { return timestep() == 0.0; }
 };
-
 template <int Nx, int Nu, typename T>
 using AbstractKnotPointX = AbstractKnotPoint<Nx, Nu, VectorX<T>, T>;
 template <int Nx, int Nu>
 using AbstractKnotPointXd = AbstractKnotPoint<Nx, Nu, VectorXd, double>;
+template <int Nx, int Nu, typename T>
+using AbstractKnotPointS = AbstractKnotPoint<Nx, Nu, Vector<T, Nx + Nu>, T>;
+template <int Nx, int Nu>
+using AbstractKnotPointSd =
+    AbstractKnotPoint<Nx, Nu, Vector<double, Nx + Nu>, double>;
 
 #define KnotPointTemplate template <int Nx, int Nu, typename V, typename T>
 #define KnotPointDeclare KnotPoint<Nx, Nu, V, T>
-
 KnotPointTemplate class StaticKnotPoint : public AbstractKnotPointDeclare {};
 KnotPointTemplate class KnotPoint : public AbstractKnotPointDeclare {
   static constexpr bool static_vector =
@@ -134,11 +123,15 @@ template <int Nx, int Nu, typename T>
 using KnotPointS = KnotPoint<Nx, Nu, Vector<T, Nx + Nu>, T>;
 template <int Nx, int Nu>
 using KnotPointSd = KnotPoint<Nx, Nu, Vector<double, Nx + Nu>, double>;
+template <int Nx, int Nu, typename T>
+using KnotPointX = KnotPoint<Nx, Nu, VectorX<T>, T>;
+template <int Nx, int Nu>
+using KnotPointXd = KnotPoint<Nx, Nu, VectorX<double>, double>;
 
 /*Specialization*/
 template <int Nx, int Nu, typename T>
-struct KnotPoint<Nx, Nu, Vector<T, Nx + Nu>, T>
-    : AbstractKnotPoint<Nx, Nu, Vector<T, Nx + Nu>, T> {
+class KnotPoint<Nx, Nu, Vector<T, Nx + Nu>, T>
+    : public AbstractKnotPoint<Nx, Nu, Vector<T, Nx + Nu>, T> {
   static constexpr bool static_vector = true;
   static_assert(static_vector, "not static vector!!!");
 
@@ -156,47 +149,73 @@ public:
   static constexpr int nx = Nx;
   static constexpr int nu = Nu;
 
-  int state_dim() final { return n_; }
-  int control_dim() final { return m_; }
-  value_type &getdata() final { return z_; }
-  void settime(double t) final { t_ = t; }
-  void settimestep(double dt) final { dt_ = dt; }
-  std::tuple<double, double> getparams() final {
+  // Overrides.
+  state_type *state() override { return &zx_; }
+  const state_type &state() const override { return zx_; }
+  void setstate(const state_type &zx) override {
+    zx_ = zx;
+    z_ << zx_, zu_;
+  }
+
+  // TODO: check is_terminal()
+  control_type *control() override { return &zu_; }
+  const control_type &control() const { return zu_; }
+  void setcontrol(const control_type &zu) override {
+    zu_ = zu;
+    z_ << zx_, zu_;
+  }
+
+  value_type *data() override { return &z_; }
+  const value_type &data() const { return z_; }
+  void setdata(const value_type &z) override {
+    z_ = z;
+    zx_ = z_(seqN(0, Nx));
+    zu_ = z_(seqN(Nx, Nu));
+  }
+
+  void settime(T t) override { t_ = t; }
+  void settimestep(T dt) override { dt_ = dt; }
+  std::tuple<T, T> getparams() const override {
     return std::make_tuple(t_, dt_);
   }
 
   // Constructor
   KnotPoint() = default;
   KnotPoint(value_type z, T t, T dt) {
-    assert(Nx + Nu == length(z));
+    CHECK(Nx + Nu == length(z));
     z_ = z;
+    zx_ = z_(seqN(0, Nx));
+    zu_ = z_(seqN(Nx, Nu));
     t_ = t;
     dt_ = dt;
   }
   KnotPoint(state_type x, control_type u, T t, T dt) {
-    assert(Nx == length(x));
-    assert(Nu == length(u));
-    // z_.resize(x.size() + u.size());
-    z_ << x, u;
+    CHECK(Nx == length(x));
+    CHECK(Nu == length(u));
+    zx_ = x;
+    zu_ = u;
+    z_ << zx_, zu_;
     t_ = t;
     dt_ = dt;
   }
   KnotPoint(const KnotPointS<Nx, Nu, T> &in) {
     CHECK(length(z_) == length(in.z_));
+    CHECK(Nx == length(in.zx_));
+    CHECK(Nu == length(in.zu_));
     z_ = in.z_;
+    zx_ = in.zx_;
+    zu_ = in.zu_;
     t_ = in.t_;
     dt_ = in.dt_;
-    n_ = in.n_;
-    m_ = in.m_;
   }
 
 private:
   // Members
   value_type z_;
+  state_type zx_;
+  control_type zu_;
   T t_;
   T dt_;
-  int n_ = Nx;
-  int m_ = Nu;
 };
 
 #endif
