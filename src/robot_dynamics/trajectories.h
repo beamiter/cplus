@@ -418,7 +418,7 @@ SampledTrajectoryTemplate void rollout(FunctionSignature sig,
                                        typename KP::state_type x0) {
   Z[0].setstate(x0);
   for (auto k = 1; k < length(Z); ++k) {
-    propagate_dynamics(sig, model, &Z[k], &Z[k - 1]);
+    propagate_dynamics(sig, model, &Z[k], Z[k - 1]);
   }
 }
 

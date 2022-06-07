@@ -211,6 +211,7 @@ public:
 
 private:
   // Members
+  // Need to sync all data after updating.
   value_type z_;
   state_type zx_;
   control_type zu_;

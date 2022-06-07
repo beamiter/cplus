@@ -119,7 +119,7 @@ public:
 
     if (std::any_of(Z[0].state()->begin(), Z[0].state()->end(),
                     [](const auto &s) { return std::isnan(s); })) {
-      //rollout(dynamics_signature(Z), prob->model[0].get(), Z, prob->x0);
+      rollout(dynamics_signature(Z), prob->model[0].get(), Z, prob->x0);
     }
     VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
     Z[0].setstate(v);

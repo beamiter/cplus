@@ -16,45 +16,56 @@ public:
   }
 };
 
-AbstractKnotPointTemplate auto evaluate(const DiscreteDynamics *model,
-                                        const AbstractKnotPointDeclare *z) {
+// Evaluate for static return.
+AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
+evaluate(const DiscreteDynamics *model, const AbstractKnotPointDeclare &z) {
   return discrete_dynamics(model, z);
 }
-template <typename P, AbstractKnotPointTypeName>
-void evaluate(const DiscreteDynamics *model, P *xn,
-              const AbstractKnotPointDeclare *z) {
+// Evaluate for inplace.
+AbstractKnotPointTemplate void
+evaluate(const DiscreteDynamics *model,
+         typename AbstractKnotPointDeclare::state_type *xn,
+         const AbstractKnotPointDeclare &z) {
   discrete_dynamics(model, xn, z);
 }
 
 // This method is called when using the 'StaticReturn'
-AbstractKnotPointTemplate V discrete_dynamics(
-    const DiscreteDynamics *model, const AbstractKnotPointDeclare *z) {
-  return discrete_dynamics(model, z->state(), z->control(), z->time(),
-                           z->timestep());
+AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
+discrete_dynamics(const DiscreteDynamics *model,
+                  const AbstractKnotPointDeclare &z) {
+  return discrete_dynamics<Nx, Nu, V, T>(model, z.state(), z.control(),
+                                         z.time(), z.timestep());
 }
-template <typename Vx, typename Vu>
-auto discrete_dynamics(const DiscreteDynamics *model, Vx x, Vu u, double t,
-                       double dt) {
+
+AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
+discrete_dynamics(const DiscreteDynamics *model,
+                  const typename AbstractKnotPointDeclare::state_type &x,
+                  const typename AbstractKnotPointDeclare::control_type &u,
+                  double t, double dt) {
   CHECK(0);
 }
 
 // This method is called when using the 'InPlace'
-template <typename Vx, AbstractKnotPointTypeName>
-void discrete_dynamics(const DiscreteDynamics *model, Vx *xn,
-                       const AbstractKnotPointDeclare *z) {
-  discrete_dynamics(model, xn, z->state(), z->control(), z->time(),
-                    z->timestep());
+AbstractKnotPointTemplate void
+discrete_dynamics(const DiscreteDynamics *model,
+                  typename AbstractKnotPointDeclare::state_type *xn,
+                  const AbstractKnotPointDeclare &z) {
+  discrete_dynamics<Nx, Nu, V, T>(model, xn, z.state(), z.control(), z.time(),
+                                  z.timestep());
 }
-template <typename P, AbstractKnotPointTypeName>
-void discrete_dynamics(const DiscreteDynamics *model, P *xn, V x, V u, T t,
-                       T dt) {
-  throw std::runtime_error("discrete dynamics not defined yet");
+AbstractKnotPointTemplate void
+discrete_dynamics(const DiscreteDynamics *model,
+                  typename AbstractKnotPointDeclare::state_type *xn,
+                  const typename AbstractKnotPointDeclare::state_type &x,
+                  const typename AbstractKnotPointDeclare::control_type &u, T t,
+                  T dt) {
   assert(0);
 }
 
-template <typename P, AbstractKnotPointTypeName>
-void discrete_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
-                       P *xn, const AbstractKnotPointDeclare *z) {
+AbstractKnotPointTemplate void
+discrete_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
+                  typename AbstractKnotPointDeclare::state_type *xn,
+                  const AbstractKnotPointDeclare &z) {
   if (sig == FunctionSignature::Inplace) {
     discrete_dynamics(model, xn, z);
   } else {
@@ -66,9 +77,9 @@ void discrete_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
 AbstractKnotPointTemplate void
 propagate_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
                    AbstractKnotPointDeclare *z2,
-                   const AbstractKnotPointDeclare *z1) {
+                   const AbstractKnotPointDeclare &z1) {
   if (sig == FunctionSignature::Inplace) {
-    discrete_dynamics(model, &z2->state(), z1);
+    discrete_dynamics(model, z2->state(), z1);
   } else {
     z2->setstate(discrete_dynamics(model, z1));
   }
