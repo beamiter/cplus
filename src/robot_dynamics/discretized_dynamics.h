@@ -29,4 +29,20 @@ public:
   QuadratureRule integrator;
 };
 
+AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
+discrete_dynamics(const DiscretizedDynamics *model,
+                  const typename AbstractKnotPointDeclare::state_type &x,
+                  const typename AbstractKnotPointDeclare::control_type &u, T t,
+                  T dt) {
+  CHECK(0);
+}
+AbstractKnotPointTemplate void
+discrete_dynamics(const DiscretizedDynamics *model,
+                  typename AbstractKnotPointDeclare::state_type *xn,
+                  const typename AbstractKnotPointDeclare::state_type &x,
+                  const typename AbstractKnotPointDeclare::control_type &u, T t,
+                  T dt) {
+  assert(0);
+}
+
 #endif

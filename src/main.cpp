@@ -17,13 +17,7 @@ using namespace google;
 
 using namespace std;
 
-using Eigen::MatrixX;
-using Eigen::MatrixXd;
-using Eigen::seq;
-using Eigen::Vector;
-using Eigen::VectorXd;
-
-enum class Sig {
+enum Sig {
   none,
   inplace,
   st,
@@ -67,16 +61,16 @@ int main(int argc, char **argv) {
   // Set logging level
   google::SetStderrLogging(google::GLOG_INFO);
 
-  A a;
+  // A Dynamic_cast has runtime overhead because it checks object types at run
+  // time using “Run-Time Type Information“.
+  // If there is a surety we will never cast to wrong object then always avoid
+  // dynamic_cast and use static_cast.
   B b;
-  b.func();
-  C c;
-  test(a);
-  test(b);
-  test(c);
-  test<Sig::none>(Sig::none);
-  test(Sig::inplace);
-  test(Sig::st);
+  LOG(INFO) << b.default_sig();
+  A *a = static_cast<A *>(&b);
+  LOG(INFO) << a->default_sig();
+  B *bb = static_cast<B *>(a);
+  LOG(INFO) << bb->default_sig();
 
   google::ShutdownGoogleLogging();
 }
