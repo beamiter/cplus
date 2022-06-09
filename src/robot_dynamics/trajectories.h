@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "discrete_dynamics.h"
+#include "discretized_dynamics.h"
 #include "knotpoint.h"
 
 using Eigen::all;
@@ -419,6 +419,15 @@ SampledTrajectoryTemplate int length(const SampledTrajectoryDeclare &z) {
 
 SampledTrajectoryTemplate void rollout(FunctionSignature sig,
                                        const DiscreteDynamics *model,
+                                       SampledTrajectoryDeclare &Z,
+                                       typename KP::state_type x0) {
+  Z[0].setstate(x0);
+  for (auto k = 1; k < length(Z); ++k) {
+    propagate_dynamics(sig, model, &Z[k], Z[k - 1]);
+  }
+}
+SampledTrajectoryTemplate void rollout(FunctionSignature sig,
+                                       const DiscretizedDynamics *model,
                                        SampledTrajectoryDeclare &Z,
                                        typename KP::state_type x0) {
   Z[0].setstate(x0);

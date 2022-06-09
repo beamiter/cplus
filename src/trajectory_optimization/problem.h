@@ -5,7 +5,7 @@
 #include <glog/logging.h>
 #include <memory>
 
-#include "robot_dynamics/discrete_dynamics.h"
+#include "robot_dynamics/discretized_dynamics.h"
 #include "robot_dynamics/integration.h"
 #include "robot_dynamics/trajectories.h"
 

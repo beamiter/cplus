@@ -29,21 +29,27 @@ struct Rote : Type {};
 class A {
 public:
   static constexpr int a = 12;
-  void test() { LOG(INFO) << "HEHE;"; }
-  virtual Sig default_sig() { return Sig::none; }
+  void test() const { LOG(INFO) << "HEHE;"; }
+  virtual Sig default_sig() const { return Sig::none; }
   virtual Type default_type() { return Type(); }
 };
 class B : public A {
 public:
-  void func() {
+  static constexpr int b = 17;
+  void func() const {
     LOG(INFO) << A::a;
     test();
   }
-  Sig default_sig() override { return Sig::inplace; }
+  void fun() const {
+    LOG(INFO) << "HAVE FUN";
+  }
+  Sig default_sig() const override { return Sig::inplace; }
+  int data = 0;
+  static const int goal = 15;
 };
 class C : public A {
 public:
-  Sig default_sig() override { return Sig::st; }
+  Sig default_sig() const override { return Sig::st; }
 };
 
 template <typename T> void test(T) { LOG(INFO) << "default!"; }
@@ -56,6 +62,9 @@ template <> void test<Sig::none>(Sig) { LOG(INFO) << "none!"; }
 template <> void test<Sig::inplace>(Sig) { LOG(INFO) << "inplace!"; }
 template <> void test<Sig::st>(Sig) { LOG(INFO) << "st!"; }
 
+template<int T>
+struct Val {};
+
 int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
   // Set logging level
@@ -66,11 +75,14 @@ int main(int argc, char **argv) {
   // If there is a surety we will never cast to wrong object then always avoid
   // dynamic_cast and use static_cast.
   B b;
+  b.data = 13;
   LOG(INFO) << b.default_sig();
-  A *a = static_cast<A *>(&b);
+  const A *a = static_cast<const A *>(&b);
   LOG(INFO) << a->default_sig();
-  B *bb = static_cast<B *>(a);
-  LOG(INFO) << bb->default_sig();
+  const B *bb = static_cast<const B *>(a);
+  LOG(INFO) << bb->default_sig() << ", " << bb->data << ", " << bb->goal;
+  Val<B::goal>();
+  bb->fun();
 
   google::ShutdownGoogleLogging();
 }

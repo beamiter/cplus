@@ -29,14 +29,13 @@ evaluate(const DiscreteDynamics *model,
   discrete_dynamics(model, xn, z);
 }
 
-// This method is called when using the 'StaticReturn'
+// This method is called when using the 'StaticReturn'.
 AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
 discrete_dynamics(const DiscreteDynamics *model,
                   const AbstractKnotPointDeclare &z) {
   return discrete_dynamics<Nx, Nu, V, T>(model, z.state(), z.control(),
                                          z.time(), z.timestep());
 }
-
 AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
 discrete_dynamics(const DiscreteDynamics *model,
                   const typename AbstractKnotPointDeclare::state_type &x,
@@ -45,7 +44,7 @@ discrete_dynamics(const DiscreteDynamics *model,
   CHECK(0);
 }
 
-// This method is called when using the 'InPlace'
+// This method is called when using the 'InPlace'.
 AbstractKnotPointTemplate void
 discrete_dynamics(const DiscreteDynamics *model,
                   typename AbstractKnotPointDeclare::state_type *xn,
@@ -59,9 +58,10 @@ discrete_dynamics(const DiscreteDynamics *model,
                   const typename AbstractKnotPointDeclare::state_type &x,
                   const typename AbstractKnotPointDeclare::control_type &u, T t,
                   T dt) {
-  assert(0);
+  CHECK(0);
 }
 
+// Function not support partial specialization yet.
 AbstractKnotPointTemplate void
 discrete_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
                   typename AbstractKnotPointDeclare::state_type *xn,
@@ -73,7 +73,7 @@ discrete_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
   }
 }
 
-// Function not support partial specialization yet
+// Propagate dynamics.
 AbstractKnotPointTemplate void
 propagate_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
                    AbstractKnotPointDeclare *z2,
@@ -95,9 +95,7 @@ void jacobian(const DiscreteDynamics *model, V J, V y, V x, V u, P p) {
 }
 template <typename V, typename T, typename P>
 void jacobian(const DiscreteDynamics *model, V J, V y, V x, V u, T t, T dt) {
-  throw std::runtime_error(
-      "user-defined discrete dynamics jacobian not defined.");
-  assert(0);
+  CHECK(0);
 }
 
 AbstractKnotPointTemplate auto
@@ -125,8 +123,7 @@ AbstractKnotPointTemplate auto
 dynamics_error_jacobian(const DiscreteDynamics *model, V J2, V J1, V y2, V y1,
                         const AbstractKnotPointDeclare *z2,
                         const AbstractKnotPointDeclare *z1) {
-  throw std::runtime_error("user-defined discrete error jacobian not defined.");
-  assert(0);
+  CHECK(0);
 }
 
 template <typename Ptr> inline auto dims(const std::vector<Ptr> &models) {
@@ -145,7 +142,7 @@ template <typename Ptr> inline auto dims(const std::vector<Ptr> &models) {
     const auto ny = models.at(i)->output_dim();
     const auto nx_next = nx[i + 1];
     if (nx_next != ny) {
-      throw std::runtime_error("Model mismatch at time step");
+      CHECK(0);
     }
   }
   return std::make_tuple(nx, nu);
