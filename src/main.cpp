@@ -6,14 +6,10 @@
 #include <memory>
 #include <type_traits>
 #include <vector>
+#include <atomic>
 
 #include <glog/logging.h>
 using namespace google;
-
-// #include "robot_dynamics/car_model.h"
-// #include "robot_dynamics/discrete_dynamics.h"
-// #include "robot_dynamics/dynamics.h"
-// #include "robot_dynamics/functionbase.h"
 
 using namespace std;
 
@@ -83,6 +79,14 @@ int main(int argc, char **argv) {
   LOG(INFO) << bb->default_sig() << ", " << bb->data << ", " << bb->goal;
   Val<B::goal>();
   bb->fun();
+
+  std::atomic_flag lock = ATOMIC_FLAG_INIT;
+  LOG(INFO) << lock.test_and_set();
+  LOG(INFO) << lock.test_and_set();
+  lock.clear();
+  LOG(INFO) << lock.test_and_set();
+  LOG(INFO) << lock.test_and_set();
+  LOG(INFO) << lock.test_and_set();
 
   google::ShutdownGoogleLogging();
 }

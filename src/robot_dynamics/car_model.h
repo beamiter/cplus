@@ -11,7 +11,6 @@
 #include "trajectory_optimization/problem.h"
 
 using Eigen::DiagonalMatrix;
-using Eigen::Dynamic;
 using Eigen::Map;
 
 enum class RefPos {

@@ -2,10 +2,7 @@
 #define DISCRETIZED_DYNAMICS_H
 
 #include "discrete_dynamics.h"
-
-struct QuadratureRule {};
-struct Explicit : QuadratureRule {};
-struct Implicit : QuadratureRule {};
+#include "integration.h"
 
 class DiscretizedDynamics : public DiscreteDynamics {
 public:
