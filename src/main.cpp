@@ -88,5 +88,10 @@ int main(int argc, char **argv) {
   LOG(INFO) << lock.test_and_set();
   LOG(INFO) << lock.test_and_set();
 
+  Eigen::MatrixXd m = Eigen::MatrixXd::Random(4, 5);
+  LOG(INFO) << m;
+  m.setIdentity();
+  LOG(INFO) << m;
+
   google::ShutdownGoogleLogging();
 }

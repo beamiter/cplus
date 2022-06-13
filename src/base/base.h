@@ -44,15 +44,15 @@ enum class DiffMethod {
   UserDefined,
 };
 
-template <typename T> int length(const T&) {
+template <typename T> int length(const T &) {
   CHECK(0);
   return -1;
 }
-template <typename T> int length(const std::vector<T>& t) { return t.size(); }
-template <typename T> int length(const MatrixX<T>& t) { return t.size(); }
-template <typename T> int length(const VectorX<T>& t) { return t.size(); }
-template <typename T, int N> auto length(const Vector<T, N>& t) { return N; }
-template <typename T, int N, int M> auto length(const Matrix<T, N, M>& t) {
+template <typename T> int length(const std::vector<T> &t) { return t.size(); }
+template <typename T> int length(const MatrixX<T> &t) { return t.size(); }
+template <typename T> int length(const VectorX<T> &t) { return t.size(); }
+template <typename T, int N> auto length(const Vector<T, N> &t) { return N; }
+template <typename T, int N, int M> auto length(const Matrix<T, N, M> &t) {
   return N * M;
 }
 
@@ -91,7 +91,7 @@ VAL(int);
 // template <bool T> struct ValBool {};
 // template <int T> struct ValInt {};
 
-template <typename Func> void loop(int start, int end, Func f) {
+template <typename Func> void loop(int start, int end, const Func &f) {
   for (int k = start; k < end; ++k) {
     f(k);
   }

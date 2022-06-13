@@ -51,11 +51,11 @@ public:
 
   /*Function*/
   int errstate_dim() const { return errstate_dim(statevectortype()); }
-  std::tuple<int, int, int> dims() {
+  std::tuple<int, int, int> dims() const {
     return std::make_tuple(state_dim(), control_dim(), output_dim());
   }
-  int jacobian_width() { return errstate_dim() + control_dim(); }
-  int input_dim() {
+  int jacobian_width() const { return errstate_dim() + control_dim(); }
+  int input_dim() const {
     if (functioninputs() == FunctionInputs::StateOnly) {
       return state_dim();
     } else if (functioninputs() == FunctionInputs::ControlOnly) {
