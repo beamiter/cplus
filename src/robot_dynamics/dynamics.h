@@ -1,6 +1,8 @@
 #ifndef DYNAMICS_H
 #define DYNAMICS_H
 
+#include <functional>
+
 #include "robot_dynamics/functionbase.h"
 #include "robot_dynamics/knotpoint.h"
 
@@ -39,36 +41,39 @@ void dynamics(const ContinuousDynamics *model, P *xdot,
   // dynamics(model, xdot, x, u);
 }
 
-// Depends on the FunctionSignature.
-template <typename P, AbstractKnotPointTypeName>
-void dynamics(FunctionSignature sig, const ContinuousDynamics *model, P *xdot,
-              const AbstractKnotPointDeclare &z) {
-  if (FunctionSignature::Inplace == sig) {
-    dynamics(model, xdot, z);
-  } else if (FunctionSignature::StaticReturn == sig) {
-    xdot = dynamics(model, z);
-  }
-}
-
-template <typename P, AbstractKnotPointTypeName>
-auto evaluate(const ContinuousDynamics *model,
-              const typename AbstractKnotPointDeclare::state_type &x,
-              const typename AbstractKnotPointDeclare::control_type &u, P p) {
-  return dynamics(model, x, u, p.t);
-}
-
-template <typename P, AbstractKnotPointTypeName>
-auto evaluate(const ContinuousDynamics *model,
-              const typename AbstractKnotPointDeclare::state_type &xdot,
-              const typename AbstractKnotPointDeclare::state_type &x,
-              const typename AbstractKnotPointDeclare::control_type &u, P p) {
-  return dynamics(model, xdot, x, u, p.t);
-}
-
-template <typename P, typename Q, AbstractKnotPointTypeName>
-auto jacobian(FunctionSignature, DiffMethod, const ContinuousDynamics *model,
-              Q J, P xdot, const AbstractKnotPointDeclare &z) {
-  jacobian(model, J, xdot, z.state(), z.constrol(), z.time());
-}
+// // Depends on the FunctionSignature.
+// template <typename P, AbstractKnotPointTypeName>
+// void dynamics(FunctionSignature sig, const ContinuousDynamics *model, P
+// *xdot,
+//               const AbstractKnotPointDeclare &z) {
+//   if (FunctionSignature::Inplace == sig) {
+//     dynamics(model, xdot, z);
+//   } else if (FunctionSignature::StaticReturn == sig) {
+//     xdot = dynamics(model, z);
+//   }
+// }
+//
+// template <typename P, AbstractKnotPointTypeName>
+// auto evaluate(const ContinuousDynamics *model,
+//               const typename AbstractKnotPointDeclare::state_type &x,
+//               const typename AbstractKnotPointDeclare::control_type &u, P p)
+//               {
+//   return dynamics(model, x, u, p.t);
+// }
+//
+// template <typename P, AbstractKnotPointTypeName>
+// auto evaluate(const ContinuousDynamics *model,
+//               const typename AbstractKnotPointDeclare::state_type &xdot,
+//               const typename AbstractKnotPointDeclare::state_type &x,
+//               const typename AbstractKnotPointDeclare::control_type &u, P p)
+//               {
+//   return dynamics(model, xdot, x, u, p.t);
+// }
+//
+// template <typename P, typename Q, AbstractKnotPointTypeName>
+// auto jacobian(FunctionSignature, DiffMethod, const ContinuousDynamics *model,
+//               Q J, P xdot, const AbstractKnotPointDeclare &z) {
+//   jacobian(model, J, xdot, z.state(), z.constrol(), z.time());
+// }
 
 #endif

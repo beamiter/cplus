@@ -41,8 +41,8 @@ discrete_dynamics(const DiscretizedDynamics<Q> *model,
                   const typename AbstractKnotPointDeclare::state_type &x,
                   const typename AbstractKnotPointDeclare::control_type &u, T t,
                   T dt) {
-  return integrate<Nx, Nu, V, T>(model->integrator, model->continuous_dynamics,
-                                 x, u, t, dt);
+  return integrate<ContinuousDynamics, Nx, Nu, V, T>(
+      model->integrator, model->continuous_dynamics, x, u, t, dt);
 }
 
 // This method is called when using the 'InPlace'.
@@ -59,9 +59,9 @@ void discrete_dynamics(const DiscretizedDynamics<Q> *model,
                        const typename AbstractKnotPointDeclare::state_type &x,
                        const typename AbstractKnotPointDeclare::control_type &u,
                        T t, T dt) {
-  integrate<Nx, Nu, V, T>(
-      &const_cast<DiscretizedDynamics<Q> *>(model)->integrator,
-      model->continuous_dynamics, xn, x, u, t, dt);
+  // integrate<Nx, Nu, V, T>(
+  //     &const_cast<DiscretizedDynamics<Q> *>(model)->integrator,
+  //     model->continuous_dynamics, xn, x, u, t, dt);
 }
 
 // Function not support partial specialization yet.
