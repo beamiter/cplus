@@ -82,7 +82,7 @@ public:
   void init(const ContinuousDynamics *model, const AbstractObjective *obj,
             VectorX<T> x0, T tf) {
     std::shared_ptr<DiscreteDynamics> discretized_car(
-        new DiscretizedDynamics(model, RK4()));
+        new DiscretizedDynamics<RK4>(model));
     init(discretized_car, obj, x0, tf);
   }
 

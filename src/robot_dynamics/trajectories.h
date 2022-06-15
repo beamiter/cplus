@@ -8,6 +8,7 @@
 
 #include "discretized_dynamics.h"
 #include "knotpoint.h"
+#include "robot_dynamics/integration.h"
 
 using Eigen::all;
 using Eigen::MatrixX;
@@ -426,10 +427,11 @@ SampledTrajectoryTemplate void rollout(FunctionSignature sig,
     propagate_dynamics(sig, model, &Z[k], Z[k - 1]);
   }
 }
-SampledTrajectoryTemplate void rollout(FunctionSignature sig,
-                                       const DiscretizedDynamics *model,
-                                       SampledTrajectoryDeclare &Z,
-                                       typename KP::state_type x0) {
+
+// DiscretizedDynamics need to specify the Quadrature rule.
+template <typename Q, SampledTrajectoryTypeName>
+void rollout(FunctionSignature sig, const DiscretizedDynamics<Q> *model,
+             SampledTrajectoryDeclare &Z, typename KP::state_type x0) {
   Z[0].setstate(x0);
   for (auto k = 1; k < length(Z); ++k) {
     propagate_dynamics(sig, model, &Z[k], Z[k - 1]);

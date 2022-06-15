@@ -144,7 +144,7 @@ auto jacobian(const AbstractFunction *fun, T J, T y, T x, T u, P p) {
 }
 template <typename T>
 auto jacobian(const AbstractFunction *fun, T J, T y, T x, T u) {
-  throw std::runtime_error("User-defined jacobian not implemented");
+  CHECK(0);
 }
 template <typename P, AbstractKnotPointTypeName>
 auto d_jacobian(FunctionSignature, DiffMethod, const AbstractFunction *fun, P H,

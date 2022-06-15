@@ -12,10 +12,9 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare &solver) {
     // In forwardpass.
     /* rollout(solver, 0.0);  */
   } else {
-    const DiscretizedDynamics *tmp =
-        dynamic_cast<const DiscretizedDynamics *>(solver.model[0].get());
-    rollout(dynamics_signature(solver), tmp, solver.Z,
-            solver.x0);
+    const DiscretizedDynamics<RK4> *tmp =
+        dynamic_cast<const DiscretizedDynamics<RK4> *>(solver.model[0].get());
+    rollout(dynamics_signature(solver), tmp, solver.Z, solver.x0);
   }
 
   solver.Z_dot = solver.Z;
