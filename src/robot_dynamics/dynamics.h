@@ -11,41 +11,56 @@ public:
   int output_dim() const override { return this->state_dim(); }
 };
 
-class ContinuousDynamics : public AbstractModel {
+template <typename KP> class ContinuousDynamics : public AbstractModel {
+  using state_type = typename KP::state_type;
+  using control_type = typename KP::control_type;
+  using value_type = typename KP::value_type;
+  using base_type = typename KP::base_type;
+
 public:
   int output_dim() const override { return this->state_dim(); }
+  virtual state_type dynamics(const state_type &x,
+                              const control_type &u) const {
+    CHECK(0);
+  }
+  virtual state_type dynamics(state_type *xdot, const state_type &x,
+                              const control_type &u) const {
+    CHECK(0);
+  }
 };
 
 // StaticReturn.
-AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
-dynamics(const ContinuousDynamics *model, const AbstractKnotPointDeclare *z) {
+template <typename KP>
+typename KP::state_type dynamics(const ContinuousDynamics<KP> *model,
+                                 const KP *z) {
   return dynamics(model, z->state(), z->control(), z->time());
 }
-AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
-dynamics(const ContinuousDynamics *model,
-         const typename AbstractKnotPointDeclare::state_type &x,
-         const typename AbstractKnotPointDeclare::control_type &u, T t) {
+template <typename KP>
+typename KP::state_type
+dynamics(const ContinuousDynamics<KP> *model, const typename KP::state_type &x,
+         const typename KP::control_type &u, typename KP::base_type t) {
   // return dynamics(model, x, u);
+  model->dynamics(x, u);
 }
 
 // Inplace.
-template <typename P, AbstractKnotPointTypeName>
-void dynamics(const ContinuousDynamics *model, P *xdot,
-              const AbstractKnotPointDeclare *z) {
+template <typename P, typename KP>
+void dynamics(const ContinuousDynamics<KP> *model, P *xdot, const KP *z) {
   dynamics(model, xdot, z->state(), z->control(), z->time());
 }
-template <typename P, AbstractKnotPointTypeName>
-void dynamics(const ContinuousDynamics *model, P *xdot,
-              const typename AbstractKnotPointDeclare::state_type &x,
-              const typename AbstractKnotPointDeclare::control_type &u, T t) {
+template <typename P, typename KP>
+void dynamics(const ContinuousDynamics<KP> *model, P *xdot,
+              const typename KP::state_type &x,
+              const typename KP::control_type &u, typename KP::base_type t) {
   // dynamics(model, xdot, x, u);
+  model->dynamics(xdot, x, u);
 }
 
 // // Depends on the FunctionSignature.
-// template <typename P, AbstractKnotPointTypeName>
+// template <typename P, typename KP>
 // void dynamics(FunctionSignature sig, const ContinuousDynamics *model, P
 // *xdot,
-//               const AbstractKnotPointDeclare &z) {
+//               const KP &z) {
 //   if (FunctionSignature::Inplace == sig) {
 //     dynamics(model, xdot, z);
 //   } else if (FunctionSignature::StaticReturn == sig) {
@@ -53,26 +68,26 @@ void dynamics(const ContinuousDynamics *model, P *xdot,
 //   }
 // }
 //
-// template <typename P, AbstractKnotPointTypeName>
+// template <typename P, typename KP>
 // auto evaluate(const ContinuousDynamics *model,
-//               const typename AbstractKnotPointDeclare::state_type &x,
-//               const typename AbstractKnotPointDeclare::control_type &u, P p)
+//               const typename KP::state_type &x,
+//               const typename KP::control_type &u, P p)
 //               {
 //   return dynamics(model, x, u, p.t);
 // }
 //
-// template <typename P, AbstractKnotPointTypeName>
+// template <typename P, typename KP>
 // auto evaluate(const ContinuousDynamics *model,
-//               const typename AbstractKnotPointDeclare::state_type &xdot,
-//               const typename AbstractKnotPointDeclare::state_type &x,
-//               const typename AbstractKnotPointDeclare::control_type &u, P p)
+//               const typename KP::state_type &xdot,
+//               const typename KP::state_type &x,
+//               const typename KP::control_type &u, P p)
 //               {
 //   return dynamics(model, xdot, x, u, p.t);
 // }
 //
-// template <typename P, typename Q, AbstractKnotPointTypeName>
+// template <typename P, typename Q, typename KP>
 // auto jacobian(FunctionSignature, DiffMethod, const ContinuousDynamics *model,
-//               Q J, P xdot, const AbstractKnotPointDeclare &z) {
+//               Q J, P xdot, const KP &z) {
 //   jacobian(model, J, xdot, z.state(), z.constrol(), z.time());
 // }
 

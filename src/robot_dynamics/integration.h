@@ -17,19 +17,19 @@ template <typename T> struct ADVecotor {};
  */
 
 // struct Euler : Explicit {};
-// AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
+// template<typename KP> typename KP::state_type
 // integrate(Euler, const ContinuousDynamics *model,
-//           const typename AbstractKnotPointDeclare::state_type &x,
-//           const typename AbstractKnotPointDeclare::control_type &u, T t, T h)
+//           const typename KP::state_type &x,
+//           const typename KP::control_type &u, T t, T h)
 //           {
 //   auto xdot = dynamics<Nx, Nu, V, T>(model, x, u, t);
 //   return x + h * xdot;
 // }
-// AbstractKnotPointTemplate void
+// template<typename KP> void
 // integrate(Euler, const ContinuousDynamics *model,
-//           typename AbstractKnotPointDeclare::state_type *xn,
-//           const typename AbstractKnotPointDeclare::state_type &x,
-//           const typename AbstractKnotPointDeclare::control_type &u, T t, T h)
+//           typename KP::state_type *xn,
+//           const typename KP::state_type &x,
+//           const typename KP::control_type &u, T t, T h)
 //           {
 //   dynamics<Nx, Nu, V, T>(model, xn, x, u, t);
 //   xn *= h;
@@ -38,9 +38,9 @@ template <typename T> struct ADVecotor {};
 // template <typename P, AbstractKnotPointTypeName>
 // void jacobian(Euler, FunctionSignature, const ContinuousDynamics *model, P
 // *J,
-//               const typename AbstractKnotPointDeclare::state_type &xn,
-//               const typename AbstractKnotPointDeclare::state_type &x,
-//               const typename AbstractKnotPointDeclare::control_type &u, T t,
+//               const typename KP::state_type &xn,
+//               const typename KP::state_type &x,
+//               const typename KP::control_type &u, T t,
 //               T h) {
 //   jacobian(model, J, xn, x, u, t);
 //   J *= h;
@@ -74,21 +74,21 @@ template <typename T> struct ADVecotor {};
 //     -> decltype(std::make_tuple(inte.k1, inte.k2, inte.k3)) {
 //   return std::make_tuple(inte.k1, inte.k2, inte.k3);
 // }
-// AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
+// template<typename KP> typename KP::state_type
 // integrate(RK3, const ContinuousDynamics *model,
-//           const typename AbstractKnotPointDeclare::state_type &x,
-//           const typename AbstractKnotPointDeclare::control_type &u, T t, T h)
+//           const typename KP::state_type &x,
+//           const typename KP::control_type &u, T t, T h)
 //           {
 //   const auto k1 = dynamics<Nx, Nu, V, T>(model, x, u, t) * h;
 //   const auto k2 = dynamics<Nx, Nu, V, T>(model, x + k1 / 2, u, t + h / 2) *
 //   h; const auto k3 = dynamics<Nx, Nu, V, T>(model, x - k1 + 2 * k2, u, t + h)
 //   * h; return x + (k1 + 4 * k2 + k3) / 6;
 // }
-// AbstractKnotPointTemplate void
+// template<typename KP> void
 // integrate(RK3 *inte, const ContinuousDynamics *model,
-//           typename AbstractKnotPointDeclare::state_type *xn,
-//           const typename AbstractKnotPointDeclare::state_type &x,
-//           const typename AbstractKnotPointDeclare::control_type &u, T t, T h)
+//           typename KP::state_type *xn,
+//           const typename KP::state_type &x,
+//           const typename KP::control_type &u, T t, T h)
 //           {
 //   auto &k1 = inte->k1;
 //   auto &k2 = inte->k2;
@@ -103,9 +103,9 @@ template <typename T> struct ADVecotor {};
 // template <typename P, AbstractKnotPointTypeName>
 // void jacobian(RK3 *inte, FunctionSignature sig, const ContinuousDynamics
 // *model,
-//               P *J, const typename AbstractKnotPointDeclare::state_type &xn,
-//               const typename AbstractKnotPointDeclare::state_type &x,
-//               const typename AbstractKnotPointDeclare::control_type &u, T t,
+//               P *J, const typename KP::state_type &xn,
+//               const typename KP::state_type &x,
+//               const typename KP::control_type &u, T t,
 //               T h) {
 //   if (FunctionSignature::StaticReturn == sig) {
 //     int n, m, p;
@@ -216,22 +216,22 @@ inline auto getks(RK4 inte)
     -> decltype(std::make_tuple(inte.k1, inte.k2, inte.k3, inte.k4)) {
   return std::make_tuple(inte.k1, inte.k2, inte.k3, inte.k4);
 }
-template <typename M, AbstractKnotPointTypeName>
-typename AbstractKnotPointDeclare::state_type
-integrate(const RK4 &, const M *model,
-          const typename AbstractKnotPointDeclare::state_type &x,
-          const typename AbstractKnotPointDeclare::control_type &u, T t, T h) {
-  const auto k1 = dynamics<Nx, Nu, V, T>(model, x, u, t) * h;
-  const auto k2 = dynamics<Nx, Nu, V, T>(model, x + k1 / 2, u, t + h / 2) * h;
-  const auto k3 = dynamics<Nx, Nu, V, T>(model, x + k2 / 2, u, t + h / 2) * h;
-  const auto k4 = dynamics<Nx, Nu, V, T>(model, x + k3, u, t + h) * h;
-  return x + (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+template <typename M, typename KP>
+typename KP::state_type
+integrate(const RK4 &, const M *model, const typename KP::state_type &x,
+          const typename KP::control_type &u, typename KP::base_type t,
+          typename KP::base_type h) {
+  const auto k1 = dynamics<KP>(model, x, u, t) * h;
+  // const auto k2 = dynamics<Nx, Nu, V, T>(model, x + k1 / 2, u, t + h / 2) *
+  // h; const auto k3 = dynamics<Nx, Nu, V, T>(model, x + k2 / 2, u, t + h / 2)
+  // * h; const auto k4 = dynamics<Nx, Nu, V, T>(model, x + k3, u, t + h) * h;
+  // return x + (k1 + 2 * k2 + 2 * k3 + k4) / 6;
 }
-// AbstractKnotPointTemplate void
+// template<typename KP> void
 // integrate(RK4 *inte, const ContinuousDynamics *model,
-//           typename AbstractKnotPointDeclare::state_type *xn,
-//           const typename AbstractKnotPointDeclare::state_type &x,
-//           const typename AbstractKnotPointDeclare::control_type &u, T t, T h)
+//           typename KP::state_type *xn,
+//           const typename KP::state_type &x,
+//           const typename KP::control_type &u, T t, T h)
 //           {
 //   auto &k1 = inte->k1;
 //   auto &k2 = inte->k2;
@@ -249,9 +249,9 @@ integrate(const RK4 &, const M *model,
 // template <typename P, AbstractKnotPointTypeName>
 // void jacobian(RK4 *inte, FunctionSignature sig, const ContinuousDynamics
 // *model,
-//               P *J, const typename AbstractKnotPointDeclare::state_type &xn,
-//               const typename AbstractKnotPointDeclare::state_type &x,
-//               const typename AbstractKnotPointDeclare::control_type &u, T t,
+//               P *J, const typename KP::state_type &xn,
+//               const typename KP::state_type &x,
+//               const typename KP::control_type &u, T t,
 //               T h) {
 //   if (FunctionSignature::StaticReturn == sig) {
 //     int n, m, p;

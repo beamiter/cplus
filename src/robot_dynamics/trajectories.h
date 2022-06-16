@@ -430,7 +430,7 @@ SampledTrajectoryTemplate void rollout(FunctionSignature sig,
 
 // DiscretizedDynamics need to specify the Quadrature rule.
 template <typename Q, SampledTrajectoryTypeName>
-void rollout(FunctionSignature sig, const DiscretizedDynamics<Q> *model,
+void rollout(FunctionSignature sig, const DiscretizedDynamics<Q, KP> *model,
              SampledTrajectoryDeclare &Z, typename KP::state_type x0) {
   Z[0].setstate(x0);
   for (auto k = 1; k < length(Z); ++k) {

@@ -48,16 +48,19 @@ template <typename T> FunctionSignature function_signature(const T &obj) {
                         : FunctionSignature::Inplace;
 }
 
-#define iLQRSolverTypeName int Nx, int Nu, typename T, typename V, bool B
-#define iLQRSolverTemplate                                                     \
-  template <int Nx, int Nu, typename T, typename V, bool B = true>
-#define iLQRSolverDeclare iLQRSolver<Nx, Nu, T, V, B>
+#define iLQRSolverTypeName typename KP, bool B
+#define iLQRSolverTemplate template <typename KP, bool B = true>
+#define iLQRSolverDeclare iLQRSolver<KP, B>
 
-iLQRSolverTemplate class iLQRSolver : UnconstrainedSolverDeclare {
+iLQRSolverTemplate class iLQRSolver : UnconstrainedSolver {
+  static constexpr int Nx = KP::N;
+  static constexpr int Nu = KP::M;
+  using T = typename KP::base_type;
+  using m_data_type = MatrixX<typename KP::base_type>;
+  using v_data_type = VectorX<typename KP::base_type>;
+
 public:
-  using vectype = V;
-  using m_data_type = MatrixX<T>;
-  using v_data_type = VectorX<T>;
+  using vectype = typename KP::value_type;
 
   iLQRSolver(
       const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
@@ -81,7 +84,7 @@ public:
         DV(DV_in), Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in),
         reg(reg_in), grad(grad_in), xdot(xdot_in) {}
 
-  iLQRSolver(ProblemDeclare *prob, SolverOptions<T> opts_in,
+  iLQRSolver(Problem<KP> *prob, SolverOptions<T> opts_in,
              SolverStats<T> stats_in, DiffMethod dynamics_diffmethod,
              Valbool<B>) {
     model = prob->model;
@@ -215,12 +218,12 @@ public:
   std::vector<T> grad;
   std::vector<T> xdot;
 };
-template <int Nx, int Nu, typename V>
-using iLQRSolverD = iLQRSolver<Nx, Nu, double, V>;
-template <int Nx, int Nu>
-using iLQRSolverXd = iLQRSolver<Nx, Nu, double, VectorXd>;
 template <int Nx, int Nu, typename T>
-using iLQRSolverX = iLQRSolver<Nx, Nu, T, VectorX<T>>;
+using iLQRSolverX = iLQRSolver<KnotPointX<Nx, Nu, T>>;
+template <int Nx, int Nu> using iLQRSolverXd = iLQRSolver<KnotPointXd<Nx, Nu>>;
+template <int Nx, int Nu, typename T>
+using iLQRSolverS = iLQRSolver<KnotPointS<Nx, Nu, T>>;
+template <int Nx, int Nu> using iLQRSolverSd = iLQRSolver<KnotPointSd<Nx, Nu>>;
 
 iLQRSolverTemplate struct iLQRSolverHelper {};
 
@@ -228,13 +231,13 @@ iLQRSolverTemplate auto dims(iLQRSolverDeclare solver) {
   return dims(solver.Z);
 }
 
-iLQRSolverTemplate auto state_dim(iLQRSolverDeclare) { return Nx; }
+iLQRSolverTemplate auto state_dim(iLQRSolverDeclare) { return KP::N; }
 
 iLQRSolverTemplate auto errstate_dim(const iLQRSolverDeclare &ilqr) {
   return ilqr.Ne;
 }
 
-iLQRSolverTemplate auto control_dim(iLQRSolverDeclare) { return Nu; }
+iLQRSolverTemplate auto control_dim(iLQRSolverDeclare) { return KP::M; }
 
 iLQRSolverTemplate auto state_dim(iLQRSolverDeclare solver, int k) {
   return state_dim(solver.model[k]);

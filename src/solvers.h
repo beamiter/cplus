@@ -4,7 +4,7 @@
 #include "base/base.h"
 #include "solver_opts.h"
 
-template <typename T> class AbstractSolver {
+class AbstractSolver {
 public:
   virtual SolverName solvername() = 0;
   // virtual bool usestatic() { return true; }
@@ -17,8 +17,6 @@ public:
   //                      : FunctionSignature::Inplace;
   // }
 };
-
-#define AbstractSolverDeclare AbstractSolver<T>
 
 // template <typename T> auto iterations(AbstractSolverDeclare solver) {
 //   return stats(solver).iterations;
@@ -45,20 +43,12 @@ public:
 //   return stats(solver).status;
 // }
 
-template <typename T> struct UnconstrainedSolver : AbstractSolverDeclare {};
-#define UnconstrainedSolverDeclare UnconstrainedSolver<T>
+struct UnconstrainedSolver : AbstractSolver {};
 
-template <typename T> struct ConstrainedSolver : AbstractSolverDeclare {};
-#define ConstrainedSolverDeclare ConstrainedSolver<T>
+struct ConstrainedSolver : AbstractSolver {};
 
-template <typename T> auto is_constrained(AbstractSolverDeclare) {
-  return true;
-}
-template <typename T> auto is_constrained(UnconstrainedSolverDeclare) {
-  return false;
-}
-template <typename T> auto is_constrained(ConstrainedSolverDeclare) {
-  return true;
-}
+inline bool is_constrained(const AbstractSolver &) { return true; }
+inline bool is_constrained(const UnconstrainedSolver &) { return false; }
+inline bool is_constrained(const ConstrainedSolver &) { return true; }
 
 #endif

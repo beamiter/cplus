@@ -22,8 +22,8 @@ TEST(CostExpansionTest, StateControl) {
   const int N = 51;
   const double dt = 0.1;
   const double tf = 5.0;
-  auto prob = CarProblem<6, 2, double>(x0, xf, uf, N, dt);
-  auto solver = iLQRSolverXd<6, 2>(&prob, opts, stats, DiffMethod::UserDefined,
+  auto prob = CarProblem<KnotPointSd<6, 2>>(x0, xf, uf, N, dt);
+  auto solver = iLQRSolverSd<6, 2>(&prob, opts, stats, DiffMethod::UserDefined,
                                    Valbool<true>());
   solve(solver);
   LOG(INFO) << "come to here!";

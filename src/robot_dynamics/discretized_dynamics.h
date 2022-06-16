@@ -4,14 +4,15 @@
 #include "discrete_dynamics.h"
 #include "integration.h"
 
-template <typename Q> class DiscretizedDynamics : public DiscreteDynamics {
+template <typename Q, typename KP>
+class DiscretizedDynamics : public DiscreteDynamics {
 public:
   DiscretizedDynamics() = default;
   virtual ~DiscretizedDynamics() = default;
   // Constructors
-  DiscretizedDynamics(const ContinuousDynamics *dynamics_in, Q rule)
+  DiscretizedDynamics(const ContinuousDynamics<KP> *dynamics_in, Q rule)
       : continuous_dynamics(dynamics_in), integrator(rule) {}
-  DiscretizedDynamics(const ContinuousDynamics *dynamics_in)
+  DiscretizedDynamics(const ContinuousDynamics<KP> *dynamics_in)
       : continuous_dynamics(dynamics_in) {}
 
   // Overriding
@@ -22,54 +23,52 @@ public:
   int output_dim() const override { return continuous_dynamics->output_dim(); }
 
   // Members
-  const ContinuousDynamics *continuous_dynamics = nullptr;
+  const ContinuousDynamics<KP> *continuous_dynamics = nullptr;
 
   Q integrator;
 };
 
 // This method is called when using the 'StaticReturn'.
-template <typename Q, AbstractKnotPointTypeName>
-typename AbstractKnotPointDeclare::state_type
-discrete_dynamics(const DiscretizedDynamics<Q> *model,
-                  const AbstractKnotPointDeclare &z) {
-  return discrete_dynamics<Q, Nx, Nu, V, T>(model, z.state(), z.control(),
-                                            z.time(), z.timestep());
+template <typename Q, typename KP>
+typename KP::state_type
+discrete_dynamics(const DiscretizedDynamics<Q, KP> *model, const KP &z) {
+  typename KP::state_type haha;
+  return discrete_dynamics<Q, KP>(model, z.state(), z.control(), z.time(),
+                                  z.timestep());
 }
-template <typename Q, AbstractKnotPointTypeName>
-typename AbstractKnotPointDeclare::state_type
-discrete_dynamics(const DiscretizedDynamics<Q> *model,
-                  const typename AbstractKnotPointDeclare::state_type &x,
-                  const typename AbstractKnotPointDeclare::control_type &u, T t,
-                  T dt) {
-  return integrate<ContinuousDynamics, Nx, Nu, V, T>(
+template <typename Q, typename KP>
+typename KP::state_type
+discrete_dynamics(const DiscretizedDynamics<Q, KP> *model,
+                  const typename KP::state_type &x,
+                  const typename KP::control_type &u, typename KP::base_type t,
+                  typename KP::base_type dt) {
+  return integrate<ContinuousDynamics<KP>, KP>(
       model->integrator, model->continuous_dynamics, x, u, t, dt);
 }
 
 // This method is called when using the 'InPlace'.
-template <typename Q, AbstractKnotPointTypeName>
-void discrete_dynamics(const DiscretizedDynamics<Q> *model,
-                       typename AbstractKnotPointDeclare::state_type *xn,
-                       const AbstractKnotPointDeclare &z) {
-  discrete_dynamics<Q, Nx, Nu, V, T>(model, xn, z.state(), z.control(),
-                                     z.time(), z.timestep());
+template <typename Q, typename KP>
+void discrete_dynamics(const DiscretizedDynamics<Q, KP> *model,
+                       typename KP::state_type *xn, const KP &z) {
+  discrete_dynamics<Q, KP>(model, xn, z.state(), z.control(), z.time(),
+                           z.timestep());
 }
-template <typename Q, AbstractKnotPointTypeName>
-void discrete_dynamics(const DiscretizedDynamics<Q> *model,
-                       typename AbstractKnotPointDeclare::state_type *xn,
-                       const typename AbstractKnotPointDeclare::state_type &x,
-                       const typename AbstractKnotPointDeclare::control_type &u,
-                       T t, T dt) {
+template <typename Q, typename KP>
+void discrete_dynamics(const DiscretizedDynamics<Q, KP> *model,
+                       typename KP::state_type *xn,
+                       const typename KP::state_type &x,
+                       const typename KP::control_type &u,
+                       typename KP::base_type t, typename KP::base_type dt) {
   // integrate<Nx, Nu, V, T>(
   //     &const_cast<DiscretizedDynamics<Q> *>(model)->integrator,
   //     model->continuous_dynamics, xn, x, u, t, dt);
 }
 
 // Function not support partial specialization yet.
-template <typename Q, AbstractKnotPointTypeName>
+template <typename Q, typename KP>
 void discrete_dynamics(FunctionSignature sig,
-                       const DiscretizedDynamics<Q> *model,
-                       typename AbstractKnotPointDeclare::state_type *xn,
-                       const AbstractKnotPointDeclare &z) {
+                       const DiscretizedDynamics<Q, KP> *model,
+                       typename KP::state_type *xn, const KP &z) {
   if (sig == FunctionSignature::Inplace) {
     discrete_dynamics(model, xn, z);
   } else {
@@ -78,11 +77,10 @@ void discrete_dynamics(FunctionSignature sig,
 }
 
 // Propagate dynamics.
-template <typename Q, AbstractKnotPointTypeName>
+template <typename Q, typename KP>
 void propagate_dynamics(FunctionSignature sig,
-                        const DiscretizedDynamics<Q> *model,
-                        AbstractKnotPointDeclare *z2,
-                        const AbstractKnotPointDeclare &z1) {
+                        const DiscretizedDynamics<Q, KP> *model, KP *z2,
+                        const KP &z1) {
   if (sig == FunctionSignature::Inplace) {
     discrete_dynamics(model, z2->state(), z1);
   } else {

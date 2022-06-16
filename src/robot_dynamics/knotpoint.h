@@ -31,6 +31,8 @@ public:
   typedef typename std::conditional<static_vector, Vector<T, Nx + Nu>, V>::type
       value_type;
   typedef T base_type;
+  static constexpr int N = Nx;
+  static constexpr int M = Nu;
   using vectype = value_type;
 
   // Pure virtual functions.

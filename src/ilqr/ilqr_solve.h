@@ -1,5 +1,6 @@
 #include "ilqr_solver.h"
 #include "robot_dynamics/discretized_dynamics.h"
+#include "robot_dynamics/knotpoint.h"
 
 iLQRSolverTemplate void initialize(iLQRSolverDeclare &solver) {
   reset(solver);
@@ -12,8 +13,9 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare &solver) {
     // In forwardpass.
     /* rollout(solver, 0.0);  */
   } else {
-    const DiscretizedDynamics<RK4> *tmp =
-        dynamic_cast<const DiscretizedDynamics<RK4> *>(solver.model[0].get());
+    const DiscretizedDynamics<RK4, KP> *tmp =
+        dynamic_cast<const DiscretizedDynamics<RK4, KP> *>(
+            solver.model[0].get());
     rollout(dynamics_signature(solver), tmp, solver.Z, solver.x0);
   }
 
