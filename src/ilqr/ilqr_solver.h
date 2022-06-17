@@ -52,7 +52,8 @@ template <typename T> FunctionSignature function_signature(const T &obj) {
 #define iLQRSolverTemplate template <typename KP, bool B = true>
 #define iLQRSolverDeclare iLQRSolver<KP, B>
 
-iLQRSolverTemplate class iLQRSolver : UnconstrainedSolver {
+iLQRSolverTemplate class iLQRSolver
+    : UnconstrainedSolver<typename KP::base_type> {
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
   using T = typename KP::base_type;
@@ -61,6 +62,7 @@ iLQRSolverTemplate class iLQRSolver : UnconstrainedSolver {
 
 public:
   using vectype = typename KP::value_type;
+  virtual ~iLQRSolver() = default;
 
   iLQRSolver(
       const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
@@ -109,7 +111,7 @@ public:
         nx.begin(), nx.end(), [&nx](const auto x) { return x == nx.front(); });
     const bool samecontroldim = std::all_of(
         nu.begin(), nu.end(), [&nu](const auto u) { return u == nu.front(); });
-    if constexpr (B) {
+    if (B) {
       assert(samecontroldim && samestatedim);
       assert(Nx == nx.front());
       assert(Nu == nu.front());
@@ -184,8 +186,8 @@ public:
 
   Vector<T, Nx> x0;
   T tf;
-  int N;
-  int Ne;
+  int N = 0;
+  int Ne = 0;
 
   SolverOptions<T> opts;
   SolverStats<T> stats;

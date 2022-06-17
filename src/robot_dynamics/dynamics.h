@@ -40,7 +40,7 @@ typename KP::state_type
 dynamics(const ContinuousDynamics<KP> *model, const typename KP::state_type &x,
          const typename KP::control_type &u, typename KP::base_type t) {
   // return dynamics(model, x, u);
-  model->dynamics(x, u);
+  return model->dynamics(x, u);
 }
 
 // Inplace.

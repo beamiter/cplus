@@ -6,6 +6,7 @@
 
 class DiscreteDynamics : public AbstractModel {
 public:
+  virtual ~DiscreteDynamics() = default;
   int state_dim() const override {
     CHECK(0);
     return -1;
