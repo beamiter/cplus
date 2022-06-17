@@ -13,14 +13,18 @@
 #include "objective.h"
 
 template <typename KP> class Problem {
+  using state_type = typename KP::state_type;
+  using control_type = typename KP::control_type;
+  using base_type = typename KP::base_type;
+  static constexpr int Nx = KP::N;
+  static constexpr int Nu = KP::M;
+
 public:
   // Constructors
   Problem() = default;
   Problem(const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
           const AbstractObjective *obj_in, ConstraintList constraints_in,
-          VectorX<typename KP::base_type> x0_in,
-          VectorX<typename KP::base_type> xf_in,
-          SampledTrajectoryS<KP::N, KP::M, typename KP::base_type> Z_in,
+          state_type x0_in, state_type xf_in, SampledTrajectory<KP> Z_in,
           int N_in)
       : model(model_in), obj(std::move(obj_in)),
         constraints(std::move(constraints_in)), x0(std::move(x0_in)),
@@ -35,12 +39,10 @@ public:
 
   // Initializer
   void init(std::vector<std::shared_ptr<DiscreteDynamics>> models,
-            const AbstractObjective *obj_in,
-            VectorX<typename KP::base_type> x0_in, double tf_in) {
+            const AbstractObjective *obj_in, state_type x0_in, double tf_in) {
     this->N = obj_in->length();
     this->x0 = x0_in;
-    this->xf =
-        VectorX<typename KP::base_type>::Zero(models.back()->state_dim());
+    this->xf = VectorX<base_type>::Zero(models.back()->state_dim());
     this->model = models;
     this->obj = obj_in;
     this->constraints = ConstraintList(models);
@@ -53,24 +55,24 @@ public:
         nu.begin(), nu.end(), [&nu](const auto u) { return u == nu[0]; });
     CHECK(same_state_dimension && same_control_dimension);
 
-    std::vector<VectorX<typename KP::base_type>> X0, U0;
+    std::vector<state_type> X0;
+    std::vector<control_type> U0;
     for (auto d : nx) {
-      X0.push_back(VectorX<typename KP::base_type>::Zero(d));
+      X0.push_back(VectorX<base_type>::Zero(d));
     }
     for (const auto &m : models) {
-      U0.push_back(VectorX<typename KP::base_type>::Zero(m->control_dim()));
+      U0.push_back(VectorX<base_type>::Zero(m->control_dim()));
     }
 
     TrivialParam param;
     param.tf = tf_in;
     param.dt = 0.1;
     param.N = N;
-    this->Z = SampledTrajectoryHelper::init<KP::N, KP::M>(X0, U0, param);
+    this->Z = SampledTrajectoryHelper::init<Nx, Nu>(X0, U0, param);
   }
 
   void init(const std::shared_ptr<DiscreteDynamics> &model,
-            const AbstractObjective *obj, VectorX<typename KP::base_type> x0,
-            typename KP::base_type tf) {
+            const AbstractObjective *obj, state_type x0, base_type tf) {
     const auto N = obj->length();
     std::vector<std::shared_ptr<DiscreteDynamics>> models;
     for (auto k = 0; k < N - 1; ++k) {
@@ -80,7 +82,7 @@ public:
   }
 
   void init(const ContinuousDynamics<KP> *model, const AbstractObjective *obj,
-            VectorX<typename KP::base_type> x0, typename KP::base_type tf) {
+            state_type, base_type tf) {
     std::shared_ptr<DiscreteDynamics> discretized_car(
         new DiscretizedDynamics<RK4, KP>(model));
     init(discretized_car, obj, x0, tf);
@@ -89,8 +91,8 @@ public:
   // Members
   // Object length.
   int N = 0;
-  Vector<typename KP::base_type, KP::N> x0;
-  Vector<typename KP::base_type, KP::N> xf;
+  state_type x0;
+  state_type xf;
   SampledTrajectory<KP> Z;
   std::vector<std::shared_ptr<DiscreteDynamics>> model;
   const AbstractObjective *obj = nullptr;

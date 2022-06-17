@@ -183,8 +183,9 @@ struct SampledTrajectoryHelper {
   }
 
   template <int Nx, int Nu>
-  static auto init(const std::vector<VectorXd> &X,
-                   const std::vector<VectorXd> &U, TrivialParam param) {
+  static auto init(const std::vector<Vector<double, Nx>> &X,
+                   const std::vector<Vector<double, Nu>> &U,
+                   TrivialParam param) {
     auto N = X.size();
     if (std::isnan(param.tf) && std::isnan(param.dt)) {
       CHECK(0);

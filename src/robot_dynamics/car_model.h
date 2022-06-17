@@ -25,16 +25,16 @@ template <typename KP> class CarModel : public ContinuousDynamics<KP> {
 
 public:
   virtual ~CarModel() = default;
-  static constexpr int N = 6;
-  static constexpr int M = 2;
+  static constexpr int Nx = KP::N;
+  static constexpr int Nu = KP::M;
   CarModel(RefPos ref_in = RefPos::rear, double L_in = 2.7,
            double lr_in = 1.5) {
     this->ref = ref_in;
     this->L = L_in;
     this->lr = lr_in;
   }
-  int state_dim() const final { return N; }
-  int control_dim() const final { return M; }
+  int state_dim() const final { return Nx; }
+  int control_dim() const final { return Nu; }
   state_type dynamics(const state_type &x,
                       const control_type &u) const override {
     CHECK(0);
@@ -51,6 +51,8 @@ public:
 
 template <typename KP> class CarProblem : public Problem<KP> {
   using base_type = typename KP::base_type;
+  using state_type = typename KP::state_type;
+  using control_type = typename KP::control_type;
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
 
@@ -62,16 +64,16 @@ public:
     VectorXd uf = Map<VectorXd>(uf_in.data(), uf_in.size());
     init(x0, xf, uf, N, tf);
   }
-  void init(const VectorX<base_type> &x0, const VectorX<base_type> &xf,
-            const VectorX<base_type> &uf, int N, double tf) {
+  void init(const state_type &x0, const state_type &xf, const control_type &uf,
+            int N, double tf) {
     DiagonalMatrix<double, Nx> Q(10, 10, 50, 1, 1, 1);
     auto R = DiagonalMatrix<double, Nu>(1, 1);
     const double rho = 1.0;
     R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-    obj_ = std::make_unique<Objective<DiagonalCost<KP::N, KP::M, base_type>>>(
-        LQRObjective<KP::N, KP::M, base_type>(Q, R, Qf, xf, uf, N));
+    obj_ = std::make_unique<Objective<DiagonalCost<Nx, Nu, base_type>>>(
+        LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N));
     // Model initialize.
     car_ = std::make_unique<CarModel<KP>>(CarModel<KP>());
     Problem<KP>::init(car_.get(), obj_.get(), x0, tf);
