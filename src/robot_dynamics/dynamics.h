@@ -23,8 +23,8 @@ public:
                               const control_type &u) const {
     CHECK(0);
   }
-  virtual state_type dynamics(state_type *xdot, const state_type &x,
-                              const control_type &u) const {
+  virtual void dynamics(state_type *xdot, const state_type &x,
+                        const control_type &u) const {
     CHECK(0);
   }
 };

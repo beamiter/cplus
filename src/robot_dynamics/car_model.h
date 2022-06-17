@@ -37,11 +37,63 @@ public:
   int control_dim() const final { return Nu; }
   state_type dynamics(const state_type &x,
                       const control_type &u) const override {
-    CHECK(0);
+    const auto &da = u[0];
+    const auto &phi = u[1];
+
+    const auto &theta = x[2];
+    const auto &delta = x[3];
+    const auto &v = x[4];
+    const auto &a = x[5];
+    double beta, s, c, omega;
+    if (RefPos::cg == ref) {
+      beta = std::atan2(lr * delta, L);
+      s = sin(theta + beta);
+      c = cos(theta + beta);
+      omega = v * cos(beta) * tan(delta) / L;
+    } else if (RefPos::rear == ref) {
+      s = sin(theta);
+      c = cos(theta);
+      omega = v * tan(delta) / L;
+    } else if (RefPos::fg == ref) {
+      s = sin(theta + delta);
+      c = cos(theta + delta);
+      omega = v * sin(delta) / L;
+    } else {
+      CHECK(0);
+    }
+    const auto xd = v * c;
+    const auto yd = v * s;
+    return state_type(xd, yd, omega, phi, a, da);
   }
-  state_type dynamics(state_type *xdot, const state_type &x,
-                      const control_type &u) const override {
-    CHECK(0);
+  void dynamics(state_type *xdot, const state_type &x,
+                const control_type &u) const override {
+    const auto &da = u[0];
+    const auto &phi = u[1];
+
+    const auto &theta = x[2];
+    const auto &delta = x[3];
+    const auto &v = x[4];
+    const auto &a = x[5];
+    double beta, s, c, omega;
+    if (RefPos::cg == ref) {
+      beta = std::atan2(lr * delta, L);
+      s = sin(theta + beta);
+      c = cos(theta + beta);
+      omega = v * cos(beta) * tan(delta) / L;
+    } else if (RefPos::rear == ref) {
+      s = sin(theta);
+      c = cos(theta);
+      omega = v * tan(delta) / L;
+    } else if (RefPos::fg == ref) {
+      s = sin(theta + delta);
+      c = cos(theta + delta);
+      omega = v * sin(delta) / L;
+    } else {
+      CHECK(0);
+    }
+    const auto xd = v * c;
+    const auto yd = v * s;
+    *xdot << xd, yd, omega, phi, a, da;
   }
 
   RefPos ref;
