@@ -13,7 +13,11 @@ using namespace google;
 
 using namespace std;
 
-struct A {};
+struct A {
+  void test() {
+    LOG(INFO) << "In A!";
+  }
+};
 struct B : A {
   int data;
 };
@@ -55,6 +59,7 @@ int main(int argc, char **argv) {
   test(b);
   fun(b);
   A a;
+  b.test();
 
   google::ShutdownGoogleLogging();
 }

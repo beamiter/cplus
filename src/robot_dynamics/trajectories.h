@@ -404,15 +404,14 @@ SampledTrajectoryTemplate auto set_dt(SampledTrajectoryDeclare Z,
   return t;
 }
 
-SampledTrajectoryTemplate auto setinitialtime(SampledTrajectoryDeclare Z,
+SampledTrajectoryTemplate void setinitialtime(SampledTrajectoryDeclare Z,
                                               typename KP::base_type t0) {
-  double t0_prev = time(Z[0]);
+  double t0_prev = Z[0].time();
   double Dt = t0 - t0_prev;
   for (auto &z : Z) {
-    double t = time(z);
-    settime(z, t + Dt);
+    double t = z.time();
+    z.settime(t + Dt);
   }
-  return Z;
 }
 
 SampledTrajectoryTemplate int length(const SampledTrajectoryDeclare &z) {

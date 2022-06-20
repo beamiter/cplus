@@ -3,6 +3,7 @@
 
 #include "dynamics.h"
 #include "robot_dynamics/knotpoint.h"
+#include <memory>
 
 class DiscreteDynamics : public AbstractModel {
 public:
@@ -127,7 +128,9 @@ dynamics_error_jacobian(const DiscreteDynamics *model, V J2, V J1, V y2, V y1,
   CHECK(0);
 }
 
-template <typename Ptr> inline auto dims(const std::vector<Ptr> &models) {
+template <typename Ptr>
+std::tuple<std::vector<int>, std::vector<int>>
+dims(const std::vector<Ptr> &models) {
   std::vector<int> nx, nu;
   if (models.empty()) {
     return std::make_tuple(nx, nu);

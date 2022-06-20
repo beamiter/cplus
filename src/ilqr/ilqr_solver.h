@@ -93,15 +93,15 @@ public:
     // TODO: Many empty item.
     obj = prob->obj;
     x0 = prob->x0;
-    tf = get_final_time(*prob);
-    N = horizonlength(*prob);
+    tf = prob->get_final_time();
+    N = prob->horizonlength();
     opts = opts_in;
     stats = stats_in;
     Z = prob->Z;
     Z_dot = Z;
 
     std::vector<int> nx, nu, ne;
-    std::tie(nx, nu) = dims(*prob);
+    std::tie(nx, nu) = prob->dims();
     for (const auto &m : prob->model) {
       ne.push_back(m->errstate_dim());
     }

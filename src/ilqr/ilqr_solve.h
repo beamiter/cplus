@@ -25,6 +25,7 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare &solver) {
 iLQRSolverTemplate void solve(iLQRSolverDeclare &solver) {
   initialize(solver);
   for (auto iter = 0; iter < solver.opts.iterations; ++iter) {
+    //auto J_prev = cost(solver, solver.Z_dot);
   }
   // return solver;
 }
