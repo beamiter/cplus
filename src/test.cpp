@@ -8,6 +8,7 @@
 #include "robot_dynamics/knotpoint.h"
 #include "robot_dynamics/trajectories.h"
 #include "solver_opts.h"
+#include "trajectory_optimization/cost_functions.h"
 #include "trajectory_optimization/problem.h"
 
 using namespace google;
@@ -22,8 +23,8 @@ TEST(CostExpansionTest, StateControl) {
   const int N = 51;
   const double dt = 0.1;
   const double tf = 5.0;
-  auto prob = CarProblem<KnotPointSd<6, 2>>(x0, xf, uf, N, dt);
-  auto solver = iLQRSolverSd<6, 2>(&prob, opts, stats, DiffMethod::UserDefined,
+  auto prob = CarProblemSd<6, 2, DiagonalCost>(x0, xf, uf, N, dt);
+  auto solver = iLQRSolverSd<6, 2, DiagonalCost>(&prob, opts, stats, DiffMethod::UserDefined,
                                    Valbool<true>());
   solve(solver);
   LOG(INFO) << "come to here!";

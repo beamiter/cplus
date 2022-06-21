@@ -109,10 +109,14 @@ public:
     const auto J = get_J();
     return std::accumulate(J.begin(), J.end(), 0);
   }
+  // template <typename KP>
+  // auto evaluate(const AbstractFunction *fun, const KP &z) {
+  //   evaluate(fun->functioninputs(), fun, z);
+  // }
   template <typename KP> double cost(const SampledTrajectory<KP> &Z) const {
     double J = 0.0;
     for (int k = 0; k < length(); ++k) {
-      J += evaluate(cost_(k), Z[k]);
+      J += evaluate<KP>(&cost_[k], Z[k]);
     }
     return J;
   }

@@ -21,21 +21,16 @@ struct A {
 struct B : A {
   int data;
 };
-void test(const B &) { LOG(INFO) << "not default!"; }
-void funny(const B &b) {
-  LOG(INFO) << "funny!";
-  test(b);
-}
+// void test(const B &) { LOG(INFO) << "not default!"; }
+// void funny(const B &b) {
+//   LOG(INFO) << "funny!";
+//   test(b);
+// }
 void test(const A &a) { LOG(INFO) << "default!"; }
 void fun(const A &a) {
   LOG(INFO) << "fun!";
   test(a);
 }
-
-class Body {
-public:
-  template <typename T> void age(T in) { LOG(INFO) << in; }
-};
 
 int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
@@ -52,14 +47,9 @@ int main(int argc, char **argv) {
   lock.clear();
   LOG(INFO) << lock.test_and_set();
 
-  Body body;
-  body.age<int>(3);
-
   B b;
   test(b);
   fun(b);
-  A a;
-  b.test();
 
   google::ShutdownGoogleLogging();
 }

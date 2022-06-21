@@ -52,11 +52,11 @@ inline bool usestaticdefault(const AbstractFunction *model) {
   return model->default_signature() == FunctionSignature::StaticReturn;
 }
 
-#define iLQRSolverTypeName typename KP, bool B
-#define iLQRSolverTemplate template <typename KP, bool B = true>
-#define iLQRSolverDeclare iLQRSolver<KP, B>
+#define iLQRSolverTypeName typename KP, typename C, bool B
+#define iLQRSolverTemplate template <typename KP, typename C, bool B = true>
+#define iLQRSolverDeclare iLQRSolver<KP, C, B>
 
-iLQRSolverTemplate class iLQRSolver : public UnconstrainedSolver<KP> {
+iLQRSolverTemplate class iLQRSolver : public UnconstrainedSolver<KP, C> {
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
   using T = typename KP::base_type;
@@ -90,7 +90,7 @@ public:
         DV(DV_in), Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in),
         reg(reg_in), grad(grad_in), xdot(xdot_in) {}
 
-  iLQRSolver(Problem<KP> *prob, SolverOptions<T> opts_in,
+  iLQRSolver(Problem<KP, C> *prob, SolverOptions<T> opts_in,
              SolverStats<T> stats_in, DiffMethod dynamics_diffmethod,
              Valbool<B>) {
     model = prob->model;
@@ -186,9 +186,8 @@ public:
   // Overrides.
   SolverName solvername() const final { return SolverName::iLQR; }
   SampledTrajectory<KP> get_trajectory() const final { return Z; }
-  const AbstractObjective *get_objective() final { return obj; }
-  // const AbstractObjective &get_objective() const final { return *obj; }
-  state_type get_initial_state() const { return x0; }
+  const Objective<C> *get_objective() const final { return obj; }
+  state_type get_initial_state() const final { return x0; }
   state_type *get_initial_state() { return &x0; }
   SolverStats<T> stats() const override { return stats_; }
   const SolverOptions<T> &options() const final { return opts; }
@@ -207,7 +206,7 @@ public:
 
   // Members.
   std::vector<std::shared_ptr<DiscreteDynamics>> model;
-  const AbstractObjective *obj;
+  const Objective<C> *obj;
 
   state_type x0;
   // Vector<T, Nx> x0;
@@ -249,12 +248,14 @@ public:
   std::vector<T> grad;
   std::vector<T> xdot;
 };
-template <int Nx, int Nu, typename T>
-using iLQRSolverX = iLQRSolver<KnotPointX<Nx, Nu, T>>;
-template <int Nx, int Nu> using iLQRSolverXd = iLQRSolver<KnotPointXd<Nx, Nu>>;
-template <int Nx, int Nu, typename T>
-using iLQRSolverS = iLQRSolver<KnotPointS<Nx, Nu, T>>;
-template <int Nx, int Nu> using iLQRSolverSd = iLQRSolver<KnotPointSd<Nx, Nu>>;
+template <int Nx, int Nu, typename T, template <int, int, typename> class C>
+using iLQRSolverX = iLQRSolver<KnotPointX<Nx, Nu, T>, C<Nx, Nu, T>>;
+template <int Nx, int Nu, template <int, int, typename> class C>
+using iLQRSolverXd = iLQRSolver<KnotPointXd<Nx, Nu>, C<Nx, Nu, double>>;
+template <int Nx, int Nu, typename T, template <int, int, typename> class C>
+using iLQRSolverS = iLQRSolver<KnotPointS<Nx, Nu, T>, C<Nx, Nu, T>>;
+template <int Nx, int Nu, template <int, int, typename> class C>
+using iLQRSolverSd = iLQRSolver<KnotPointSd<Nx, Nu>, C<Nx, Nu, double>>;
 
 iLQRSolverTemplate void reset(iLQRSolverDeclare &solver) {
   reset(solver.stats_, solver.opts.iterations, solver.solvername());

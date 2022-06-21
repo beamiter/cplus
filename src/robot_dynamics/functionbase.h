@@ -49,7 +49,7 @@ public:
     return state_dim();
   }
 
-  /*Function*/
+  /*Function.*/
   int errstate_dim() const { return errstate_dim(statevectortype()); }
   std::tuple<int, int, int> dims() const {
     return std::make_tuple(state_dim(), control_dim(), output_dim());
@@ -69,28 +69,35 @@ private:
 };
 
 // TODO: need support vadiatic parameters
-template <typename P, AbstractKnotPointTypeName>
+// Evaluate.
+template <typename P, typename KP>
+auto evaluate(const AbstractFunction *fun, P y, const KP &z) {
+  evaluate(fun->functioninputs(), fun, y, z);
+}
+template <typename KP> auto evaluate(const AbstractFunction *fun, const KP &z) {
+  evaluate(fun->functioninputs(), fun, z);
+}
+//////////////////////////////////
+template <typename P, typename KP>
 auto evaluate(FunctionInputs inputtype, const AbstractFunction *fun, P y,
-              const AbstractKnotPointDeclare &z) {
+              const KP &z) {
   evaluate(fun, y, getargs(inputtype, z));
 }
-
-template <typename P, AbstractKnotPointTypeName>
+template <typename P, typename KP>
 auto evaluate(FunctionInputs inputtype, const AbstractFunction &fun,
-              const AbstractKnotPointDeclare &z) {
+              const KP &z) {
   evaluate(fun, getargs(inputtype, z));
 }
-
+/////////////////////////////////
 template <typename T, typename P>
 auto evaluate(const AbstractFunction &fun, T y, T x, T u, P p) {
   evaluate(fun, y, x, u);
 }
-
 template <typename T, typename P>
 auto evaluate(const AbstractFunction &fun, T x, T u, P p) {
   evaluate(fun, x, u);
 }
-
+///////////////////////////////////////
 template <typename T, typename... Args>
 auto evaluate(FunctionSignature sig, const AbstractFunction *fun, T y,
               Args... args) {
@@ -99,42 +106,40 @@ auto evaluate(FunctionSignature sig, const AbstractFunction *fun, T y,
   }
   evaluate(fun, y, args...);
 }
-
+/////////////////////
 template <typename T>
 auto evaluate(const AbstractFunction *fun, T y, T x, T u) {
-  throw std::runtime_error("Not implemented");
+  CHECK(0);
 }
 template <typename T> auto evaluate(const AbstractFunction *fun, T x, T u) {
-  throw std::runtime_error("Not implemented");
+  CHECK(0);
 }
-
-template <typename P, AbstractKnotPointTypeName>
+//////////////////////////////////
+template <typename P, typename KP>
 void evaluate(FunctionSignature sig, const AbstractFunction *fun, P y,
-              const AbstractKnotPointDeclare &z) {
+              const KP &z) {
   if (sig == FunctionSignature::StaticReturn) {
-
     y = evaluate(fun, z);
   } else {
-
     evaluate(fun, y, z);
   }
 }
 
-template <typename P, AbstractKnotPointTypeName>
+// Jacobian.
+template <typename P, typename KP>
 auto jacobian(FunctionSignature, DiffMethod, const AbstractFunction *fun, P J,
-              P y, const AbstractKnotPointDeclare &z) {
+              P y, const KP &z) {
   jacobian(fun, J, y, z);
 }
 
-template <typename P, AbstractKnotPointTypeName>
-auto jacobian(const AbstractFunction *fun, P J, P y,
-              const AbstractKnotPointDeclare &z) {
+template <typename P, typename KP>
+auto jacobian(const AbstractFunction *fun, P J, P y, const KP &z) {
   jacobian(fun->functioninputs(), fun, J, y, z);
 }
 
-template <typename P, AbstractKnotPointTypeName>
+template <typename P, typename KP>
 auto jacobian(FunctionInputs inputtype, const AbstractFunction *fun, P J, P y,
-              const AbstractKnotPointDeclare &z) {
+              const KP &z) {
   jacobian(fun, J, y, getargs(inputtype, z));
 }
 
@@ -146,26 +151,15 @@ template <typename T>
 auto jacobian(const AbstractFunction *fun, T J, T y, T x, T u) {
   CHECK(0);
 }
-template <typename P, AbstractKnotPointTypeName>
+template <typename P, typename KP>
 auto d_jacobian(FunctionSignature, DiffMethod, const AbstractFunction *fun, P H,
-                P b, P y, const AbstractKnotPointDeclare &z) {
+                P b, P y, const KP &z) {
   d_jacobian(fun, H, b, y, state(z), control(z), getparams(z));
 }
 
 template <typename T, typename Q>
 auto d_jacobian(const AbstractFunction *fun, T H, T b, T y, T x, T u, Q p) {
   d_jacobian(fun, H, b, y, x, u);
-}
-
-template <typename P, AbstractKnotPointTypeName>
-auto evaluate(const AbstractFunction *fun, P y,
-              const AbstractKnotPointDeclare &z) {
-  evaluate(fun->functioninputs(), fun, y, z);
-}
-
-template <AbstractKnotPointTypeName>
-auto evaluate(const AbstractFunction *fun, const AbstractKnotPointDeclare &z) {
-  evaluate(fun->functioninputs(), fun, z);
 }
 
 #endif

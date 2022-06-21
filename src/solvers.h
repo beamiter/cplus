@@ -6,7 +6,7 @@
 #include "solver_opts.h"
 #include "trajectory_optimization/objective.h"
 
-template <typename KP> class AbstractSolver {
+template <typename KP, typename C> class AbstractSolver {
 
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
@@ -22,8 +22,7 @@ public:
   virtual const SolverOptions<T> &options() const = 0;
   virtual SolverOptions<T> *options() = 0;
   virtual SampledTrajectory<KP> get_trajectory() const = 0;
-  virtual const AbstractObjective *get_objective() = 0;
-  // virtual const AbstractObjective &get_objective() const= 0;
+  virtual const Objective<C> *get_objective() const = 0;
   virtual state_type get_initial_state() const = 0;
   virtual state_type *get_initial_state() = 0;
   virtual void rollout() = 0;
@@ -45,8 +44,9 @@ public:
       reset(get_constraints(), opts);
     }
   }
-  virtual double cost(const SampledTrajectory<KP> &Z) = 0;
-
+  double cost(const SampledTrajectory<KP> &Z) {
+    return get_objective()->cost(Z);
+  }
   std::vector<state_type> states() {
     std::vector<state_type> rtn;
     for (const auto &z : get_trajectory()) {
@@ -81,10 +81,12 @@ public:
   }
 };
 
-template <typename KP> struct UnconstrainedSolver : AbstractSolver<KP> {
+template <typename KP, typename C>
+struct UnconstrainedSolver : AbstractSolver<KP, C> {
   bool is_constrained() final { return false; }
 };
-template <typename KP> struct ConstrainedSolver : AbstractSolver<KP> {
+template <typename KP, typename C>
+struct ConstrainedSolver : AbstractSolver<KP, C> {
   bool is_constrained() final { return true; }
 };
 

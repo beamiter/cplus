@@ -101,7 +101,7 @@ public:
   double lr = 0.0;
 };
 
-template <typename KP> class CarProblem : public Problem<KP> {
+template <typename KP, typename C> class CarProblem : public Problem<KP, C> {
   using base_type = typename KP::base_type;
   using state_type = typename KP::state_type;
   using control_type = typename KP::control_type;
@@ -124,18 +124,29 @@ public:
     R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-    obj_ = std::make_unique<Objective<DiagonalCost<Nx, Nu, base_type>>>(
+    // obj_ = std::make_unique<Objective<DiagonalCost<Nx, Nu, base_type>>>(
+    //     LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N));
+    obj_ = std::make_unique<Objective<C>>(
         LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N));
     // Model initialize.
     car_ = std::make_unique<CarModel<KP>>(CarModel<KP>());
-    Problem<KP>::init(car_.get(), obj_.get(), x0, tf);
+    Problem<KP, C>::init(car_.get(), obj_.get(), x0, tf);
 
     // initial_controls, initial_states, rollout
   }
 
   // Members.
   std::unique_ptr<CarModel<KP>> car_;
-  std::unique_ptr<Objective<DiagonalCost<Nx, Nu, base_type>>> obj_;
+  // std::unique_ptr<Objective<DiagonalCost<Nx, Nu, base_type>>> obj_;
+  std::unique_ptr<Objective<C>> obj_;
 };
+template <int Nx, int Nu, typename T, template <int, int, typename> class C>
+using CarProblemX = CarProblem<KnotPointX<Nx, Nu, T>, C<Nx, Nu, T>>;
+template <int Nx, int Nu, template <int, int, typename> class C>
+using CarProblemXd = CarProblem<KnotPointXd<Nx, Nu>, C<Nx, Nu, double>>;
+template <int Nx, int Nu, typename T, template <int, int, typename> class C>
+using CarProblemS = CarProblem<KnotPointS<Nx, Nu, T>, C<Nx, Nu, T>>;
+template <int Nx, int Nu, template <int, int, typename> class C>
+using CarProblemSd = CarProblem<KnotPointSd<Nx, Nu>, C<Nx, Nu, double>>;
 
 #endif

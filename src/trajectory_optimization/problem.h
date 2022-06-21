@@ -14,7 +14,8 @@
 
 namespace {} // namespace
 
-template <typename KP> class Problem {
+// Knot point type, objective type
+template <typename KP, typename C> class Problem {
   using state_type = typename KP::state_type;
   using control_type = typename KP::control_type;
   using base_type = typename KP::base_type;
@@ -25,14 +26,14 @@ public:
   // Constructors
   Problem() = default;
   Problem(const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
-          const AbstractObjective *obj_in, ConstraintList constraints_in,
+          const Objective<C> *obj_in, ConstraintList constraints_in,
           state_type x0_in, state_type xf_in, SampledTrajectory<KP> Z_in,
           int N_in)
       : model(model_in), obj(std::move(obj_in)),
         constraints(std::move(constraints_in)), x0(std::move(x0_in)),
         xf(std::move(xf_in)), Z(std::move(Z_in)), N(N_in) {}
 
-  explicit Problem(const Problem<KP> &prob)
+  explicit Problem(const Problem<KP, C> &prob)
       : obj(prob.obj), constraints(prob.constraints), x0(prob.x0), xf(prob.xf),
         Z(prob.Z), N(prob.N) {
     std::copy(prob.model.begin(), prob.model.end(),
@@ -41,7 +42,7 @@ public:
 
   // Initializer
   void init(std::vector<std::shared_ptr<DiscreteDynamics>> models,
-            const AbstractObjective *obj_in, state_type x0_in, double tf_in) {
+            const Objective<C> *obj_in, state_type x0_in, double tf_in) {
     this->N = obj_in->length();
     this->x0 = x0_in;
     this->xf = VectorX<base_type>::Zero(models.back()->state_dim());
@@ -75,7 +76,7 @@ public:
   }
 
   void init(const std::shared_ptr<DiscreteDynamics> &model,
-            const AbstractObjective *obj, state_type x0, base_type tf) {
+            const Objective<C> *obj, state_type x0, base_type tf) {
     const auto N = obj->length();
     std::vector<std::shared_ptr<DiscreteDynamics>> models;
     for (auto k = 0; k < N - 1; ++k) {
@@ -84,7 +85,7 @@ public:
     init(models, obj, x0, tf);
   }
 
-  void init(const ContinuousDynamics<KP> *model, const AbstractObjective *obj,
+  void init(const ContinuousDynamics<KP> *model, const Objective<C> *obj,
             state_type, base_type tf) {
     std::shared_ptr<DiscreteDynamics> discretized_car(
         new DiscretizedDynamics<RK4, KP>(model));
@@ -98,7 +99,7 @@ public:
   state_type xf;
   SampledTrajectory<KP> Z;
   std::vector<std::shared_ptr<DiscreteDynamics>> model;
-  const AbstractObjective *obj = nullptr;
+  const Objective<C> *obj = nullptr;
   ConstraintList constraints;
 
   std::tuple<std::vector<int>, std::vector<int>> dims() const {
@@ -156,18 +157,18 @@ public:
     this->xf = xf;
   }
 
-  auto cost() { return cost(this->obj, this->Z); }
+  auto cost() { return this->obj->cost(this->Z); }
 };
 
-template <typename KP> auto rollout(const Problem<KP> &prob) {
+template <typename KP, typename C> auto rollout(const Problem<KP, C> &prob) {
   return rollout(FunctionSignature::StaticReturn, prob);
 }
-template <typename KP>
-auto rollout(FunctionSignature sig, const Problem<KP> &prob) {
+template <typename KP, typename C>
+auto rollout(FunctionSignature sig, const Problem<KP, C> &prob) {
   return rollout(sig, prob.get_model(), prob.get_trajectory(),
                  prob.get_initial_state());
 }
-template <typename KP>
+template <typename KP, typename C>
 auto rollout(FunctionSignature sig, std::vector<DiscreteDynamics> &models,
              SampledTrajectory<KP> Z, typename KP::state_type x0) {
   Z[0].setstate(x0);
