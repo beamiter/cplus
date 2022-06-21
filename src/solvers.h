@@ -45,11 +45,8 @@ public:
       reset(get_constraints(), opts);
     }
   }
-  double cost(const SampledTrajectory<KP> &Z) {
-    auto obj = get_objective();
-    // TODO
-    // return cost(obj, Z);
-  }
+  virtual double cost(const SampledTrajectory<KP> &Z) = 0;
+
   std::vector<state_type> states() {
     std::vector<state_type> rtn;
     for (const auto &z : get_trajectory()) {

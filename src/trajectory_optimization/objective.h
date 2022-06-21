@@ -4,11 +4,13 @@
 #include <Eigen/src/Core/DiagonalMatrix.h>
 #include <algorithm>
 #include <iostream>
+#include <numeric>
 #include <tuple>
 #include <vector>
 
 #include "base/base.h"
 #include "robot_dynamics/functionbase.h"
+#include "robot_dynamics/trajectories.h"
 #include "trajectory_optimization/cost_functions.h"
 
 using Eigen::DiagonalMatrix;
@@ -24,11 +26,6 @@ public:
   virtual std::vector<double> get_J() const = 0;
 };
 
-// template<>
-// auto length(AbstractObjective obj) {
-//   return length(obj.cost);
-// }
-
 template <typename C> class Objective : public AbstractObjective {
   // For template type check.
   static_assert(std::is_base_of<CostFunction, C>::value,
@@ -38,8 +35,8 @@ public:
   // Constructors
   Objective(std::vector<C> cost_in,
             DiffMethod diff_method_in = DiffMethod::UserDefined) {
-    cost = cost_in;
-    int N = cost.size();
+    cost_ = cost_in;
+    int N = cost_.size();
     J.resize(N, 0);
     const_grad.resize(N, false);
     const_hess.resize(N, false);
@@ -47,8 +44,8 @@ public:
   }
 
   Objective(std::vector<C> cost_in, std::vector<DiffMethod> diff_method_in) {
-    cost = cost_in;
-    int N = cost.size();
+    cost_ = cost_in;
+    int N = cost_.size();
     J.resize(N, 0);
     const_grad.resize(N, false);
     const_hess.resize(N, false);
@@ -72,17 +69,18 @@ public:
     return Objective<C>(cost_tmp);
   }
 
-  auto begin() { return cost.begin(); }
-  auto end() { return cost.end(); }
-  auto size() { return cost.size(); }
-  auto front() { return cost.front(); }
-  auto back() { return cost.back(); }
-  auto &operator[](int k) { return cost[k]; }
-  const auto &operator[](int k) const { return cost[k]; }
+  auto begin() { return cost_.begin(); }
+  auto end() { return cost_.end(); }
+  auto size() { return cost_.size(); }
+  auto front() { return cost_.front(); }
+  auto back() { return cost_.back(); }
+  auto &operator[](int k) { return cost_[k]; }
+  const auto &operator[](int k) const { return cost_[k]; }
 
-  int length() const override { return cost.size(); }
-  int state_dim(int k) const override { return cost[k].state_dim(); }
-  int control_dim(int k) const override { return cost[k].control_dim(); }
+  // Overrides.
+  int length() const override { return cost_.size(); }
+  int state_dim(int k) const override { return cost_[k].state_dim(); }
+  int control_dim(int k) const override { return cost_[k].control_dim(); }
   std::vector<double> get_J() const override { return J; }
 
   std::tuple<std::vector<int>, std::vector<int>> dims() {
@@ -94,22 +92,59 @@ public:
     return std::make_tuple(nx, nu);
   }
   std::tuple<int, int, int> dims(int k) {
-    return std::make_tuple(cost[k].state_dim(), cost[k].control_dim(),
-                           cost.size());
+    return std::make_tuple(cost_[k].state_dim(), cost_[k].control_dim(),
+                           cost_.size());
   }
-
   bool is_quadratic() {
     return std::all_of(const_hess.begin(), const_hess.end(),
                        [](const auto hess) { return hess == true; });
   }
+  template <typename KP> void cost_inplace(const SampledTrajectory<KP> &Z) {
+    for (int k = 0; k < length(); ++k) {
+      evaluate(cost_[k], J[k], Z.data);
+    }
+  }
+  template <typename KP> double cost(const SampledTrajectory<KP> &Z) {
+    cost_inplace(Z);
+    const auto J = get_J();
+    return std::accumulate(J.begin(), J.end(), 0);
+  }
+  template <typename KP> double cost(const SampledTrajectory<KP> &Z) const {
+    double J = 0.0;
+    for (int k = 0; k < length(); ++k) {
+      J += evaluate(cost_(k), Z[k]);
+    }
+    return J;
+  }
 
   // Members
-  std::vector<C> cost;
+  std::vector<C> cost_;
   std::vector<double> J;
   std::vector<bool> const_grad;
   std::vector<bool> const_hess;
   std::vector<DiffMethod> diff_method;
 };
+
+// template <typename C, typename KP>
+// void cost_core(Objective<C> *obj, const SampledTrajectory<KP> &Z) {
+//   for (int k = 0; k < obj->length(); ++k) {
+//     evaluate(obj->cost[k], obj->J[k], Z.data);
+//   }
+// }
+// template <typename C, typename KP>
+// double cost_inplace(Objective<C> *obj, const SampledTrajectory<KP> &Z) {
+//   cost_core(obj, Z);
+//   const auto J = obj->get_J();
+//   return std::accumulate(J.begin(), J.end(), 0);
+// }
+// template <typename C, typename KP>
+// double cost(Objective<C> *obj, const SampledTrajectory<KP> &Z) {
+//   double J = 0.0;
+//   for (int k = 0; k < obj->length(); ++k) {
+//     J += evaluate(obj->at(k), Z[k]);
+//   }
+//   return J;
+// }
 
 template <int n, int m, typename T>
 Objective<QuadraticCost<n, m, T>>
