@@ -12,6 +12,7 @@
 #include "robot_dynamics/trajectories.h"
 #include "solver_opts.h"
 #include "solvers.h"
+#include "trajectory_optimization/objective.h"
 #include "trajectory_optimization/problem.h"
 
 using Eigen::Map;
@@ -47,16 +48,19 @@ template <typename T> FunctionSignature function_signature(const T &obj) {
   return usestatic(obj) ? FunctionSignature::StaticReturn
                         : FunctionSignature::Inplace;
 }
+inline bool usestaticdefault(const AbstractFunction *model) {
+  return model->default_signature() == FunctionSignature::StaticReturn;
+}
 
 #define iLQRSolverTypeName typename KP, bool B
 #define iLQRSolverTemplate template <typename KP, bool B = true>
 #define iLQRSolverDeclare iLQRSolver<KP, B>
 
-iLQRSolverTemplate class iLQRSolver
-    : UnconstrainedSolver<typename KP::base_type> {
+iLQRSolverTemplate class iLQRSolver : public UnconstrainedSolver<KP> {
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
   using T = typename KP::base_type;
+  using state_type = typename KP::state_type;
   using m_data_type = MatrixX<typename KP::base_type>;
   using v_data_type = VectorX<typename KP::base_type>;
 
@@ -80,7 +84,7 @@ public:
       m_data_type Qux_reg_in, DynamicRegularization<T> reg_in,
       std::vector<T> grad_in, std::vector<T> xdot_in)
       : model(model_in), obj(obj_in), x0(x0_in), tf(tf_in), N(N_in),
-        opts(opts_in), stats(stats_in), Z(Z_in), Z_dot(Z_dot_in), dx(dx_in),
+        opts(opts_in), stats_(stats_in), Z(Z_in), Z_dot(Z_dot_in), dx(dx_in),
         du(du_in), gains(gains_in), K_vec(K_in), d_vec(d_in), D_vec(D_in),
         G_vec(G_in), Efull(Efull_in), Eerr(Eerr_in), Q_vec(Q_in), S_vec(S_in),
         DV(DV_in), Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in),
@@ -96,7 +100,7 @@ public:
     tf = prob->get_final_time();
     N = prob->horizonlength();
     opts = opts_in;
-    stats = stats_in;
+    stats_ = stats_in;
     Z = prob->Z;
     Z_dot = Z;
 
@@ -124,7 +128,7 @@ public:
 
     if (std::any_of(Z[0].state()->begin(), Z[0].state()->end(),
                     [](const auto &s) { return std::isnan(s); })) {
-      rollout(dynamics_signature(Z), prob->model[0].get(), Z, prob->x0);
+      ::rollout(dynamics_signature(Z), prob->model[0].get(), Z, prob->x0);
     }
     VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
     Z[0].setstate(v);
@@ -179,21 +183,46 @@ public:
     reset(*this);
   }
 
-  SolverName solvername() override { return SolverName::iLQR; }
+  // Overrides.
+  SolverName solvername() const final { return SolverName::iLQR; }
+  SampledTrajectory<KP> get_trajectory() const final { return Z; }
+  const AbstractObjective *get_objective() final { return obj; }
+  // const AbstractObjective &get_objective() const final { return *obj; }
+  state_type get_initial_state() const { return x0; }
+  state_type *get_initial_state() { return &x0; }
+  SolverStats<T> stats() const override { return stats_; }
+  const SolverOptions<T> &options() const final { return opts; }
+  SolverOptions<T> *options() final { return &opts; }
+  void rollout() final {}
 
+  // Functions.
+  int state_dim() { return Nx; }
+  int errstate_dim() { return Ne; }
+  int control_dim() { return Nu; }
+  auto state_dim(int k) { return state_dim(model[k]); }
+  auto errstate_dim(int k) { return errstate_dim(model[k]); }
+  auto control_dim(int k) { return control_dim(model[k]); }
+  auto get_model() { return model; }
+  auto get_feedbackgains() { return K_vec; }
+
+  // Members.
   std::vector<std::shared_ptr<DiscreteDynamics>> model;
   const AbstractObjective *obj;
 
-  Vector<T, Nx> x0;
+  state_type x0;
+  // Vector<T, Nx> x0;
   T tf;
+  // Number of horizonlength.
   int N = 0;
   int Ne = 0;
 
   SolverOptions<T> opts;
-  SolverStats<T> stats;
+  SolverStats<T> stats_;
 
-  SampledTrajectoryS<Nx, Nu, T> Z;
-  SampledTrajectoryS<Nx, Nu, T> Z_dot;
+  SampledTrajectory<KP> Z;
+  SampledTrajectory<KP> Z_dot;
+  // SampledTrajectoryS<Nx, Nu, T> Z;
+  // SampledTrajectoryS<Nx, Nu, T> Z_dot;
   std::vector<v_data_type> dx;
   std::vector<v_data_type> du;
 
@@ -227,58 +256,8 @@ template <int Nx, int Nu, typename T>
 using iLQRSolverS = iLQRSolver<KnotPointS<Nx, Nu, T>>;
 template <int Nx, int Nu> using iLQRSolverSd = iLQRSolver<KnotPointSd<Nx, Nu>>;
 
-iLQRSolverTemplate struct iLQRSolverHelper {};
-
-iLQRSolverTemplate auto dims(iLQRSolverDeclare solver) {
-  return dims(solver.Z);
-}
-
-iLQRSolverTemplate auto state_dim(iLQRSolverDeclare) { return KP::N; }
-
-iLQRSolverTemplate auto errstate_dim(const iLQRSolverDeclare &ilqr) {
-  return ilqr.Ne;
-}
-
-iLQRSolverTemplate auto control_dim(iLQRSolverDeclare) { return KP::M; }
-
-iLQRSolverTemplate auto state_dim(iLQRSolverDeclare solver, int k) {
-  return state_dim(solver.model[k]);
-}
-
-iLQRSolverTemplate auto errstate_dim(iLQRSolverDeclare solver, int k) {
-  return errstate_dim(solver.model[k]);
-}
-
-iLQRSolverTemplate auto control_dim(iLQRSolverDeclare solver, int k) {
-  return control_dim(solver.model[k]);
-}
-
-iLQRSolverTemplate auto get_trajectory(iLQRSolverDeclare solver) {
-  return solver.Z;
-}
-
-iLQRSolverTemplate auto get_objective(iLQRSolverDeclare solver) {
-  return solver.obj;
-}
-
-iLQRSolverTemplate auto get_model(iLQRSolverDeclare solver) {
-  return solver.model;
-}
-
-iLQRSolverTemplate auto get_initial_state(iLQRSolverDeclare solver) {
-  return solver.x0;
-}
-
-iLQRSolverTemplate auto get_feedbackgains(iLQRSolverDeclare solver) {
-  return solver.K;
-}
-
-inline bool usestaticdefault(const AbstractFunction *model) {
-  return model->default_signature() == FunctionSignature::StaticReturn;
-}
-
 iLQRSolverTemplate void reset(iLQRSolverDeclare &solver) {
-  reset(solver.stats, solver.opts.iterations, solver.solvername());
+  reset(solver.stats_, solver.opts.iterations, solver.solvername());
   solver.reg.rou = solver.opts.bp_reg_initial;
   solver.reg.d_rou = 0.0;
 }

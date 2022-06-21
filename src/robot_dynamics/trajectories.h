@@ -238,7 +238,8 @@ SampledTrajectoryTemplate auto control_dim(SampledTrajectoryDeclare Z, int k) {
   return control_dim(Z[k]);
 }
 
-SampledTrajectoryTemplate auto dims(SampledTrajectoryDeclare Z) {
+SampledTrajectoryTemplate std::tuple<std::vector<int>, std::vector<int>, int>
+dims(SampledTrajectoryDeclare Z) {
   std::vector<int> nx;
   std::vector<int> nu;
   for (const auto z : Z) {
@@ -318,7 +319,8 @@ SampledTrajectoryTemplate auto controls(SampledTrajectoryDeclare Z,
   return rtn;
 }
 
-SampledTrajectoryTemplate auto gettimes(SampledTrajectoryDeclare Z) {
+SampledTrajectoryTemplate std::vector<typename KP::base_type>
+gettimes(SampledTrajectoryDeclare Z) {
   std::vector<typename KP::base_type> rtn;
   for (const auto z : Z) {
     rtn.push_back(time(z));
