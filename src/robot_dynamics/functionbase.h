@@ -83,18 +83,18 @@ auto evaluate(FunctionInputs inputtype, const AbstractFunction *fun, P y,
               const KP &z) {
   evaluate(fun, y, getargs(inputtype, z));
 }
-template <typename P, typename KP>
-auto evaluate(FunctionInputs inputtype, const AbstractFunction &fun,
+template <typename KP>
+auto evaluate(FunctionInputs inputtype, const AbstractFunction *fun,
               const KP &z) {
   evaluate(fun, getargs(inputtype, z));
 }
 /////////////////////////////////
 template <typename T, typename P>
-auto evaluate(const AbstractFunction &fun, T y, T x, T u, P p) {
+auto evaluate(const AbstractFunction *fun, T y, T x, T u, P p) {
   evaluate(fun, y, x, u);
 }
 template <typename T, typename P>
-auto evaluate(const AbstractFunction &fun, T x, T u, P p) {
+auto evaluate(const AbstractFunction *fun, T x, T u, P p) {
   evaluate(fun, x, u);
 }
 ///////////////////////////////////////
