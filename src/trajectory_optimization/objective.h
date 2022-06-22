@@ -10,6 +10,7 @@
 
 #include "base/base.h"
 #include "robot_dynamics/functionbase.h"
+#include "robot_dynamics/knotpoint.h"
 #include "robot_dynamics/trajectories.h"
 #include "trajectory_optimization/cost_functions.h"
 
@@ -126,7 +127,7 @@ public:
 };
 
 template <int n, int m, typename T>
-Objective<QuadraticCost<n, m, T>>
+Objective<QuadraticCostS<n, m, T>>
 LQRObjective(const MatrixX<T> &Q, const MatrixX<T> &R, const MatrixX<T> &Qf,
              const VectorX<T> &xf, const VectorX<T> &uf, int N,
              bool checks = true,
@@ -144,12 +145,12 @@ LQRObjective(const MatrixX<T> &Q, const MatrixX<T> &R, const MatrixX<T> &Qf,
   const auto &qf = -1.0 * Qf * xf;
   const double cf = 0.5 * xf.adjoint() * Qf * xf;
 
-  const auto &l = QuadraticCost<n, m, T>(Q, R, H, q, r, c, checks, false);
-  const auto &lN = QuadraticCost<n, m, T>(Qf, R, H, qf, r, cf, false, true);
-  return Objective<QuadraticCost<n, m, T>>::init(l, lN, N);
+  const auto &l = QuadraticCostS<n, m, T>(Q, R, H, q, r, c, checks, false);
+  const auto &lN = QuadraticCostS<n, m, T>(Qf, R, H, qf, r, cf, false, true);
+  return Objective<QuadraticCostS<n, m, T>>::init(l, lN, N);
 }
 template <int n, int m, typename T>
-Objective<DiagonalCost<n, m, T>>
+Objective<DiagonalCostS<n, m, T>>
 LQRObjective(const DiagonalMatrix<T, n> &Q, const DiagonalMatrix<T, m> &R,
              const DiagonalMatrix<T, n> &Qf, const VectorX<T> &xf,
              const VectorX<T> &uf, int N, bool checks = true,
@@ -166,9 +167,9 @@ LQRObjective(const DiagonalMatrix<T, n> &Q, const DiagonalMatrix<T, m> &R,
   const auto &qf = -1.0 * Qf * xf;
   const auto &cf = 0.5 * xf.adjoint() * Qf * xf;
 
-  const auto &l = DiagonalCost<n, m, T>(Q, R, q, r, c, checks, false);
-  const auto &lN = DiagonalCost<n, m, T>(Qf, R, qf, r, cf, false, true);
-  return Objective<DiagonalCost<n, m, T>>::init(l, lN, N);
+  const auto &l = DiagonalCostS<n, m, T>(Q, R, q, r, c, checks, false);
+  const auto &lN = DiagonalCostS<n, m, T>(Qf, R, qf, r, cf, false, true);
+  return Objective<DiagonalCostS<n, m, T>>::init(l, lN, N);
 }
 
 #endif

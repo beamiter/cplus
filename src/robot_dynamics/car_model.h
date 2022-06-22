@@ -124,8 +124,6 @@ public:
     R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-    // obj_ = std::make_unique<Objective<DiagonalCost<Nx, Nu, base_type>>>(
-    //     LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N));
     obj_ = std::make_unique<Objective<C>>(
         LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N));
     // Model initialize.
@@ -137,7 +135,6 @@ public:
 
   // Members.
   std::unique_ptr<CarModel<KP>> car_;
-  // std::unique_ptr<Objective<DiagonalCost<Nx, Nu, base_type>>> obj_;
   std::unique_ptr<Objective<C>> obj_;
 };
 template <int Nx, int Nu, typename T, template <int, int, typename> class C>

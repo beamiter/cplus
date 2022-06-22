@@ -23,8 +23,8 @@ TEST(CostExpansionTest, StateControl) {
   const int N = 51;
   const double dt = 0.1;
   const double tf = 5.0;
-  auto prob = CarProblemSd<6, 2, DiagonalCost>(x0, xf, uf, N, dt);
-  auto solver = iLQRSolverSd<6, 2, DiagonalCost>(&prob, opts, stats, DiffMethod::UserDefined,
+  auto prob = CarProblemSd<6, 2, DiagonalCostS>(x0, xf, uf, N, dt);
+  auto solver = iLQRSolverSd<6, 2, DiagonalCostS>(&prob, opts, stats, DiffMethod::UserDefined,
                                    Valbool<true>());
   solve(solver);
   LOG(INFO) << "come to here!";
