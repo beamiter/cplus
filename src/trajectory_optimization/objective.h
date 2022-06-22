@@ -109,10 +109,6 @@ public:
     const auto J = get_J();
     return std::accumulate(J.begin(), J.end(), 0);
   }
-  // template <typename KP>
-  // auto evaluate(const AbstractFunction *fun, const KP &z) {
-  //   evaluate(fun->functioninputs(), fun, z);
-  // }
   template <typename KP> double cost(const SampledTrajectory<KP> &Z) const {
     double J = 0.0;
     for (int k = 0; k < length(); ++k) {
@@ -128,27 +124,6 @@ public:
   std::vector<bool> const_hess;
   std::vector<DiffMethod> diff_method;
 };
-
-// template <typename C, typename KP>
-// void cost_core(Objective<C> *obj, const SampledTrajectory<KP> &Z) {
-//   for (int k = 0; k < obj->length(); ++k) {
-//     evaluate(obj->cost[k], obj->J[k], Z.data);
-//   }
-// }
-// template <typename C, typename KP>
-// double cost_inplace(Objective<C> *obj, const SampledTrajectory<KP> &Z) {
-//   cost_core(obj, Z);
-//   const auto J = obj->get_J();
-//   return std::accumulate(J.begin(), J.end(), 0);
-// }
-// template <typename C, typename KP>
-// double cost(Objective<C> *obj, const SampledTrajectory<KP> &Z) {
-//   double J = 0.0;
-//   for (int k = 0; k < obj->length(); ++k) {
-//     J += evaluate(obj->at(k), Z[k]);
-//   }
-//   return J;
-// }
 
 template <int n, int m, typename T>
 Objective<QuadraticCost<n, m, T>>
