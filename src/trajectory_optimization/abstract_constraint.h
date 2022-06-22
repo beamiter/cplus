@@ -3,29 +3,27 @@
 
 #include <stdexcept>
 
+#include "base/base.h"
 #include "robot_dynamics/functionbase.h"
 
 // AbstractFunctionTemplate class AbstractConstraint : AbstractFunctionDeclare
 // {};
 class AbstractConstraint {};
 
-class StageConstraint : AbstractConstraint {};
-inline auto functioninputs(StageConstraint) {
-  return FunctionInputs::StateControl;
-}
+class StageConstraint : public AbstractConstraint {
+  StateControl functioninputs(StageConstraint) { return StateControl(); }
+};
 
-class StateConstraint : StageConstraint {};
-inline auto functioninputs(StateConstraint) {
-  return FunctionInputs::StateOnly;
-}
+class StateConstraint : public StageConstraint {
+  StateOnly functioninputs(StateConstraint) { return StateOnly(); }
+};
 
-class ControlConstraint : StageConstraint {};
-inline auto functioninputs(ControlConstraint) {
-  return FunctionInputs::ControlOnly;
-}
+class ControlConstraint : public StageConstraint {
+  ControlOnly functioninputs(ControlConstraint) { return ControlOnly(); }
+};
 
 inline auto sense(AbstractConstraint) {
-  throw std::runtime_error("Not implemented");
+  CHECK(0);
 }
 
 #endif

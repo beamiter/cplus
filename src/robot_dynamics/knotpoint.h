@@ -66,22 +66,21 @@ public:
   }
 
   // Functions.
-  auto getinput(FunctionInputs input) {
-    if (input == FunctionInputs::StateOnly) {
-      return state();
-    } else if (input == FunctionInputs::ControlOnly) {
-      return control();
-    } else {
-      return data();
-    }
-  }
-  auto getargs(FunctionInputs) {
+  value_type getinput(StateControl) const { return data(); }
+  state_type getinput(StateOnly) const { return state(); }
+  control_type getinput(ControlOnly) const { return control(); }
+  std::tuple<state_type, control_type, std::tuple<int, int>>
+  getargs(StateControl) const {
     return std::make_tuple(state(), control(), getparams());
+  }
+  std::tuple<state_type> getargs(StateOnly) const { return std::make_tuple(state()); }
+  std::tuple<control_type> getargs(ControlOnly) const {
+    return std::make_tuple(control());
   }
 
   int state_dim() const { return Nx; };
   int control_dim() const { return Nu; };
-  int errstate_dim() { return state_dim(); }
+  int errstate_dim() const { return state_dim(); }
   int size() const { return state_dim() + control_dim(); }
   std::tuple<int, int> dims() {
     return std::make_tuple(state_dim(), control_dim());

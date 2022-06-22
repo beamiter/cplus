@@ -18,11 +18,13 @@ using Eigen::VectorXcd;
 using Eigen::VectorXd;
 using Eigen::VectorXf;
 
-enum class FunctionInputs {
-  StateOnly,
-  ControlOnly,
-  StateControl,
-};
+#define DERIVE(Base, Derived)                                                  \
+  struct Derived : Base {};
+
+struct FunctionInputs {};
+DERIVE(FunctionInputs, StateOnly);
+DERIVE(FunctionInputs, ControlOnly);
+DERIVE(FunctionInputs, StateControl);
 
 // struct StateVectorType {};
 // struct EuclideanState : StateVectorType {};
@@ -62,19 +64,19 @@ template <> inline auto zero(float) { return 0.0; }
 template <> inline auto zero(int) { return 0; }
 
 template <typename T, typename U> struct is_same_type {
-  const static bool value = false;
+  constexpr static bool value = false;
 };
 template <typename T> struct is_same_type<T, T> {
   constexpr static bool value = true;
 };
 template <typename T> struct is_same_type<std::vector<T>, std::vector<T>> {
-  const static bool value = true;
+  constexpr static bool value = true;
 };
 template <typename T> struct is_same_type<VectorX<T>, VectorX<T>> {
-  const static bool value = true;
+  constexpr static bool value = true;
 };
 template <typename T> struct is_same_type<MatrixX<T>, MatrixX<T>> {
-  const static bool value = true;
+  constexpr static bool value = true;
 };
 
 template <typename T> struct UseStatic { static constexpr bool val = false; };

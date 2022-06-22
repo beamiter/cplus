@@ -115,7 +115,7 @@ public:
         nx.begin(), nx.end(), [&nx](const auto x) { return x == nx.front(); });
     const bool samecontroldim = std::all_of(
         nu.begin(), nu.end(), [&nu](const auto u) { return u == nu.front(); });
-    if (B) {
+    if constexpr (B) {
       assert(samecontroldim && samestatedim);
       assert(Nx == nx.front());
       assert(Nu == nu.front());

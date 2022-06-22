@@ -31,9 +31,6 @@ public:
   virtual int output_dim() const = 0;
 
   /*Virtual function*/
-  virtual FunctionInputs functioninputs() const {
-    return FunctionInputs::StateControl;
-  }
   virtual DiffMethod default_diffmethod() const {
     return DiffMethod::UserDefined;
   }
@@ -50,71 +47,96 @@ public:
   }
 
   /*Function.*/
+  constexpr StateControl functioninputs() const { return StateControl(); }
   int errstate_dim() const { return errstate_dim(statevectortype()); }
   std::tuple<int, int, int> dims() const {
     return std::make_tuple(state_dim(), control_dim(), output_dim());
   }
   int jacobian_width() const { return errstate_dim() + control_dim(); }
-  int input_dim() const {
-    if (functioninputs() == FunctionInputs::StateOnly) {
-      return state_dim();
-    } else if (functioninputs() == FunctionInputs::ControlOnly) {
-      return control_dim();
-    } else {
-      return state_dim() + control_dim();
-    }
-  }
+  int input_dim() { return input_dim(functioninputs()); }
+  int input_dim(StateOnly) { return state_dim(); }
+  int input_dim(ControlOnly) { return control_dim(); }
+  int input_dim(StateControl) { return state_dim() + control_dim(); }
 
 private:
 };
 
 // TODO: need support vadiatic parameters
 // Evaluate.
+// Top-level command that can be overridden.
+// Should only be overridden if using hand-written Jacobian methods.
 template <typename P, typename KP>
-auto evaluate(const AbstractFunction *fun, P y, const KP &z) {
+void evaluate(const AbstractFunction *fun, P y, const KP &z) {
   evaluate(fun->functioninputs(), fun, y, z);
+  return;
 }
 template <typename KP> auto evaluate(const AbstractFunction *fun, const KP &z) {
-  evaluate(fun->functioninputs(), fun, z);
+  return evaluate(fun->functioninputs(), fun, z);
 }
 //////////////////////////////////
-template <typename P, typename KP>
-auto evaluate(FunctionInputs inputtype, const AbstractFunction *fun, P y,
-              const KP &z) {
-  evaluate(fun, y, getargs(inputtype, z));
+template <typename P, typename KP, typename TP = FunctionInputs>
+void evaluate(TP tp, const AbstractFunction *fun, P y, const KP &z) {
+  typename KP::state_type state;
+  typename KP::control_type control;
+  std::tuple<typename KP::base_type, typename KP::base_type> param(0, 0);
+  if constexpr (is_same_type<StateControl, decltype(tp)>::value) {
+    std::tie(state, control, param) = z.getargs(tp);
+  } else if constexpr (is_same_type<StateOnly, decltype(tp)>::value) {
+    std::tie(state) = z.getargs(tp);
+  } else if constexpr (is_same_type<ControlOnly, decltype(tp)>::value) {
+    std::tie(control) = z.getargs(tp);
+  } else {
+    CHECK(0);
+  }
+  evaluate<P, KP, decltype(param)>(fun, y, state, control, param);
+  return;
 }
-template <typename KP>
-auto evaluate(FunctionInputs inputtype, const AbstractFunction *fun,
-              const KP &z) {
-  evaluate(fun, getargs(inputtype, z));
+template <typename KP, typename TP = FunctionInputs>
+auto evaluate(TP tp, const AbstractFunction *fun, const KP &z) {
+  typename KP::state_type state;
+  typename KP::control_type control;
+  std::tuple<typename KP::base_type, typename KP::base_type> param(0, 0);
+  if constexpr (is_same_type<StateControl, TP>::value) {
+    std::tie(state, control, param) = z.getargs(tp);
+  } else if constexpr (is_same_type<StateOnly, TP>::value) {
+    std::tie(state) = z.getargs(tp);
+  } else if constexpr (is_same_type<ControlOnly, TP>::value) {
+    std::tie(control) = z.getargs(tp);
+  } else {
+    CHECK(0);
+  }
+  return evaluate<KP, decltype(param)>(fun, state, control, param);
 }
 /////////////////////////////////
-template <typename T, typename P>
-auto evaluate(const AbstractFunction *fun, T y, T x, T u, P p) {
+// Strip the parameter.
+template <typename P, typename KP, typename Q>
+void evaluate(const AbstractFunction *fun, P y,
+              const typename KP::state_type &x,
+              const typename KP::control_type &u, const Q &p) {
   evaluate(fun, y, x, u);
+  return;
 }
-template <typename T, typename P>
-auto evaluate(const AbstractFunction *fun, T x, T u, P p) {
-  evaluate(fun, x, u);
-}
-///////////////////////////////////////
-template <typename T, typename... Args>
-auto evaluate(FunctionSignature sig, const AbstractFunction *fun, T y,
-              Args... args) {
-  if (sig == FunctionSignature::StaticReturn) {
-    return evaluate(fun, args...);
-  }
-  evaluate(fun, y, args...);
+template <typename KP, typename Q>
+auto evaluate(const AbstractFunction *fun, const typename KP::state_type &x,
+              const typename KP::control_type &u, Q p) {
+  return evaluate<KP>(fun, x, u);
 }
 /////////////////////
-template <typename T>
-auto evaluate(const AbstractFunction *fun, T y, T x, T u) {
+// Minimal call that must be implemented.
+template <typename P, typename KP>
+void evaluate(const AbstractFunction *fun, P y,
+              const typename KP::state_type &x,
+              const typename KP::control_type &u) {
   CHECK(0);
 }
-template <typename T> auto evaluate(const AbstractFunction *fun, T x, T u) {
+template <typename KP>
+double evaluate(const AbstractFunction *fun, const typename KP::state_type x,
+                const typename KP::control_type &u) {
   CHECK(0);
+  return 0.0;
 }
-//////////////////////////////////
+///////////////////////////////////////
+// Dispatch on function signature.
 template <typename P, typename KP>
 void evaluate(FunctionSignature sig, const AbstractFunction *fun, P y,
               const KP &z) {
@@ -123,6 +145,14 @@ void evaluate(FunctionSignature sig, const AbstractFunction *fun, P y,
   } else {
     evaluate(fun, y, z);
   }
+}
+template <typename T, typename... Args>
+auto evaluate(FunctionSignature sig, const AbstractFunction *fun, T y,
+              Args... args) {
+  if (sig == FunctionSignature::StaticReturn) {
+    return evaluate(fun, args...);
+  }
+  evaluate(fun, y, args...);
 }
 
 // Jacobian.

@@ -13,19 +13,20 @@ using namespace google;
 
 using namespace std;
 
-enum class Taste {
-  good,
-  bad,
+struct Taste {
 };
+struct Good : Taste {};
+struct Bad : Taste {};
 
 struct A {
-  constexpr Taste gettaste() { return Taste::bad; }
+  constexpr Good gettaste() { return Good(); }
 };
 
-constexpr Taste gettaste(A) { return Taste::good; }
+constexpr Bad gettaste(A) { return Bad(); }
 
-template <Taste t> void test() { LOG(INFO) << "default"; }
-template <> void test<Taste::good>() { LOG(INFO) << "good"; }
+template <typename T=Taste> void test(T) { LOG(INFO) << "default"; }
+template <> void test(Good) { LOG(INFO) << "good"; }
+template <> void test(Bad) { LOG(INFO) << "bad"; }
 
 int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
@@ -39,8 +40,9 @@ int main(int argc, char **argv) {
   LOG(INFO) << lock.test_and_set();
 
   A a;
-  test<gettaste(a)>();
-  test<a.gettaste()>();
+  test(1);
+  test(a.gettaste());
+  test(gettaste(a));
 
   google::ShutdownGoogleLogging();
 }
