@@ -16,15 +16,15 @@ template <typename T> struct DynamicsExpansion {
       : f(f_in), Df(Df_in), A(Df(all, seq(0, n - 1))), B(Df(all, seqN(n, m))),
         De(De_in), fx(De(all, seq(0, e - 1))), fu(De(all, seqN(e, m))),
         tmp(tmp_in) {}
-  VectorX<T> f;
-  MatrixX<T> Df;
+  VectorX<T> f;  // (Nx,)
+  MatrixX<T> Df; // (Nx, Nx+Nu)
   Ref<MatrixX<T>> A;
   Ref<MatrixX<T>> B;
   MatrixX<T> De;
   Ref<MatrixX<T>> fx;
   Ref<MatrixX<T>> fu;
-  MatrixX<T> tmp;
-  static auto init(int n, int e, int m) {
+  MatrixX<T> tmp; // (Nx, Ne)
+  static DynamicsExpansion<T> init(int n, int e, int m) {
     auto f = VectorX<T>::Zero(n);
     auto Df = MatrixX<T>::Zero(n, n + m);
     MatrixX<T> De;
