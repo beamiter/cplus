@@ -107,7 +107,8 @@ FullStateExpansion(const CostExpansion<typename KP::base_type, B> &E,
 }
 template <typename KP, bool B>
 CostExpansion<typename KP::base_type, B>
-FullStateExpansion(StateVectorType type, const CostExpansion<typename KP::base_type, B> &E,
+FullStateExpansion(StateVectorType type,
+                   const CostExpansion<typename KP::base_type, B> &E,
                    const DiscreteDynamics<KP> *model) {
   if (type == StateVectorType::EuclideanState) {
     return E;
