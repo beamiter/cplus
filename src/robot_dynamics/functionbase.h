@@ -14,21 +14,30 @@ template <typename KP> class AbstractFunction {
   //               "T is not derived of FunctionSignature");
   // static_assert(std::is_base_of<StateVectorType, S>::value,
   //               "P is not derived of StateVectorType");
-
-public:
-  // typedef F default_signature;
-  // typedef S statevectortype;
-  // For template type check.
   // typedef typename std::enable_if<std::is_base_of<FunctionSignature,
   // F>::value,
   //                                 F>::type default_signature;
   // typedef typename std::enable_if<std::is_base_of<StateVectorType, S>::value,
   //                                 S>::type statevectortype;
+public:
   ~AbstractFunction() = default;
   /*Pure virtual function*/
   virtual int state_dim() const = 0;
   virtual int control_dim() const = 0;
   virtual int output_dim() const = 0;
+  /////////////////////
+  // Minimal call that must be implemented.
+  // TODO: What's the type of P?
+  // virtual void evaluate(P y, const typename KP::state_type &x,
+  // const typename KP::control_type &u) {
+  // CHECK(0);
+  // return;
+  //}
+  virtual double evaluate(const typename KP::state_type &x,
+                          const typename KP::control_type &u) const {
+    CHECK(0);
+    return 0.0;
+  }
 
   /*Virtual function*/
   virtual DiffMethod default_diffmethod() const {
@@ -114,28 +123,13 @@ template <typename P, typename KP, typename Q>
 void evaluate(const AbstractFunction<KP> *fun, P y,
               const typename KP::state_type &x,
               const typename KP::control_type &u, const Q &p) {
-  evaluate(fun, y, x, u);
+  fun->evaluate(y, x, u);
   return;
 }
 template <typename KP, typename Q>
 auto evaluate(const AbstractFunction<KP> *fun, const typename KP::state_type &x,
               const typename KP::control_type &u, Q p) {
-  return evaluate<KP>(fun, x, u);
-}
-/////////////////////
-// Minimal call that must be implemented.
-template <typename P, typename KP>
-void evaluate(const AbstractFunction<KP> *fun, P y,
-              const typename KP::state_type &x,
-              const typename KP::control_type &u) {
-  CHECK(0);
-}
-template <typename KP>
-double evaluate(const AbstractFunction<KP> *fun,
-                const typename KP::state_type x,
-                const typename KP::control_type &u) {
-  CHECK(0);
-  return 0.0;
+  return fun->evaluate(x, u);
 }
 ///////////////////////////////////////
 // Dispatch on function signature.

@@ -36,7 +36,6 @@ public:
   // Pure virtual functions.
   virtual double stage_cost(const state_type &x, const control_type &u) = 0;
   virtual double stage_cost(const state_type &x) = 0;
-  virtual double evaluate(const state_type &x, const control_type &u) = 0;
 
   // Virtual functions.
   virtual bool is_blockdiag() const { return false; }
@@ -88,7 +87,7 @@ public:
   double stage_cost(const state_type &x) final {
     return 0.5 * x.adjoint() * Q * x + q.dot(x) + c;
   }
-  double evaluate(const state_type &x, const control_type &u) final {
+  double evaluate(const state_type &x, const control_type &u) const final {
     auto J = 0.5 * x.adjoint() * Q * x + q.dot(x) + c;
     if (u.size() == 0) {
       J += 0.5 * u.adjoint() * R * u + r.dot(u);
