@@ -41,17 +41,17 @@ public:
   }
 
   // Initializer
-  void init(std::vector<std::shared_ptr<DiscreteDynamics<KP>>> models,
+  void init(std::vector<std::shared_ptr<DiscreteDynamics<KP>>> models_in,
             const Objective<C> *obj_in, state_type x0_in, double tf_in) {
     this->N = obj_in->length();
     this->x0 = x0_in;
-    this->xf = VectorX<base_type>::Zero(models.back()->state_dim());
-    this->model = models;
+    this->xf = VectorX<base_type>::Zero(models_in.back()->state_dim());
+    this->model = models_in;
     this->obj = obj_in;
-    this->constraints = ConstraintList(models);
+    this->constraints = ConstraintList(models_in);
 
     std::vector<int> nx, nu;
-    std::tie(nx, nu) = ::dims(models);
+    std::tie(nx, nu) = ::dims(models_in);
     const bool same_state_dimension = std::all_of(
         nx.begin(), nx.end(), [&nx](const auto x) { return x == nx[0]; });
     const bool same_control_dimension = std::all_of(
@@ -63,7 +63,7 @@ public:
     for (auto d : nx) {
       X0.push_back(VectorX<base_type>::Zero(d));
     }
-    for (const auto &m : models) {
+    for (const auto &m : models_in) {
       U0.push_back(VectorX<base_type>::Zero(m->control_dim()));
     }
 
@@ -75,21 +75,21 @@ public:
     ::setinitialtime<KP>(Z, 0.0);
   }
 
-  void init(const std::shared_ptr<DiscreteDynamics<KP>> &model,
-            const Objective<C> *obj, state_type x0, base_type tf) {
-    const auto N = obj->length();
+  void init(const std::shared_ptr<DiscreteDynamics<KP>> &model_in,
+            const Objective<C> *obj_in, state_type x0_in, base_type tf_in) {
+    const auto N = obj_in->length();
     std::vector<std::shared_ptr<DiscreteDynamics<KP>>> models;
     for (auto k = 0; k < N - 1; ++k) {
-      models.push_back(model);
+      models.push_back(model_in);
     }
-    init(models, obj, x0, tf);
+    init(models, obj_in, x0_in, tf_in);
   }
 
-  void init(const ContinuousDynamics<KP> *model, const Objective<C> *obj,
-            state_type, base_type tf) {
+  void init(const ContinuousDynamics<KP> *model_in, const Objective<C> *obj_in,
+            state_type x0_in, base_type tf_in) {
     std::shared_ptr<DiscreteDynamics<KP>> discretized_car(
-        new DiscretizedDynamics<RK4, KP>(model));
-    init(discretized_car, obj, x0, tf);
+        new DiscretizedDynamics<RK4, KP>(model_in));
+    init(discretized_car, obj_in, x0_in, tf_in);
   }
 
   // Members

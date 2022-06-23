@@ -222,10 +222,10 @@ integrate(const RK4 &, const M *model, const typename KP::state_type &x,
           const typename KP::control_type &u, typename KP::base_type t,
           typename KP::base_type h) {
   const auto k1 = dynamics<KP>(model, x, u, t) * h;
-  // const auto k2 = dynamics<Nx, Nu, V, T>(model, x + k1 / 2, u, t + h / 2) *
-  // h; const auto k3 = dynamics<Nx, Nu, V, T>(model, x + k2 / 2, u, t + h / 2)
-  // * h; const auto k4 = dynamics<Nx, Nu, V, T>(model, x + k3, u, t + h) * h;
-  // return x + (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+  const auto k2 = dynamics<KP>(model, x + k1 / 2, u, t + h / 2) * h;
+  const auto k3 = dynamics<KP>(model, x + k2 / 2, u, t + h / 2) * h;
+  const auto k4 = dynamics<KP>(model, x + k3, u, t + h) * h;
+  return x + (k1 + 2 * k2 + 2 * k3 + k4) / 6;
 }
 // template<typename KP> void
 // integrate(RK4 *inte, const ContinuousDynamics *model,

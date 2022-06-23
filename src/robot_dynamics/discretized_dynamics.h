@@ -32,7 +32,6 @@ public:
 template <typename Q, typename KP>
 typename KP::state_type
 discrete_dynamics(const DiscretizedDynamics<Q, KP> *model, const KP &z) {
-  typename KP::state_type haha;
   return discrete_dynamics<Q, KP>(model, z.state(), z.control(), z.time(),
                                   z.timestep());
 }
