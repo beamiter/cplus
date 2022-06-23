@@ -32,7 +32,7 @@ public:
   auto get_constraints() {}
 
   // Functions.
-  bool is_parentsolver() { stats().parent == solvername(); };
+  bool is_parentsolver() { stats().parent == solvername(); }
   int iterations() { return stats().iterations; }
   TerminationStatus status() { stats().status; }
   void set_options(const SolverOptions<T> &opt) { *options() = opt; }

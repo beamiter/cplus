@@ -83,7 +83,7 @@ void propagate_dynamics(FunctionSignature sig,
   if (sig == FunctionSignature::Inplace) {
     discrete_dynamics(model, z2->state(), z1);
   } else {
-    z2->setstate(discrete_dynamics(model, z1));
+    z2->setstate(discrete_dynamics<Q, KP>(model, z1));
   }
 }
 
