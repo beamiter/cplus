@@ -17,7 +17,7 @@ using Eigen::Matrix;
 using Eigen::MatrixX;
 using Eigen::Vector;
 
-class CostFunction : public ScalarFunction {
+template <typename KP> class CostFunction : public ScalarFunction<KP> {
 public:
 };
 
@@ -25,7 +25,7 @@ public:
 #define QuadraticCostFunctionTemplate template <typename KP>
 #define QuadraticCostFunctionDeclare QuadraticCostFunction<KP>
 QuadraticCostFunctionTemplate class QuadraticCostFunction
-    : public CostFunction {
+    : public CostFunction<KP> {
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
   using T = typename KP::base_type;
@@ -34,7 +34,9 @@ QuadraticCostFunctionTemplate class QuadraticCostFunction
 
 public:
   // Pure virtual functions.
-  // virtual double stage_cost(const state_type &x, const control_type &u) = 0;
+  virtual double stage_cost(const state_type &x, const control_type &u) = 0;
+  virtual double stage_cost(const state_type &x) = 0;
+  virtual double evaluate(const state_type &x, const control_type &u) = 0;
 
   // Virtual functions.
   virtual bool is_blockdiag() const { return false; }
@@ -79,6 +81,20 @@ public:
   DiagonalCost(Vector<T, Nx> Q_in, Vector<T, Nu> R_in, MatrixXd H,
                Vector<T, Nx> q_in, Vector<T, Nu> r_in, T c_in)
       : Q(Q_in), R(R_in), q(q_in), r(r_in), c(c_in) {}
+
+  double stage_cost(const state_type &x, const control_type &u) final {
+    return 0.5 * u.adjoint() * R * u + r.dot(u) + stage_cost(x);
+  }
+  double stage_cost(const state_type &x) final {
+    return 0.5 * x.adjoint() * Q * x + q.dot(x) + c;
+  }
+  double evaluate(const state_type &x, const control_type &u) final {
+    auto J = 0.5 * x.adjoint() * Q * x + q.dot(x) + c;
+    if (u.size() == 0) {
+      J += 0.5 * u.adjoint() * R * u + r.dot(u);
+    }
+    return J;
+  }
 
   bool is_blockdiag() const final { return true; }
 
@@ -136,6 +152,31 @@ public:
     zeroH = (H.norm() < 0.001);
     tmpu = r;
   }
+  double stage_cost(const state_type &x, const control_type &u) final {
+    auto J = 0.5 * u.adjoint() * R * u + r.dot(u) + stage_cost(x);
+    if (!is_blockdiag()) {
+      J += u.adjoint() * H * x;
+    }
+    return J;
+  }
+  double stage_cost(const state_type &x) final {
+    return 0.5 * x.adjoint() * Q * x + q.dot(x) + c;
+  }
+  double evaluate(const state_type &x, const control_type &u) final {
+    auto J = 0.5 * x.adjoint() * Q * x + q.dot(x) + c;
+    if (!u.empty()) {
+      J += 0.5 * u.adjoint() * R * u + r.dot(u);
+    }
+    if (!is_blockdiag()) {
+      if (length(x) <= 14) {
+        J += u.adjoint() * H * x;
+      } else {
+        tmpu = H * x;
+        J += tmpu.adjoint() * u;
+      }
+    }
+    return J;
+  }
 
   int state_dim() const override { return q.size(); }
   int control_dim() const override { return r.size(); }
@@ -150,16 +191,29 @@ using QuadraticCostX = QuadraticCost<KnotPointX<n, m, T>>;
 template <int n, int m>
 using QuadraticCostXd = QuadraticCost<KnotPointXd<n, m>>;
 
-// QuadraticCost or DiagonalCost
+// DiagonalCost
 QuadraticCostFunctionTemplate DiagonalCost<KP>
-LQRCost(DiagonalMatrix<typename KP::base_type, KP::Nx> Q,
-        DiagonalMatrix<typename KP::base_type, KP::Nu> R,
-        Vector<typename KP::base_type, KP::Nx> xf,
-        Vector<typename KP::base_type, KP::Nu> uf) {
+LQRCost(DiagonalMatrix<typename KP::base_type, KP::N> Q,
+        DiagonalMatrix<typename KP::base_type, KP::M> R,
+        Vector<typename KP::base_type, KP::N> xf,
+        Vector<typename KP::base_type, KP::M> uf) {
   auto q = -Q * xf;
   auto r = -R * xf;
   double c = 0.5 * xf.adjoint() * Q * xf + 0.5 * uf.adjoint * uf;
   return DiagonalCost<KP>(Q, R, q, r, c);
+}
+// QuadraticCost
+QuadraticCostFunctionTemplate QuadraticCost<KP>
+LQRCost(Matrix<typename KP::base_type, KP::N, KP::N> Q,
+        Matrix<typename KP::base_type, KP::M, KP::M> R,
+        Vector<typename KP::base_type, KP::Nx> xf,
+        Vector<typename KP::base_type, KP::Nu> uf) {
+  Matrix<typename KP::base_type, KP::M, KP::N> H;
+  H.setZero();
+  auto q = -Q * xf;
+  auto r = -R * uf;
+  auto c = 0.5 * xf.adjoint() * Q * xf + 0.5 * uf.adjoint() * R * uf;
+  return QuadraticCost<KP>(Q, R, H, q, r, c);
 }
 
 #endif

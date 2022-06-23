@@ -421,7 +421,7 @@ SampledTrajectoryTemplate int length(const SampledTrajectoryDeclare &z) {
 }
 
 SampledTrajectoryTemplate void rollout(FunctionSignature sig,
-                                       const DiscreteDynamics *model,
+                                       const DiscreteDynamics<KP> *model,
                                        SampledTrajectoryDeclare &Z,
                                        typename KP::state_type x0) {
   Z[0].setstate(x0);

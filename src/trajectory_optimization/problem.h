@@ -25,7 +25,7 @@ template <typename KP, typename C> class Problem {
 public:
   // Constructors
   Problem() = default;
-  Problem(const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
+  Problem(const std::vector<std::shared_ptr<DiscreteDynamics<KP>>> &model_in,
           const Objective<C> *obj_in, ConstraintList constraints_in,
           state_type x0_in, state_type xf_in, SampledTrajectory<KP> Z_in,
           int N_in)
@@ -41,7 +41,7 @@ public:
   }
 
   // Initializer
-  void init(std::vector<std::shared_ptr<DiscreteDynamics>> models,
+  void init(std::vector<std::shared_ptr<DiscreteDynamics<KP>>> models,
             const Objective<C> *obj_in, state_type x0_in, double tf_in) {
     this->N = obj_in->length();
     this->x0 = x0_in;
@@ -75,10 +75,10 @@ public:
     ::setinitialtime<KP>(Z, 0.0);
   }
 
-  void init(const std::shared_ptr<DiscreteDynamics> &model,
+  void init(const std::shared_ptr<DiscreteDynamics<KP>> &model,
             const Objective<C> *obj, state_type x0, base_type tf) {
     const auto N = obj->length();
-    std::vector<std::shared_ptr<DiscreteDynamics>> models;
+    std::vector<std::shared_ptr<DiscreteDynamics<KP>>> models;
     for (auto k = 0; k < N - 1; ++k) {
       models.push_back(model);
     }
@@ -87,7 +87,7 @@ public:
 
   void init(const ContinuousDynamics<KP> *model, const Objective<C> *obj,
             state_type, base_type tf) {
-    std::shared_ptr<DiscreteDynamics> discretized_car(
+    std::shared_ptr<DiscreteDynamics<KP>> discretized_car(
         new DiscretizedDynamics<RK4, KP>(model));
     init(discretized_car, obj, x0, tf);
   }
@@ -98,7 +98,7 @@ public:
   state_type x0;
   state_type xf;
   SampledTrajectory<KP> Z;
-  std::vector<std::shared_ptr<DiscreteDynamics>> model;
+  std::vector<std::shared_ptr<DiscreteDynamics<KP>>> model;
   const Objective<C> *obj = nullptr;
   ConstraintList constraints;
 
@@ -169,7 +169,7 @@ auto rollout(FunctionSignature sig, const Problem<KP, C> &prob) {
                  prob.get_initial_state());
 }
 template <typename KP, typename C>
-auto rollout(FunctionSignature sig, std::vector<DiscreteDynamics> &models,
+auto rollout(FunctionSignature sig, std::vector<DiscreteDynamics<KP>> &models,
              SampledTrajectory<KP> Z, typename KP::state_type x0) {
   Z[0].setstate(x0);
   for (int k = 1; k < length(Z); ++k) {

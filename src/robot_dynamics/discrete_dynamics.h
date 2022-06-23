@@ -5,7 +5,7 @@
 #include "robot_dynamics/knotpoint.h"
 #include <memory>
 
-class DiscreteDynamics : public AbstractModel {
+template <typename KP> class DiscreteDynamics : public AbstractModel<KP> {
 public:
   virtual ~DiscreteDynamics() = default;
   int state_dim() const override {
@@ -19,55 +19,54 @@ public:
 };
 
 // Evaluate for static return.
-AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
-evaluate(const DiscreteDynamics *model, const AbstractKnotPointDeclare &z) {
+template <typename KP>
+typename KP::state_type evaluate(const DiscreteDynamics<KP> *model,
+                                 const KP &z) {
   return discrete_dynamics(model, z);
 }
 // Evaluate for in-place.
-AbstractKnotPointTemplate void
-evaluate(const DiscreteDynamics *model,
-         typename AbstractKnotPointDeclare::state_type *xn,
-         const AbstractKnotPointDeclare &z) {
+template <typename KP>
+void evaluate(const DiscreteDynamics<KP> *model, typename KP::state_type *xn,
+              const KP &z) {
   discrete_dynamics(model, xn, z);
 }
 
 // This method is called when using the 'StaticReturn'.
-AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
-discrete_dynamics(const DiscreteDynamics *model,
-                  const AbstractKnotPointDeclare &z) {
-  return discrete_dynamics<Nx, Nu, V, T>(model, z.state(), z.control(),
-                                         z.time(), z.timestep());
+template <typename KP>
+typename KP::state_type discrete_dynamics(const DiscreteDynamics<KP> *model,
+                                          const KP &z) {
+  return discrete_dynamics<KP>(model, z.state(), z.control(), z.time(),
+                               z.timestep());
 }
-AbstractKnotPointTemplate typename AbstractKnotPointDeclare::state_type
-discrete_dynamics(const DiscreteDynamics *model,
-                  const typename AbstractKnotPointDeclare::state_type &x,
-                  const typename AbstractKnotPointDeclare::control_type &u, T t,
-                  T dt) {
+template <typename KP>
+typename KP::state_type discrete_dynamics(const DiscreteDynamics<KP> *model,
+                                          const typename KP::state_type &x,
+                                          const typename KP::control_type &u,
+                                          typename KP::base_type t,
+                                          typename KP::base_type dt) {
   CHECK(0);
 }
 
 // This method is called when using the 'InPlace'.
-AbstractKnotPointTemplate void
-discrete_dynamics(const DiscreteDynamics *model,
-                  typename AbstractKnotPointDeclare::state_type *xn,
-                  const AbstractKnotPointDeclare &z) {
-  discrete_dynamics<Nx, Nu, V, T>(model, xn, z.state(), z.control(), z.time(),
-                                  z.timestep());
+template <typename KP>
+void discrete_dynamics(const DiscreteDynamics<KP> *model,
+                       typename KP::state_type *xn, const KP &z) {
+  discrete_dynamics<KP>(model, xn, z.state(), z.control(), z.time(),
+                        z.timestep());
 }
-AbstractKnotPointTemplate void
-discrete_dynamics(const DiscreteDynamics *model,
-                  typename AbstractKnotPointDeclare::state_type *xn,
-                  const typename AbstractKnotPointDeclare::state_type &x,
-                  const typename AbstractKnotPointDeclare::control_type &u, T t,
-                  T dt) {
+template <typename KP>
+void discrete_dynamics(const DiscreteDynamics<KP> *model,
+                       typename KP::state_type *xn,
+                       const typename KP::state_type &x,
+                       const typename KP::control_type &u,
+                       typename KP::base_type t, typename KP::base_type dt) {
   CHECK(0);
 }
 
 // Function not support partial specialization yet.
-AbstractKnotPointTemplate void
-discrete_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
-                  typename AbstractKnotPointDeclare::state_type *xn,
-                  const AbstractKnotPointDeclare &z) {
+template <typename KP>
+void discrete_dynamics(FunctionSignature sig, const DiscreteDynamics<KP> *model,
+                       typename KP::state_type *xn, const KP &z) {
   if (sig == FunctionSignature::Inplace) {
     discrete_dynamics(model, xn, z);
   } else {
@@ -76,10 +75,10 @@ discrete_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
 }
 
 // Propagate dynamics.
-AbstractKnotPointTemplate void
-propagate_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
-                   AbstractKnotPointDeclare *z2,
-                   const AbstractKnotPointDeclare &z1) {
+template <typename KP>
+void propagate_dynamics(FunctionSignature sig,
+                        const DiscreteDynamics<KP> *model, KP *z2,
+                        const KP &z1) {
   if (sig == FunctionSignature::Inplace) {
     discrete_dynamics(model, z2->state(), z1);
   } else {
@@ -91,42 +90,39 @@ propagate_dynamics(FunctionSignature sig, const DiscreteDynamics *model,
 // TODO: dynamics_error
 // TODO: dynamics_error_jacobian
 
-template <typename V, typename T, typename P>
-void jacobian(const DiscreteDynamics *model, V J, V y, V x, V u, P p) {
-  jacobian(model, J, y, x, u, p.t, p.dt);
-}
-template <typename V, typename T, typename P>
-void jacobian(const DiscreteDynamics *model, V J, V y, V x, V u, T t, T dt) {
-  CHECK(0);
-}
+// template <typename V, typename T, typename P>
+// void jacobian(const DiscreteDynamics<KP> *model, V J, V y, V x, V u, P p) {
+// jacobian(model, J, y, x, u, p.t, p.dt);
+//}
+// template <typename V, typename T, typename P>
+// void jacobian(const DiscreteDynamics<KP> *model, V J, V y, V x, V u, T t,
+// T dt) {
+// CHECK(0);
+//}
 
-AbstractKnotPointTemplate auto
-dynamics_error(const DiscreteDynamics *model,
-               const AbstractKnotPointDeclare *z2,
-               const AbstractKnotPointDeclare *z1) {
-  return discrete_dynamics(model, z1) - state(z1);
-}
-AbstractKnotPointTemplate auto
-dynamics_error(const DiscreteDynamics *model, V y2, V y1,
-               const AbstractKnotPointDeclare *z2,
-               const AbstractKnotPointDeclare *z1) {
-  discrete_dynamics(model, y2, z1);
-  y2 -= state(z2);
-}
+// template <typename KP>
+// auto dynamics_error(const DiscreteDynamics<KP> *model, const KP *z2,
+// const KP *z1) {
+// return discrete_dynamics(model, z1) - state(z1);
+//}
+// template <typename KP>
+// auto dynamics_error(const DiscreteDynamics<KP> *model, V y2, V y1, const KP
+// *z2, const KP *z1) {
+// discrete_dynamics(model, y2, z1);
+// y2 -= state(z2);
+//}
 
-AbstractKnotPointTemplate auto
-dynamics_error_jacobian(FunctionSignature sig, DiffMethod diff,
-                        const DiscreteDynamics *model, V J2, V J1, V y2, V y1,
-                        const AbstractKnotPointDeclare *z2,
-                        const AbstractKnotPointDeclare *z1) {
-  dynamics_error_jacobian(model, J2, J1, y2, y1, z2, z1);
-}
-AbstractKnotPointTemplate auto
-dynamics_error_jacobian(const DiscreteDynamics *model, V J2, V J1, V y2, V y1,
-                        const AbstractKnotPointDeclare *z2,
-                        const AbstractKnotPointDeclare *z1) {
-  CHECK(0);
-}
+// template <typename KP>
+// auto dynamics_error_jacobian(FunctionSignature sig, DiffMethod diff,
+// const DiscreteDynamics<KP> *model, V J2, V J1,
+// V y2, V y1, const KP *z2, const KP *z1) {
+// dynamics_error_jacobian(model, J2, J1, y2, y1, z2, z1);
+//}
+// template <typename KP>
+// auto dynamics_error_jacobian(const DiscreteDynamics<KP> *model, V J2, V J1,
+// V y2, V y1, const KP *z2, const KP *z1) {
+// CHECK(0);
+//}
 
 template <typename Ptr>
 std::tuple<std::vector<int>, std::vector<int>>

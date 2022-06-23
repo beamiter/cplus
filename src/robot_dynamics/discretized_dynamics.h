@@ -5,7 +5,7 @@
 #include "integration.h"
 
 template <typename Q, typename KP>
-class DiscretizedDynamics : public DiscreteDynamics {
+class DiscretizedDynamics : public DiscreteDynamics<KP> {
 public:
   DiscretizedDynamics() = default;
   virtual ~DiscretizedDynamics() = default;

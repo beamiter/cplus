@@ -6,12 +6,12 @@
 #include "robot_dynamics/functionbase.h"
 #include "robot_dynamics/knotpoint.h"
 
-class AbstractModel : public AbstractFunction {
+template <typename KP> class AbstractModel : public AbstractFunction<KP> {
 public:
   int output_dim() const override { return this->state_dim(); }
 };
 
-template <typename KP> class ContinuousDynamics : public AbstractModel {
+template <typename KP> class ContinuousDynamics : public AbstractModel<KP> {
   using state_type = typename KP::state_type;
   using control_type = typename KP::control_type;
   using value_type = typename KP::value_type;

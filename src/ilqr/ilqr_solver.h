@@ -48,7 +48,8 @@ template <typename T> FunctionSignature function_signature(const T &obj) {
   return usestatic(obj) ? FunctionSignature::StaticReturn
                         : FunctionSignature::Inplace;
 }
-inline bool usestaticdefault(const AbstractFunction *model) {
+template <typename KP>
+bool usestaticdefault(const AbstractFunction<KP> *model) {
   return model->default_signature() == FunctionSignature::StaticReturn;
 }
 
@@ -69,7 +70,7 @@ public:
   virtual ~iLQRSolver() = default;
 
   iLQRSolver(
-      const std::vector<std::shared_ptr<DiscreteDynamics>> &model_in,
+      const std::vector<std::shared_ptr<DiscreteDynamics<KP>>> &model_in,
       const AbstractObjective *obj_in, VectorX<T> x0_in, T tf_in, int N_in,
       SolverOptions<T> opts_in, SolverStats<T> stats_in,
       SampledTrajectoryS<Nx, Nu, T> Z_in,
@@ -205,7 +206,7 @@ public:
   auto get_feedbackgains() { return K_vec; }
 
   // Members.
-  std::vector<std::shared_ptr<DiscreteDynamics>> model;
+  std::vector<std::shared_ptr<DiscreteDynamics<KP>>> model;
   const Objective<C> *obj;
 
   state_type x0;

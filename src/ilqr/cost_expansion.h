@@ -99,21 +99,22 @@ public:
   std::vector<bool> const_grad;
 };
 
-template <typename T, bool B>
-CostExpansion<T, B> FullStateExpansion(const CostExpansion<T, B> &E,
-                                       const DiscreteDynamics *model) {
+template <typename KP, bool B>
+CostExpansion<typename KP::base_type, B>
+FullStateExpansion(const CostExpansion<typename KP::base_type, B> &E,
+                   const DiscreteDynamics<KP> *model) {
   return FullStateExpansion(model->statevectortype(), E, model);
 }
-template <typename T, bool B>
-CostExpansion<T, B> FullStateExpansion(StateVectorType type,
-                                       const CostExpansion<T, B> &E,
-                                       const DiscreteDynamics *model) {
+template <typename KP, bool B>
+CostExpansion<typename KP::base_type, B>
+FullStateExpansion(StateVectorType type, const CostExpansion<typename KP::base_type, B> &E,
+                   const DiscreteDynamics<KP> *model) {
   if (type == StateVectorType::EuclideanState) {
     return E;
   } else {
     const int n = model->state_dim();
     const int m = model->control_dim();
-    return CostExpansion<T, B>(n, m, E.length());
+    return CostExpansion<typename KP::base_type, B>(n, m, E.length());
   }
 }
 

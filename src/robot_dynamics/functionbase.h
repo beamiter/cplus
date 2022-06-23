@@ -8,7 +8,7 @@
 #include "base/base.h"
 #include "robot_dynamics/knotpoint.h"
 
-class AbstractFunction {
+template <typename KP> class AbstractFunction {
   // For template type check.
   // static_assert(std::is_base_of<FunctionSignature, F>::value,
   //               "T is not derived of FunctionSignature");
@@ -66,16 +66,17 @@ private:
 // Top-level command that can be overridden.
 // Should only be overridden if using hand-written Jacobian methods.
 template <typename P, typename KP>
-void evaluate(const AbstractFunction *fun, P y, const KP &z) {
+void evaluate(const AbstractFunction<KP> *fun, P y, const KP &z) {
   evaluate(fun->functioninputs(), fun, y, z);
   return;
 }
-template <typename KP> auto evaluate(const AbstractFunction *fun, const KP &z) {
+template <typename KP>
+auto evaluate(const AbstractFunction<KP> *fun, const KP &z) {
   return evaluate(fun->functioninputs(), fun, z);
 }
 //////////////////////////////////
 template <typename P, typename KP, typename TP = FunctionInputs>
-void evaluate(TP tp, const AbstractFunction *fun, P y, const KP &z) {
+void evaluate(TP tp, const AbstractFunction<KP> *fun, P y, const KP &z) {
   typename KP::state_type state;
   typename KP::control_type control;
   std::tuple<typename KP::base_type, typename KP::base_type> param(0, 0);
@@ -92,7 +93,7 @@ void evaluate(TP tp, const AbstractFunction *fun, P y, const KP &z) {
   return;
 }
 template <typename KP, typename TP = FunctionInputs>
-auto evaluate(TP tp, const AbstractFunction *fun, const KP &z) {
+auto evaluate(TP tp, const AbstractFunction<KP> *fun, const KP &z) {
   typename KP::state_type state;
   typename KP::control_type control;
   std::tuple<typename KP::base_type, typename KP::base_type> param(0, 0);
@@ -110,27 +111,28 @@ auto evaluate(TP tp, const AbstractFunction *fun, const KP &z) {
 /////////////////////////////////
 // Strip the parameter.
 template <typename P, typename KP, typename Q>
-void evaluate(const AbstractFunction *fun, P y,
+void evaluate(const AbstractFunction<KP> *fun, P y,
               const typename KP::state_type &x,
               const typename KP::control_type &u, const Q &p) {
   evaluate(fun, y, x, u);
   return;
 }
 template <typename KP, typename Q>
-auto evaluate(const AbstractFunction *fun, const typename KP::state_type &x,
+auto evaluate(const AbstractFunction<KP> *fun, const typename KP::state_type &x,
               const typename KP::control_type &u, Q p) {
   return evaluate<KP>(fun, x, u);
 }
 /////////////////////
 // Minimal call that must be implemented.
 template <typename P, typename KP>
-void evaluate(const AbstractFunction *fun, P y,
+void evaluate(const AbstractFunction<KP> *fun, P y,
               const typename KP::state_type &x,
               const typename KP::control_type &u) {
   CHECK(0);
 }
 template <typename KP>
-double evaluate(const AbstractFunction *fun, const typename KP::state_type x,
+double evaluate(const AbstractFunction<KP> *fun,
+                const typename KP::state_type x,
                 const typename KP::control_type &u) {
   CHECK(0);
   return 0.0;
@@ -138,7 +140,7 @@ double evaluate(const AbstractFunction *fun, const typename KP::state_type x,
 ///////////////////////////////////////
 // Dispatch on function signature.
 template <typename P, typename KP>
-void evaluate(FunctionSignature sig, const AbstractFunction *fun, P y,
+void evaluate(FunctionSignature sig, const AbstractFunction<KP> *fun, P y,
               const KP &z) {
   if (sig == FunctionSignature::StaticReturn) {
     y = evaluate(fun, z);
@@ -146,49 +148,49 @@ void evaluate(FunctionSignature sig, const AbstractFunction *fun, P y,
     evaluate(fun, y, z);
   }
 }
-template <typename T, typename... Args>
-auto evaluate(FunctionSignature sig, const AbstractFunction *fun, T y,
-              Args... args) {
-  if (sig == FunctionSignature::StaticReturn) {
-    return evaluate(fun, args...);
-  }
-  evaluate(fun, y, args...);
-}
+// template <typename T, typename... Args>
+// auto evaluate(FunctionSignature sig, const AbstractFunction *fun, T y,
+// Args... args) {
+// if (sig == FunctionSignature::StaticReturn) {
+// return evaluate(fun, args...);
+//}
+// evaluate(fun, y, args...);
+//}
 
 // Jacobian.
 template <typename P, typename KP>
-auto jacobian(FunctionSignature, DiffMethod, const AbstractFunction *fun, P J,
-              P y, const KP &z) {
+auto jacobian(FunctionSignature, DiffMethod, const AbstractFunction<KP> *fun,
+              P J, P y, const KP &z) {
   jacobian(fun, J, y, z);
 }
 
 template <typename P, typename KP>
-auto jacobian(const AbstractFunction *fun, P J, P y, const KP &z) {
+auto jacobian(const AbstractFunction<KP> *fun, P J, P y, const KP &z) {
   jacobian(fun->functioninputs(), fun, J, y, z);
 }
 
 template <typename P, typename KP>
-auto jacobian(FunctionInputs inputtype, const AbstractFunction *fun, P J, P y,
-              const KP &z) {
+auto jacobian(FunctionInputs inputtype, const AbstractFunction<KP> *fun, P J,
+              P y, const KP &z) {
   jacobian(fun, J, y, getargs(inputtype, z));
 }
 
-template <typename T, typename P>
-auto jacobian(const AbstractFunction *fun, T J, T y, T x, T u, P p) {
+template <typename T, typename P, typename KP>
+auto jacobian(const AbstractFunction<KP> *fun, T J, T y, T x, T u, P p) {
   jacobian(fun, J, y, x, u);
 }
-template <typename T>
-auto jacobian(const AbstractFunction *fun, T J, T y, T x, T u) {
+template <typename T, typename KP>
+auto jacobian(const AbstractFunction<KP> *fun, T J, T y, T x, T u) {
   CHECK(0);
 }
 template <typename P, typename KP>
-auto d_jacobian(FunctionSignature, DiffMethod, const AbstractFunction *fun, P H,
-                P b, P y, const KP &z) {
+auto d_jacobian(FunctionSignature, DiffMethod, const AbstractFunction<KP> *fun,
+                P H, P b, P y, const KP &z) {
   d_jacobian(fun, H, b, y, state(z), control(z), getparams(z));
 }
 
-template <typename T, typename Q>
-auto d_jacobian(const AbstractFunction *fun, T H, T b, T y, T x, T u, Q p) {
+template <typename T, typename Q, typename KP>
+auto d_jacobian(const AbstractFunction<KP> *fun, T H, T b, T y, T x, T u, Q p) {
   d_jacobian(fun, H, b, y, x, u);
 }
 
