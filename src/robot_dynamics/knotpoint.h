@@ -179,14 +179,14 @@ public:
 
   // TODO: check is_terminal()
   control_type *control() override { return &zu_; }
-  const control_type &control() const { return zu_; }
+  const control_type &control() const override { return zu_; }
   void setcontrol(const control_type &zu) override {
     zu_ = zu;
     z_ << zx_, zu_;
   }
 
   value_type *data() override { return &z_; }
-  const value_type &data() const { return z_; }
+  const value_type &data() const override { return z_; }
   void setdata(const value_type &z) override {
     z_ = z;
     zx_ = z_(seqN(0, Nx));

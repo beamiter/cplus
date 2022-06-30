@@ -22,6 +22,7 @@ public:
   virtual state_type dynamics(const state_type &x,
                               const control_type &u) const {
     CHECK(0);
+    return x;
   }
   virtual void dynamics(state_type *xdot, const state_type &x,
                         const control_type &u) const {

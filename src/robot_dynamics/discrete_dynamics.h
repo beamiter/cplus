@@ -45,6 +45,7 @@ typename KP::state_type discrete_dynamics(const DiscreteDynamics<KP> *model,
                                           typename KP::base_type t,
                                           typename KP::base_type dt) {
   CHECK(0);
+  return x;
 }
 
 // This method is called when using the 'InPlace'.
