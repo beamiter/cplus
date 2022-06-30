@@ -189,7 +189,7 @@ public:
   SampledTrajectory<KP> get_trajectory() const final { return Z; }
   const Objective<C> *get_objective() const final { return obj; }
   state_type get_initial_state() const final { return x0; }
-  state_type *get_initial_state() { return &x0; }
+  state_type *get_initial_state() final { return &x0; }
   SolverStats<T> stats() const override { return stats_; }
   const SolverOptions<T> &options() const final { return opts; }
   SolverOptions<T> *options() final { return &opts; }
@@ -262,6 +262,17 @@ iLQRSolverTemplate void reset(iLQRSolverDeclare &solver) {
   reset(solver.stats_, solver.opts.iterations, solver.solvername());
   solver.reg.rou = solver.opts.bp_reg_initial;
   solver.reg.d_rou = 0.0;
+}
+
+iLQRSolverTemplate void dynamics_expansion(iLQRSolverDeclare &solver,
+                                           const SampledTrajectory<KP> &Z) {
+  const auto& diff = solver.opts.dynamics_diffmethod;
+  auto &D = solver.D_vec;
+  const auto &model = solver.model;
+  for (int k = 0; k < D.size(); ++k) {
+    jacobian(dynamics_signature(solver), diff, model[k], &D[k], Z[k]);
+  }
+  error_expansion(solver.model, D, solver.G_vec);
 }
 
 #endif

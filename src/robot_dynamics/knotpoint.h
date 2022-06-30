@@ -30,10 +30,15 @@ public:
       control_type;
   typedef typename std::conditional<static_vector, Vector<T, Nx + Nu>, V>::type
       value_type;
+  typedef
+      typename std::conditional<static_vector, MatrixX<T>,
+                                std::vector<std::vector<T>>>::type m_data_type;
+  typedef
+      typename std::conditional<static_vector, VectorX<T>, V>::type v_data_type;
   typedef T base_type;
+  typedef value_type vectype;
   static constexpr int N = Nx;
   static constexpr int M = Nu;
-  using vectype = value_type;
 
   // Pure virtual functions.
   // virtual value_type &getdata() = 0;
@@ -73,7 +78,9 @@ public:
   getargs(StateControl) const {
     return std::make_tuple(state(), control(), getparams());
   }
-  std::tuple<state_type> getargs(StateOnly) const { return std::make_tuple(state()); }
+  std::tuple<state_type> getargs(StateOnly) const {
+    return std::make_tuple(state());
+  }
   std::tuple<control_type> getargs(ControlOnly) const {
     return std::make_tuple(control());
   }
@@ -115,11 +122,15 @@ public:
       control_type;
   typedef typename std::conditional<static_vector, Vector<T, Nx + Nu>, V>::type
       value_type;
+  typedef
+      typename std::conditional<static_vector, MatrixX<T>,
+                                std::vector<std::vector<T>>>::type m_data_type;
+  typedef
+      typename std::conditional<static_vector, VectorX<T>, V>::type v_data_type;
   typedef T base_type;
-  using vectype = value_type;
-
-  static constexpr int nx = Nx;
-  static constexpr int nu = Nu;
+  typedef value_type vectype;
+  static constexpr int N = Nx;
+  static constexpr int M = Nu;
 };
 
 template <int Nx, int Nu, typename T>
@@ -147,11 +158,16 @@ public:
           control_type;
   typedef typename std::conditional<static_vector, Vector<T, Nx + Nu>,
                                     VectorX<T>>::type value_type;
+  typedef
+      typename std::conditional<static_vector, MatrixX<T>,
+                                std::vector<std::vector<T>>>::type m_data_type;
+  typedef
+      typename std::conditional<static_vector, VectorX<T>, std::vector<T>>::type
+          v_data_type;
   typedef T base_type;
-  using vectype = value_type;
-
-  static constexpr int nx = Nx;
-  static constexpr int nu = Nu;
+  typedef value_type vectype;
+  static constexpr int N = Nx;
+  static constexpr int M = Nu;
 
   // Overrides.
   state_type *state() override { return &zx_; }

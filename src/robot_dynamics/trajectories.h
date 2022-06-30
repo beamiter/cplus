@@ -116,7 +116,7 @@ public:
   auto end() { return data.end(); }
   auto front() { return data.front(); }
   auto back() { return data.back(); }
-  auto size() { return data.size(); }
+  int size() const { return data.size(); }
   const KP &operator[](int i) const { return data[i]; }
   KP &operator[](int i) { return data[i]; }
 

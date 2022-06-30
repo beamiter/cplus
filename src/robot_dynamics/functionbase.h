@@ -38,6 +38,10 @@ public:
     CHECK(0);
     return 0.0;
   }
+  virtual void gradient(typename KP::v_data_type *grad,
+                        const typename KP::state_type &x,
+                        const typename KP::control_type &u,
+                        bool is_terminal = false) const {}
 
   /*Virtual function*/
   virtual DiffMethod default_diffmethod() const {
@@ -56,6 +60,10 @@ public:
   }
 
   /*Function.*/
+  void gradient(typename KP::v_data_type *grad, const KP &z) {
+    gradient(z.state(), z.control(), z.is_terminal());
+  }
+
   constexpr StateControl functioninputs() const { return StateControl(); }
   int errstate_dim() const { return errstate_dim(statevectortype()); }
   std::tuple<int, int, int> dims() const {
@@ -152,40 +160,42 @@ void evaluate(FunctionSignature sig, const AbstractFunction<KP> *fun, P y,
 //}
 
 // Jacobian.
-template <typename P, typename KP>
-auto jacobian(FunctionSignature, DiffMethod, const AbstractFunction<KP> *fun,
-              P J, P y, const KP &z) {
-  jacobian(fun, J, y, z);
-}
+// template <typename P, typename KP>
+// auto jacobian(FunctionSignature, DiffMethod, const AbstractFunction<KP> *fun,
+//               P J, P y, const KP &z) {
+//   jacobian(fun, J, y, z);
+// }
 
-template <typename P, typename KP>
-auto jacobian(const AbstractFunction<KP> *fun, P J, P y, const KP &z) {
-  jacobian(fun->functioninputs(), fun, J, y, z);
-}
+// template <typename P, typename KP>
+// auto jacobian(const AbstractFunction<KP> *fun, P J, P y, const KP &z) {
+//   jacobian(fun->functioninputs(), fun, J, y, z);
+// }
 
-template <typename P, typename KP>
-auto jacobian(FunctionInputs inputtype, const AbstractFunction<KP> *fun, P J,
-              P y, const KP &z) {
-  jacobian(fun, J, y, getargs(inputtype, z));
-}
+// template <typename P, typename KP>
+// auto jacobian(FunctionInputs inputtype, const AbstractFunction<KP> *fun, P J,
+//               P y, const KP &z) {
+//   jacobian(fun, J, y, getargs(inputtype, z));
+// }
 
-template <typename T, typename P, typename KP>
-auto jacobian(const AbstractFunction<KP> *fun, T J, T y, T x, T u, P p) {
-  jacobian(fun, J, y, x, u);
-}
-template <typename T, typename KP>
-auto jacobian(const AbstractFunction<KP> *fun, T J, T y, T x, T u) {
-  CHECK(0);
-}
-template <typename P, typename KP>
-auto d_jacobian(FunctionSignature, DiffMethod, const AbstractFunction<KP> *fun,
-                P H, P b, P y, const KP &z) {
-  d_jacobian(fun, H, b, y, state(z), control(z), getparams(z));
-}
+// template <typename T, typename P, typename KP>
+// auto jacobian(const AbstractFunction<KP> *fun, T J, T y, T x, T u, P p) {
+//   jacobian(fun, J, y, x, u);
+// }
+// template <typename T, typename KP>
+// auto jacobian(const AbstractFunction<KP> *fun, T J, T y, T x, T u) {
+//   CHECK(0);
+// }
+// template <typename P, typename KP>
+// auto d_jacobian(FunctionSignature, DiffMethod, const AbstractFunction<KP>
+// *fun,
+//                 P H, P b, P y, const KP &z) {
+//   d_jacobian(fun, H, b, y, state(z), control(z), getparams(z));
+// }
 
-template <typename T, typename Q, typename KP>
-auto d_jacobian(const AbstractFunction<KP> *fun, T H, T b, T y, T x, T u, Q p) {
-  d_jacobian(fun, H, b, y, x, u);
-}
+// template <typename T, typename Q, typename KP>
+// auto d_jacobian(const AbstractFunction<KP> *fun, T H, T b, T y, T x, T u, Q
+// p) {
+//   d_jacobian(fun, H, b, y, x, u);
+// }
 
 #endif

@@ -8,6 +8,8 @@
 #include <iostream>
 #include <vector>
 
+#include "base/base.h"
+#include "ilqr/dynamics_expansion.h"
 #include "robot_dynamics/discrete_dynamics.h"
 #include "robot_dynamics/functionbase.h"
 #include "robot_dynamics/statevectortype.h"
@@ -91,6 +93,7 @@ public:
       : data(in.data), const_hess(in.const_hess), const_grad(in.const_grad) {}
 
   const auto &operator[](int i) const { return data[i]; }
+  auto &operator[](int i) { return data[i]; }
   int size() const { return data.size(); }
   int length() const { return data.size(); }
 
@@ -117,6 +120,45 @@ FullStateExpansion(StateVectorType type,
     const int m = model->control_dim();
     return CostExpansion<typename KP::base_type, B>(n, m, E.length());
   }
+}
+
+template <typename O, typename C, typename P>
+void cost_expansion(const O *obj, C *E, const P &Z) {
+  for (int k = 0; k < Z.size(); ++k) {
+    gradient(obj->diff_method[k], &obj->cost_[k], (*E)[k].grad, Z[k]);
+    // hessian(obj.diffmethod[k], obj.cost[k], E[k].hess, Z[k]);
+  }
+}
+template <typename M, typename C, typename P, typename Q>
+void error_expansion(const std::vector<M> &models, C Eerr, C Efull, P G, Q Z) {
+  _error_expansion(models.front()->statevectortype(), models, Eerr, Efull, G,
+                   Z);
+}
+template <typename M, typename C, typename P, typename Q>
+void _error_expansion(StateVectorType type, const std::vector<M> &models,
+                      C Eerr, C Efull, P G, Q Z) {
+  CHECK(Eerr == Efull);
+  if (StateVectorType::EuclideanState == type) {
+    return;
+  } else if (StateVectorType::RotationState == type) {
+    const int N = length(Z);
+    for (int k = 0; k < Eerr.size(); ++k) {
+      const auto &model = models[std::min(k, N - 2)];
+      _error_expansion(model, Eerr[k], Efull[k], G[k], G.back(), Z[k]);
+    }
+  }
+}
+template <typename M, typename C, typename P, typename Q>
+void _error_expansion(const M& model, C E, C cost, P G, Q z) {
+  E.xx = 0;
+  E.uu = cost.uu;
+  E.u = cost.u;
+  d_errstate_jacobian(model, E.xx, z.state(), cost.x);
+  E.ux = cost.ux * G;
+  E.x = G.adjoint() * cost.x;
+  auto tmp = cost.xx * G;
+  // TODO: Not sure if it's right!
+  // E.xx = G.adjoint() * tmp;
 }
 
 #endif
