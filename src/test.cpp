@@ -29,9 +29,6 @@ TEST(CostExpansionTest, StateControl) {
   solve(solver);
   LOG(INFO) << "come to here!";
 }
-void test(CostExpansion<double> &ce) {
-  ce.data.push_back(StateControlExpansion<double, true>(4, 2));
-}
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
@@ -41,35 +38,14 @@ int main(int argc, char **argv) {
   google::SetStderrLogging(google::GLOG_INFO);
 
   CostExpansion<double> ce(4, 2, 5);
-  // CostExpansion<double> ce;
-  // test(ce);
   LOG(INFO) << ce.data.size();
   auto &haha = ce.data[0];
-  haha.grad(3) = 908;
-  haha.data(5, 6) = 100;
-  LOG(INFO) << haha.grad;
-  LOG(INFO) << haha.data;
-  ce.data.push_back(StateControlExpansion<double, true>(4, 2));
-  auto &haha0 = ce.data[5];
-  haha0.grad(3) = 908;
-  haha0.data(5, 6) = 100;
-  LOG(INFO) << haha0.grad;
-  LOG(INFO) << haha0.data;
-  ce.data.push_back(StateControlExpansion<double, true>(4, 2));
-  haha0.grad(3) = 1908;
-  haha0.data(5, 6) = 1100;
-  LOG(INFO) << haha0.grad;
-  LOG(INFO) << haha0.data;
+  haha->grad(3) = 908;
+  haha->data(5, 6) = 100;
+  LOG(INFO) << haha->grad;
+  LOG(INFO) << haha->data;
 
-  // std::vector<StateControlExpansion<double, true>> he;
-  // he.push_back(StateControlExpansion<double, true>(4, 2));
-  // auto &hehe = he[0];
-  // hehe.grad(3) = 908;
-  // hehe.data(5, 6) = 100;
-  // LOG(INFO) << hehe.grad;
-  // LOG(INFO) << hehe.data;
-
-  // LOG(INFO) << RUN_ALL_TESTS();
+  LOG(INFO) << RUN_ALL_TESTS();
 
   google::ShutdownGoogleLogging();
   return 1;

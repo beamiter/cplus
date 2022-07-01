@@ -2,7 +2,6 @@
 #define ILQR_COST_EXPANTION
 
 #include <Eigen/Dense>
-
 #include <Eigen/src/Core/DiagonalMatrix.h>
 #include <Eigen/src/Core/Matrix.h>
 #include <iostream>
@@ -79,12 +78,17 @@ public:
     const_hess.resize(N, false);
     const_grad.resize(N, false);
     for (auto k = 0; k < N; ++k) {
-      data.push_back(StateControlExpansion<T, B>(nx[k], nu[k]));
+      data.push_back(
+          std::make_shared<StateControlExpansion<T, B>>(nx[k], nu[k]));
     }
   }
-  // Delegating constructors
-  CostExpansion(int n, int m, int N)
-      : CostExpansion(std::vector<int>(N, n), std::vector<int>(N, m)) {}
+  CostExpansion(int n, int m, int N) {
+    const_hess.resize(N, false);
+    const_grad.resize(N, false);
+    for (auto k = 0; k < N; ++k) {
+      data.push_back(std::make_shared<StateControlExpansion<T, B>>(n, m));
+    }
+  }
   CostExpansion(const CostExpansion &in)
       : data(in.data), const_hess(in.const_hess), const_grad(in.const_grad) {}
 
@@ -93,7 +97,7 @@ public:
   int size() const { return data.size(); }
   int length() const { return data.size(); }
 
-  std::vector<StateControlExpansion<T, B>> data;
+  std::vector<std::shared_ptr<StateControlExpansion<T, B>>> data;
   std::vector<bool> const_hess;
   std::vector<bool> const_grad;
 };
@@ -121,9 +125,7 @@ FullStateExpansion(StateVectorType type,
 template <typename O, typename C, typename P>
 void cost_expansion(const O *obj, C &E, const P &Z) {
   for (int k = 0; k < Z.size(); ++k) {
-    // LOG(INFO) << E[k].grad;
-    gradient(obj->diff_method[k], obj->cost_[k], E[k].grad, Z[k]);
-    // LOG(INFO) << E[k].grad;
+    gradient(obj->diff_method[k], obj->cost_[k], E[k]->grad, Z[k]);
     // hessian(obj.diffmethod[k], obj.cost[k], E[k].hess, Z[k]);
   }
 }
