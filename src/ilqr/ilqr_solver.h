@@ -62,8 +62,8 @@ iLQRSolverTemplate class iLQRSolver : public UnconstrainedSolver<KP, C> {
   static constexpr int Nu = KP::M;
   using T = typename KP::base_type;
   using state_type = typename KP::state_type;
-  using m_data_type = MatrixX<typename KP::base_type>;
-  using v_data_type = VectorX<typename KP::base_type>;
+  using matrix_type = MatrixX<typename KP::base_type>;
+  using vector_type = VectorX<typename KP::base_type>;
 
 public:
   using vectype = typename KP::value_type;
@@ -74,15 +74,15 @@ public:
       const AbstractObjective *obj_in, VectorX<T> x0_in, T tf_in, int N_in,
       SolverOptions<T> opts_in, SolverStats<T> stats_in,
       SampledTrajectoryS<Nx, Nu, T> Z_in,
-      SampledTrajectoryS<Nx, Nu, T> Z_dot_in, std::vector<v_data_type> dx_in,
-      std::vector<v_data_type> du_in, std::vector<m_data_type> gains_in,
-      std::vector<Ref<m_data_type>> K_in, std::vector<Ref<v_data_type>> d_in,
-      std::vector<DynamicsExpansion<T>> D_in, std::vector<m_data_type> G_in,
+      SampledTrajectoryS<Nx, Nu, T> Z_dot_in, std::vector<vector_type> dx_in,
+      std::vector<vector_type> du_in, std::vector<matrix_type> gains_in,
+      std::vector<Ref<matrix_type>> K_in, std::vector<Ref<vector_type>> d_in,
+      std::vector<DynamicsExpansion<T>> D_in, std::vector<matrix_type> G_in,
       CostExpansion<T> Efull_in, CostExpansion<T> Eerr_in,
       std::vector<StateControlExpansion<T, true>> Q_in,
       std::vector<StateControlExpansion<T, false>> S_in, std::vector<T> DV_in,
-      StateControlExpansion<T, true> Qtmp_in, m_data_type Quu_reg_in,
-      m_data_type Qux_reg_in, DynamicRegularization<T> reg_in,
+      StateControlExpansion<T, true> Qtmp_in, matrix_type Quu_reg_in,
+      matrix_type Qux_reg_in, DynamicRegularization<T> reg_in,
       std::vector<T> grad_in, std::vector<T> xdot_in)
       : model(model_in), obj(obj_in), x0(x0_in), tf(tf_in), N(N_in),
         opts(opts_in), stats_(stats_in), Z(Z_in), Z_dot(Z_dot_in), dx(dx_in),
@@ -159,9 +159,8 @@ public:
       G_vec.push_back(a);
     });
 
-    Eerr = std::make_unique<CostExpansion<T>>(CostExpansion<T>(ne, nu));
-    Efull = std::make_unique<CostExpansion<T>>(
-        FullStateExpansion(*Eerr.get(), prob->model.front().get()));
+    Eerr = CostExpansion<T>(ne, nu);
+    Efull = FullStateExpansion(Eerr, prob->model.front().get());
 
     loop(0, N, [&ne, &nu, this](const int k) {
       Q_vec.push_back(StateControlExpansion<T, true>(ne[k], nu[k]));
@@ -223,18 +222,18 @@ public:
   SampledTrajectory<KP> Z_dot;
   // SampledTrajectoryS<Nx, Nu, T> Z;
   // SampledTrajectoryS<Nx, Nu, T> Z_dot;
-  std::vector<v_data_type> dx;
-  std::vector<v_data_type> du;
+  std::vector<vector_type> dx;
+  std::vector<vector_type> du;
 
-  std::vector<m_data_type> gains;
-  std::vector<Ref<m_data_type>> K_vec;
-  std::vector<Ref<v_data_type>> d_vec;
+  std::vector<matrix_type> gains;
+  std::vector<Ref<matrix_type>> K_vec;
+  std::vector<Ref<vector_type>> d_vec;
 
   std::vector<DynamicsExpansion<T>> D_vec;
-  std::vector<m_data_type> G_vec;
+  std::vector<matrix_type> G_vec;
 
-  std::unique_ptr<CostExpansion<T>> Efull;
-  std::unique_ptr<CostExpansion<T>> Eerr;
+  CostExpansion<T> Efull;
+  CostExpansion<T> Eerr;
 
   std::vector<StateControlExpansion<T, true>> Q_vec;
   std::vector<StateControlExpansion<T, false>> S_vec;
@@ -242,8 +241,8 @@ public:
   std::vector<T> DV;
 
   std::unique_ptr<StateControlExpansion<T, true>> Qtmp = nullptr;
-  m_data_type Quu_reg;
-  m_data_type Qux_reg;
+  matrix_type Quu_reg;
+  matrix_type Qux_reg;
   DynamicRegularization<T> reg;
 
   std::vector<T> grad;
@@ -266,7 +265,7 @@ iLQRSolverTemplate void reset(iLQRSolverDeclare &solver) {
 
 iLQRSolverTemplate void dynamics_expansion(iLQRSolverDeclare &solver,
                                            const SampledTrajectory<KP> &Z) {
-  const auto& diff = solver.opts.dynamics_diffmethod;
+  const auto &diff = solver.opts.dynamics_diffmethod;
   auto &D = solver.D_vec;
   const auto &model = solver.model;
   for (int k = 0; k < D.size(); ++k) {

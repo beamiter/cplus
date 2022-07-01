@@ -37,11 +37,13 @@ void gradient(const AbstractFunction<KP> &fun, G &grad, const KP &z) {
   gradient(fun, grad, z.state(), z.control(), z.getparams());
 }
 template <typename KP, typename G, typename X, typename U, typename P>
-void gradient(const AbstractFunction<KP> &fun, G &grad, X x, U u, P p) {
+void gradient(const AbstractFunction<KP> &fun, G &grad, const X &x, const U &u,
+              const P &p) {
   gradient(fun, grad, x, u);
 }
 template <typename KP, typename G, typename X, typename U>
-void gradient(const AbstractFunction<KP> &fun, G &grad, X x, U u) {
+void gradient(const AbstractFunction<KP> &fun, G &grad, const X &x,
+              const U &u) {
   fun.gradient(grad, x, u);
 }
 

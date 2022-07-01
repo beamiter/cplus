@@ -89,7 +89,7 @@ template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
   bool projected_newton = true;
   bool reuse_jacobians = false;
   bool trim_stats = true;
-  int iterations = 10;
+  int iterations = 1;
   bool show_summary = true;
   int verbose = 0;
 };

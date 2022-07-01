@@ -26,8 +26,6 @@ template <typename T, bool B> class StateControlExpansion {};
 template <typename T> class StateControlExpansion<T, true> {
 public:
   static constexpr bool state_control = true;
-  typedef MatrixX<T> m_data_type;
-  typedef VectorX<T> v_data_type;
   static_assert(state_control, "For state and control!!!");
 
   StateControlExpansion(int n, int m)
@@ -36,25 +34,23 @@ public:
         xx(data(ix, ix)), x(grad(ix)), iu(n, m), ux(data(iu, ix)),
         uu(data(iu, iu)), u(grad(iu)) {
     hess.setIdentity();
-    assert(n > 0 && m > 0);
+    CHECK(n > 0 && m > 0);
   }
 
   Eigen::ArithmeticSequence<int, int> ix;
-  m_data_type data;
-  Ref<m_data_type> hess;
-  Ref<v_data_type> grad;
-  Ref<m_data_type> xx;
-  Ref<v_data_type> x;
+  MatrixX<T> data;
+  Ref<MatrixX<T>> hess;
+  Ref<VectorX<T>> grad;
+  Ref<MatrixX<T>> xx;
+  Ref<VectorX<T>> x;
   Eigen::ArithmeticSequence<int, int> iu;
-  Ref<m_data_type> ux;
-  Ref<m_data_type> uu;
-  Ref<v_data_type> u;
+  Ref<MatrixX<T>> ux;
+  Ref<MatrixX<T>> uu;
+  Ref<VectorX<T>> u;
 };
 template <typename T> class StateControlExpansion<T, false> {
 public:
   static constexpr bool state_control = false;
-  typedef MatrixX<T> m_data_type;
-  typedef VectorX<T> v_data_type;
   static_assert(!state_control, "For only state!!!");
 
   // m is not essential
@@ -63,21 +59,21 @@ public:
         hess(data(all, seq(0, last - 1))), grad(data(all, last)),
         xx(data(ix, ix)), x(grad(ix)) {
     hess.setIdentity();
-    assert(n > 0);
+    CHECK(n > 0);
   }
 
   Eigen::ArithmeticSequence<int, int> ix;
-  m_data_type data;
-  Ref<m_data_type> hess;
-  Ref<v_data_type> grad;
-  Ref<m_data_type> xx;
-  Ref<v_data_type> x;
+  MatrixX<T> data;
+  Ref<MatrixX<T>> hess;
+  Ref<VectorX<T>> grad;
+  Ref<MatrixX<T>> xx;
+  Ref<VectorX<T>> x;
 };
 
 template <typename T, bool B = true> class CostExpansion {
 public:
   static const bool state_control = B;
-
+  CostExpansion() = default;
   CostExpansion(const std::vector<int> &nx, const std::vector<int> &nu = {}) {
     const auto N = nx.size();
     const_hess.resize(N, false);
@@ -125,7 +121,9 @@ FullStateExpansion(StateVectorType type,
 template <typename O, typename C, typename P>
 void cost_expansion(const O *obj, C &E, const P &Z) {
   for (int k = 0; k < Z.size(); ++k) {
+    // LOG(INFO) << E[k].grad;
     gradient(obj->diff_method[k], obj->cost_[k], E[k].grad, Z[k]);
+    // LOG(INFO) << E[k].grad;
     // hessian(obj.diffmethod[k], obj.cost[k], E[k].hess, Z[k]);
   }
 }

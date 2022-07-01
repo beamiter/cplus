@@ -32,9 +32,14 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare &solver) {
   for (auto iter = 0; iter < solver.opts.iterations; ++iter) {
     auto J_prev = solver.cost(solver.Z_dot);
     LOG(INFO) << "********** " << J_prev;
+    LOG(INFO) << solver.Efull.data[0].grad;
+    LOG(INFO) << solver.Efull.data[0].data;
     errstate_jacobian(solver.model, solver.G_vec, solver.Z_dot);
     dynamics_expansion(solver, solver.Z_dot);
-    cost_expansion(solver.obj, *solver.Efull, solver.Z_dot);
+    cost_expansion(solver.obj, solver.Efull, solver.Z_dot);
+    solver.Efull.data[0].grad(3) = 1789;
+    LOG(INFO) << solver.Efull.data[0].grad;
+    LOG(INFO) << solver.Efull.data[0].data;
   }
   // return solver;
 }
