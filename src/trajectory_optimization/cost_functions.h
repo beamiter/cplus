@@ -94,15 +94,15 @@ public:
     }
     return J;
   }
-  void gradient(typename KP::v_data_type *grad,
+  void gradient(typename KP::v_data_type &grad,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u,
                 bool is_terminal = false) const final {
     const auto ix = Eigen::seq(0, Nx - 1);
     const auto iu = Eigen::seqN(Nx, Nu);
-    (*grad)(ix) = Q * x + q;
+    grad(ix) = Q * x + q;
     if (!is_terminal) {
-      (*grad)(iu) = R * u + r;
+      grad(iu) = R * u + r;
     }
   }
 
@@ -187,7 +187,7 @@ public:
     }
     return J;
   }
-  void gradient(typename KP::v_data_type *grad,
+  void gradient(typename KP::v_data_type &grad,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u,
                 bool is_terminal = false) const final {

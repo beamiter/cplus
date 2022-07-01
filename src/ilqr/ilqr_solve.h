@@ -34,7 +34,7 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare &solver) {
     LOG(INFO) << "********** " << J_prev;
     errstate_jacobian(solver.model, solver.G_vec, solver.Z_dot);
     dynamics_expansion(solver, solver.Z_dot);
-    cost_expansion(solver.obj, solver.Efull.get(), solver.Z_dot);
+    cost_expansion(solver.obj, *solver.Efull, solver.Z_dot);
   }
   // return solver;
 }

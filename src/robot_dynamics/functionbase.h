@@ -38,7 +38,7 @@ public:
     CHECK(0);
     return 0.0;
   }
-  virtual void gradient(typename KP::v_data_type *grad,
+  virtual void gradient(typename KP::v_data_type &grad,
                         const typename KP::state_type &x,
                         const typename KP::control_type &u,
                         bool is_terminal = false) const {}
@@ -60,8 +60,8 @@ public:
   }
 
   /*Function.*/
-  void gradient(typename KP::v_data_type *grad, const KP &z) {
-    gradient(z.state(), z.control(), z.is_terminal());
+  void gradient(typename KP::v_data_type &grad, const KP &z) {
+    gradient(grad, z.state(), z.control(), z.is_terminal());
   }
 
   constexpr StateControl functioninputs() const { return StateControl(); }

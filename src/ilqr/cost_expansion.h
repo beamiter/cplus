@@ -123,9 +123,9 @@ FullStateExpansion(StateVectorType type,
 }
 
 template <typename O, typename C, typename P>
-void cost_expansion(const O *obj, C *E, const P &Z) {
+void cost_expansion(const O *obj, C &E, const P &Z) {
   for (int k = 0; k < Z.size(); ++k) {
-    gradient(obj->diff_method[k], &obj->cost_[k], (*E)[k].grad, Z[k]);
+    gradient(obj->diff_method[k], obj->cost_[k], E[k].grad, Z[k]);
     // hessian(obj.diffmethod[k], obj.cost[k], E[k].hess, Z[k]);
   }
 }
@@ -149,7 +149,7 @@ void _error_expansion(StateVectorType type, const std::vector<M> &models,
   }
 }
 template <typename M, typename C, typename P, typename Q>
-void _error_expansion(const M& model, C E, C cost, P G, Q z) {
+void _error_expansion(const M &model, C E, C cost, P G, Q z) {
   E.xx = 0;
   E.uu = cost.uu;
   E.u = cost.u;
