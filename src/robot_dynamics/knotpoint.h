@@ -31,11 +31,11 @@ public:
   typedef typename std::conditional<static_vector, Vector<T, Nx + Nu>, V>::type
       value_type;
   typedef
-      typename std::conditional<static_vector, MatrixX<T>,
-                                std::vector<std::vector<T>>>::type m_data_type;
+      typename std::conditional<static_vector, Eigen::Ref<MatrixX<T>>,
+                                std::vector<std::vector<T>>>::type hessian_type;
   typedef
       typename std::conditional<static_vector, Eigen::Ref<VectorX<T>>, V>::type
-          v_data_type;
+          gradient_type;
   typedef T base_type;
   typedef value_type vectype;
   static constexpr int N = Nx;
@@ -124,11 +124,11 @@ public:
   typedef typename std::conditional<static_vector, Vector<T, Nx + Nu>, V>::type
       value_type;
   typedef
-      typename std::conditional<static_vector, MatrixX<T>,
-                                std::vector<std::vector<T>>>::type m_data_type;
+      typename std::conditional<static_vector, Eigen::Ref<MatrixX<T>>,
+                                std::vector<std::vector<T>>>::type hessian_type;
   typedef
       typename std::conditional<static_vector, Eigen::Ref<VectorX<T>>, V>::type
-          v_data_type;
+          gradient_type;
   typedef T base_type;
   typedef value_type vectype;
   static constexpr int N = Nx;
@@ -161,10 +161,10 @@ public:
   typedef typename std::conditional<static_vector, Vector<T, Nx + Nu>,
                                     VectorX<T>>::type value_type;
   typedef
-      typename std::conditional<static_vector, MatrixX<T>,
-                                std::vector<std::vector<T>>>::type m_data_type;
+      typename std::conditional<static_vector, Eigen::Ref<MatrixX<T>>,
+                                std::vector<std::vector<T>>>::type hessian_type;
   typedef typename std::conditional<static_vector, Eigen::Ref<VectorX<T>>,
-                                    std::vector<T>>::type v_data_type;
+                                    std::vector<T>>::type gradient_type;
   typedef T base_type;
   typedef value_type vectype;
   static constexpr int N = Nx;

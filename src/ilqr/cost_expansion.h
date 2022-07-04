@@ -126,7 +126,7 @@ template <typename O, typename C, typename P>
 void cost_expansion(const O *obj, C &E, const P &Z) {
   for (int k = 0; k < Z.size(); ++k) {
     gradient(obj->diff_method[k], obj->cost_[k], E[k]->grad, Z[k]);
-    // hessian(obj.diffmethod[k], obj.cost[k], E[k].hess, Z[k]);
+    hessian(obj->diff_method[k], obj->cost_[k], E[k]->hess, Z[k]);
   }
 }
 template <typename M, typename C, typename P, typename Q>

@@ -94,7 +94,7 @@ public:
     }
     return J;
   }
-  void gradient(typename KP::v_data_type &grad,
+  void gradient(typename KP::gradient_type &grad,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u,
                 bool is_terminal = false) const final {
@@ -105,9 +105,31 @@ public:
       grad(iu) = R * u + r;
     }
   }
-
+  void hessian(typename KP::hessian_type &hess,
+               const typename KP::state_type &x,
+               const typename KP::control_type &u,
+               bool is_terminal = false) const final {
+    const auto ix = Eigen::seq(0, Nx - 1);
+    const auto iu = Eigen::seqN(Nx, Nu);
+    if (is_diag()) {
+      hess.setZero();
+      for (auto i = 0; i < Nx; ++i) {
+        hess(i, i) = Q.diagonal()(i);
+      }
+    } else {
+      hess(ix, ix) = Q;
+    }
+    if (!is_terminal) {
+      if (is_diag()) {
+        for (auto i = 0; i < Nu; ++i) {
+          hess(i + Nx, i + Nx) = R.diagonal()(i);
+        }
+      } else {
+        hess(iu, iu) = R.diagonal();
+      }
+    }
+  }
   bool is_blockdiag() const final { return true; }
-
   bool is_diag() const final { return true; }
 };
 template <int n, int m, typename T>
@@ -187,7 +209,7 @@ public:
     }
     return J;
   }
-  void gradient(typename KP::v_data_type &grad,
+  void gradient(typename KP::gradient_type &grad,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u,
                 bool is_terminal = false) const final {
@@ -199,6 +221,33 @@ public:
       if (!is_blockdiag()) {
         grad(ix) = H.transpose() * u;
         grad(iu) = H * x;
+      }
+    }
+  }
+  void hessian(typename KP::hessian_type &hess,
+               const typename KP::state_type &x,
+               const typename KP::control_type &u,
+               bool is_terminal = false) const final {
+    const auto ix = Eigen::seq(0, Nx - 1);
+    const auto iu = Eigen::seqN(Nx, Nu);
+    if (QuadraticCostFunctionDeclare::is_diag()) {
+      hess.setZero();
+      for (auto i = 0; i < Nx; ++i) {
+        hess(i, i) = Q(i, i);
+      }
+    } else {
+      hess(ix, ix) = Q;
+    }
+    if (!is_terminal) {
+      if (QuadraticCostFunctionDeclare::is_diag()) {
+        for (auto i = 0; i < Nu; ++i) {
+          hess(i + Nx, i + Nx) = R(i, i);
+        }
+      } else {
+        hess(iu, iu) = R;
+      }
+      if (!is_blockdiag()) {
+        hess(iu, ix) = H;
       }
     }
   }

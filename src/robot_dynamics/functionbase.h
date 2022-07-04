@@ -38,10 +38,14 @@ public:
     CHECK(0);
     return 0.0;
   }
-  virtual void gradient(typename KP::v_data_type &grad,
+  virtual void gradient(typename KP::gradient_type &grad,
                         const typename KP::state_type &x,
                         const typename KP::control_type &u,
                         bool is_terminal = false) const {}
+  virtual void hessian(typename KP::hessian_type &hess,
+                       const typename KP::state_type &x,
+                       const typename KP::control_type &u,
+                       bool is_terminal = false) const {}
 
   /*Virtual function*/
   virtual DiffMethod default_diffmethod() const {
@@ -60,7 +64,7 @@ public:
   }
 
   /*Function.*/
-  void gradient(typename KP::v_data_type &grad, const KP &z) {
+  void gradient(typename KP::gradient_type &grad, const KP &z) {
     gradient(grad, z.state(), z.control(), z.is_terminal());
   }
 
