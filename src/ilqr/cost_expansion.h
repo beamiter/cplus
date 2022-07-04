@@ -137,7 +137,9 @@ void error_expansion(const std::vector<M> &models, C Eerr, C Efull, P G, Q Z) {
 template <typename M, typename C, typename P, typename Q>
 void _error_expansion(StateVectorType type, const std::vector<M> &models,
                       C Eerr, C Efull, P G, Q Z) {
-  CHECK(Eerr == Efull);
+  CHECK(0);
+  // TODO. Need to check equality.
+  // CHECK(Eerr == Efull);
   if (StateVectorType::EuclideanState == type) {
     return;
   } else if (StateVectorType::RotationState == type) {
@@ -149,14 +151,14 @@ void _error_expansion(StateVectorType type, const std::vector<M> &models,
   }
 }
 template <typename M, typename C, typename P, typename Q>
-void _error_expansion(const M &model, C E, C cost, P G, Q z) {
+void _error_expansion(const M &model, C E, C cost, P G, P tmp, Q z) {
   E.xx = 0;
   E.uu = cost.uu;
   E.u = cost.u;
   d_errstate_jacobian(model, E.xx, z.state(), cost.x);
   E.ux = cost.ux * G;
   E.x = G.adjoint() * cost.x;
-  auto tmp = cost.xx * G;
+  tmp = cost.xx * G;
   // TODO: Not sure if it's right!
   // E.xx = G.adjoint() * tmp;
 }

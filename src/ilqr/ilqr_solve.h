@@ -37,6 +37,8 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare &solver) {
     errstate_jacobian(solver.model, solver.G_vec, solver.Z_dot);
     dynamics_expansion(solver, solver.Z_dot);
     cost_expansion(solver.obj, solver.Efull, solver.Z_dot);
+    error_expansion(solver.model, solver.Eerr, solver.Efull, solver.G_vec,
+                    solver.Z_dot);
     // solver.Efull.data[0].grad(3) = 1789;
     // LOG(INFO) << solver.Efull.data[0].grad;
     // LOG(INFO) << solver.Efull.data[0].data;
