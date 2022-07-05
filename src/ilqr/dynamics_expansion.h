@@ -45,7 +45,7 @@ template <typename T> struct DynamicsExpansion {
 template <typename M, typename KP>
 void jacobian(FunctionSignature sig, DiffMethod diff, const M &model,
               DynamicsExpansion<typename KP::base_type> *D, const KP &z) {
-  // jacobian(sig, diff, model, D->Df, D->f, z);
+  // jacobian(sig, diff, model.get(), D->Df, D->f, z);
 }
 template <typename M, typename P, typename Q>
 void errstate_jacobian(const std::vector<M> &model, std::vector<P> &G,
