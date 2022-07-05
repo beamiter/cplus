@@ -130,14 +130,14 @@ void cost_expansion(const O *obj, C &E, const P &Z) {
   }
 }
 template <typename M, typename C, typename P, typename Q>
-void error_expansion(const std::vector<M> &models, C Eerr, C Efull, P G, Q Z) {
+void error_expansion(const std::vector<M> &models, C &Eerr, const C &Efull,
+                     P &G, const Q &Z) {
   _error_expansion(models.front()->statevectortype(), models, Eerr, Efull, G,
                    Z);
 }
 template <typename M, typename C, typename P, typename Q>
 void _error_expansion(StateVectorType type, const std::vector<M> &models,
-                      C Eerr, C Efull, P G, Q Z) {
-  CHECK(0);
+                      C &Eerr, const C &Efull, P &G, const Q &Z) {
   // TODO. Need to check equality.
   // CHECK(Eerr == Efull);
   if (StateVectorType::EuclideanState == type) {
@@ -151,16 +151,18 @@ void _error_expansion(StateVectorType type, const std::vector<M> &models,
   }
 }
 template <typename M, typename C, typename P, typename Q>
-void _error_expansion(const M &model, C E, C cost, P G, P tmp, Q z) {
-  E.xx = 0;
-  E.uu = cost.uu;
-  E.u = cost.u;
-  d_errstate_jacobian(model, E.xx, z.state(), cost.x);
-  E.ux = cost.ux * G;
-  E.x = G.adjoint() * cost.x;
-  tmp = cost.xx * G;
+void _error_expansion(const M &model, C &E, const C &cost, const P &G, P &tmp,
+                      const Q &z) {
+  E->xx.setZero();
+  E->uu = cost->uu;
+  E->u = cost->u;
+  // TODO. Impl this.
+  // d_errstate_jacobian(model, E->xx, z.state(), cost->x);
+  E->ux = cost->ux * G;
+  E->x = G.adjoint() * cost->x;
+  tmp = cost->xx * G;
   // TODO: Not sure if it's right!
-  // E.xx = G.adjoint() * tmp;
+  E->xx = G.adjoint() * tmp;
 }
 
 #endif
