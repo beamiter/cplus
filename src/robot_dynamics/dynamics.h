@@ -45,11 +45,11 @@ dynamics(const ContinuousDynamics<KP> *model, const typename KP::state_type &x,
 }
 
 // Inplace.
-template <typename P, typename KP>
+template <typename KP, typename P>
 void dynamics(const ContinuousDynamics<KP> *model, P *xdot, const KP *z) {
   dynamics(model, xdot, z->state(), z->control(), z->time());
 }
-template <typename P, typename KP>
+template <typename KP, typename P>
 void dynamics(const ContinuousDynamics<KP> *model, P *xdot,
               const typename KP::state_type &x,
               const typename KP::control_type &u, typename KP::base_type t) {
@@ -57,39 +57,35 @@ void dynamics(const ContinuousDynamics<KP> *model, P *xdot,
   model->dynamics(xdot, x, u);
 }
 
-// // Depends on the FunctionSignature.
-// template <typename P, typename KP>
-// void dynamics(FunctionSignature sig, const ContinuousDynamics *model, P
-// *xdot,
-//               const KP &z) {
-//   if (FunctionSignature::Inplace == sig) {
-//     dynamics(model, xdot, z);
-//   } else if (FunctionSignature::StaticReturn == sig) {
-//     xdot = dynamics(model, z);
-//   }
-// }
-//
-// template <typename P, typename KP>
-// auto evaluate(const ContinuousDynamics *model,
-//               const typename KP::state_type &x,
-//               const typename KP::control_type &u, P p)
-//               {
-//   return dynamics(model, x, u, p.t);
-// }
-//
-// template <typename P, typename KP>
-// auto evaluate(const ContinuousDynamics *model,
-//               const typename KP::state_type &xdot,
-//               const typename KP::state_type &x,
-//               const typename KP::control_type &u, P p)
-//               {
-//   return dynamics(model, xdot, x, u, p.t);
-// }
-//
-// template <typename P, typename Q, typename KP>
-// auto jacobian(FunctionSignature, DiffMethod, const ContinuousDynamics *model,
-//               Q J, P xdot, const KP &z) {
-//   jacobian(model, J, xdot, z.state(), z.constrol(), z.time());
-// }
+// Depends on the FunctionSignature.
+template <typename KP, typename P>
+void dynamics(FunctionSignature sig, const ContinuousDynamics<KP> *model,
+              P *xdot, const KP &z) {
+  if (FunctionSignature::Inplace == sig) {
+    dynamics(model, xdot, z);
+  } else if (FunctionSignature::StaticReturn == sig) {
+    xdot = dynamics(model, z);
+  }
+}
+
+template <typename KP, typename P>
+auto evaluate(const ContinuousDynamics<KP> *model,
+              const typename KP::state_type &x,
+              const typename KP::control_type &u, P p) {
+  return dynamics(model, x, u, p.t);
+}
+template <typename KP, typename P>
+auto evaluate(const ContinuousDynamics<KP> *model,
+              const typename KP::state_type &xdot,
+              const typename KP::state_type &x,
+              const typename KP::control_type &u, P p) {
+  return dynamics(model, xdot, x, u, p.t);
+}
+template <typename KP, typename Q>
+auto jacobian(FunctionSignature, DiffMethod,
+              const ContinuousDynamics<KP> *model, Q &J,
+              typename KP::state_type &xdot, const KP &z) {
+  jacobian(model, J, xdot, z.state(), z.constrol(), z.time());
+}
 
 #endif

@@ -266,12 +266,11 @@ iLQRSolverTemplate void reset(iLQRSolverDeclare &solver) {
 iLQRSolverTemplate void dynamics_expansion(iLQRSolverDeclare &solver,
                                            const SampledTrajectory<KP> &Z) {
   const auto &diff = solver.opts.dynamics_diffmethod;
-  auto &D = solver.D_vec;
   const auto &model = solver.model;
-  for (int k = 0; k < D.size(); ++k) {
-    jacobian(dynamics_signature(solver), diff, model[k], &D[k], Z[k]);
+  for (int k = 0; k < solver.D_vec.size(); ++k) {
+    jacobian(dynamics_signature(solver), diff, model[k], &solver.D_vec[k], Z[k]);
   }
-  error_expansion(solver.model, D, solver.G_vec);
+  error_expansion(solver.model, solver.D_vec, solver.G_vec);
 }
 
 #endif

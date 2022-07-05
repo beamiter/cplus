@@ -35,8 +35,7 @@ public:
   }
   int state_dim() const final { return Nx; }
   int control_dim() const final { return Nu; }
-  state_type dynamics(const state_type &x,
-                      const control_type &u) const override {
+  state_type dynamics(const state_type &x, const control_type &u) const final {
     const auto &da = u[0];
     const auto &phi = u[1];
 
@@ -66,7 +65,7 @@ public:
     return state_type(xd, yd, omega, phi, a, da);
   }
   void dynamics(state_type *xdot, const state_type &x,
-                const control_type &u) const override {
+                const control_type &u) const final {
     const auto &da = u[0];
     const auto &phi = u[1];
 
@@ -94,6 +93,12 @@ public:
     const auto xd = v * c;
     const auto yd = v * s;
     *xdot << xd, yd, omega, phi, a, da;
+  }
+  void jacobian(typename KP::jacobian_type &jaco,
+                const typename KP::state_type &y,
+                const typename KP::state_type &x,
+                const typename KP::control_type &u) const final {
+    CHECK(0);
   }
 
   RefPos ref;

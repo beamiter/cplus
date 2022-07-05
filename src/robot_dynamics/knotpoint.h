@@ -33,6 +33,9 @@ public:
   typedef
       typename std::conditional<static_vector, Eigen::Ref<MatrixX<T>>,
                                 std::vector<std::vector<T>>>::type hessian_type;
+  typedef typename std::conditional<static_vector, MatrixX<T>,
+                                    std::vector<std::vector<T>>>::type
+      jacobian_type;
   typedef
       typename std::conditional<static_vector, Eigen::Ref<VectorX<T>>, V>::type
           gradient_type;
@@ -126,6 +129,9 @@ public:
   typedef
       typename std::conditional<static_vector, Eigen::Ref<MatrixX<T>>,
                                 std::vector<std::vector<T>>>::type hessian_type;
+  typedef typename std::conditional<static_vector, MatrixX<T>,
+                                    std::vector<std::vector<T>>>::type
+      jacobian_type;
   typedef
       typename std::conditional<static_vector, Eigen::Ref<VectorX<T>>, V>::type
           gradient_type;
@@ -163,6 +169,9 @@ public:
   typedef
       typename std::conditional<static_vector, Eigen::Ref<MatrixX<T>>,
                                 std::vector<std::vector<T>>>::type hessian_type;
+  typedef typename std::conditional<static_vector, MatrixX<T>,
+                                    std::vector<std::vector<T>>>::type
+      jacobian_type;
   typedef typename std::conditional<static_vector, Eigen::Ref<VectorX<T>>,
                                     std::vector<T>>::type gradient_type;
   typedef T base_type;

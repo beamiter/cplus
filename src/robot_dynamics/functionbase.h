@@ -41,11 +41,21 @@ public:
   virtual void gradient(typename KP::gradient_type &grad,
                         const typename KP::state_type &x,
                         const typename KP::control_type &u,
-                        bool is_terminal = false) const {}
+                        bool is_terminal = false) const {
+    CHECK(0);
+  }
   virtual void hessian(typename KP::hessian_type &hess,
                        const typename KP::state_type &x,
                        const typename KP::control_type &u,
-                       bool is_terminal = false) const {}
+                       bool is_terminal = false) const {
+    CHECK(0);
+  }
+  virtual void jacobian(typename KP::jacobian_type &jaco,
+                        const typename KP::state_type &y,
+                        const typename KP::state_type &x,
+                        const typename KP::control_type &u) const {
+    CHECK(0);
+  }
 
   /*Virtual function*/
   virtual DiffMethod default_diffmethod() const {
@@ -191,7 +201,8 @@ auto jacobian(const AbstractFunction<KP> *fun, P &J, Q &y, const X &x,
 template <typename KP, typename P, typename Q, typename X, typename U>
 auto jacobian(const AbstractFunction<KP> *fun, P &J, Q &y, const X &x,
               const U &u) {
-  CHECK(0);
+  fun->jacobian(J, y, x, u);
+  // CHECK(0);
 }
 
 template <typename KP, typename P, typename Q, typename HESS>
