@@ -48,7 +48,7 @@ public:
   virtual void settime(T t) = 0;
   virtual void settimestep(T dt) = 0;
 
-  virtual std::tuple<T, T> getparams() const = 0;
+  virtual std::tuple<T, T> params() const = 0;
 
   virtual state_type *state() = 0;
   virtual const state_type &state() const = 0;
@@ -77,7 +77,7 @@ public:
   control_type getinput(ControlOnly) const { return control(); }
   std::tuple<state_type, control_type, std::tuple<int, int>>
   getargs(StateControl) const {
-    return std::make_tuple(state(), control(), getparams());
+    return std::make_tuple(state(), control(), params());
   }
   std::tuple<state_type> getargs(StateOnly) const {
     return std::make_tuple(state());
@@ -94,8 +94,8 @@ public:
     return std::make_tuple(state_dim(), control_dim());
   }
 
-  base_type time() const { return std::get<0>(getparams()); }
-  base_type timestep() const { return std::get<1>(getparams()); }
+  base_type time() const { return std::get<0>(params()); }
+  base_type timestep() const { return std::get<1>(params()); }
   bool is_terminal() const { return timestep() == 0.0; }
 };
 template <int Nx, int Nu, typename T>
@@ -196,9 +196,7 @@ public:
 
   void settime(T t) override { t_ = t; }
   void settimestep(T dt) override { dt_ = dt; }
-  std::tuple<T, T> getparams() const override {
-    return std::make_tuple(t_, dt_);
-  }
+  std::tuple<T, T> params() const override { return std::make_tuple(t_, dt_); }
 
   // Constructor
   KnotPoint() = default;

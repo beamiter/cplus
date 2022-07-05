@@ -33,7 +33,7 @@ void gradient(DiffMethod diff, const ScalarFunction<KP> &fun, G &grad,
 }
 template <typename KP, typename G>
 void gradient(const AbstractFunction<KP> &fun, G &grad, const KP &z) {
-  gradient(fun, grad, z.state(), z.control(), z.getparams(), z.is_terminal());
+  gradient(fun, grad, z.state(), z.control(), z.params(), z.is_terminal());
 }
 template <typename KP, typename G, typename X, typename U, typename P>
 void gradient(const AbstractFunction<KP> &fun, G &grad, const X &x, const U &u,
@@ -62,7 +62,7 @@ void hessian(DiffMethod diff, const ScalarFunction<KP> &fun, H &hess,
 }
 template <typename KP, typename H>
 void hessian(const ScalarFunction<KP> &fun, H &hess, const KP z) {
-  hessian(fun, hess, z.state(), z.control(), z.getparams(), z.is_terminal());
+  hessian(fun, hess, z.state(), z.control(), z.params(), z.is_terminal());
 }
 template <typename KP, typename H, typename X, typename U, typename P>
 void hessian(const ScalarFunction<KP> &fun, H &hess, const X &x, const U &u,
