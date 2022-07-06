@@ -150,7 +150,7 @@ public:
     });
 
     loop(0, N - 1, [&nx, &ne, &nu, this](const int k) {
-      D_vec.push_back(DynamicsExpansion<T>::init(nx[k], ne[k], nu[k]));
+      D_vec.push_back(DynamicsExpansion<T>(nx[k], ne[k], nu[k]));
     });
 
     loop(0, N, [&nx, &ne, this](const int k) {

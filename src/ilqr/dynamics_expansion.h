@@ -24,22 +24,16 @@ template <typename T> struct DynamicsExpansion {
   MatrixX<T> Df; // (Nx, Nx+Nu)
   Ref<MatrixX<T>> A;
   Ref<MatrixX<T>> B;
-  MatrixX<T> De;
+  MatrixX<T> De; // (Ne, Ne+Nu) or (Nx, Nx+Nu)
   Ref<MatrixX<T>> fx;
   Ref<MatrixX<T>> fu;
   MatrixX<T> tmp; // (Nx, Ne)
-  static DynamicsExpansion<T> init(int n, int e, int m) {
-    auto f = VectorX<T>::Zero(n);
-    auto Df = MatrixX<T>::Zero(n, n + m);
-    MatrixX<T> De;
-    if (n != e) {
-      De = MatrixX<T>::Zero(e, e + m);
-    } else {
-      De = Df;
-    }
-    auto tmp = MatrixX<T>::Zero(n, e);
-    return DynamicsExpansion(f, Df, De, tmp, n, e, m);
-  }
+  DynamicsExpansion(int n, int e, int m)
+      : f(VectorX<T>::Zero(n)), Df(MatrixX<T>::Zero(n, n + m)),
+        A(Df(all, seq(0, n - 1))), B(Df(all, seqN(n, m))),
+        De(n != e ? MatrixX<T>::Zero(e, e + m) : Df),
+        fx(De(all, seq(0, e - 1))), fu(De(all, seqN(e, m))),
+        tmp(MatrixX<T>::Zero(n, e)) {}
 };
 
 template <typename M, typename KP>
