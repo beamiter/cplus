@@ -98,7 +98,18 @@ public:
                 const typename KP::state_type &y,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u) const final {
-    CHECK(0);
+    // CHECK(0);
+    const double s2 = sin(x(2));
+    const double c2 = cos(x(2));
+    jaco(0, 2) = -s2 * x(4);
+    jaco(0, 4) = c2;
+    jaco(1, 2) = c2 * x(4);
+    jaco(1, 4) = s2;
+    jaco(2, 4) = tan(x(3)) / L;
+    jaco(2, 3) = x(4) / (std::pow(cos(x(3)), 2) * L);
+    jaco(3, 7) = 1;
+    jaco(4, 5) = 1;
+    jaco(5, 6) = 1;
   }
 
   RefPos ref;
