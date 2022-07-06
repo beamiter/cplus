@@ -129,18 +129,18 @@ public:
     R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-    obj_ = std::make_unique<Objective<C>>(
+    obj_ = std::make_shared<Objective<C>>(
         LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N));
     // Model initialize.
-    car_ = std::make_unique<CarModel<KP>>(CarModel<KP>());
+    car_ = std::make_shared<CarModel<KP>>(CarModel<KP>());
     Problem<KP, C>::init(car_.get(), obj_.get(), x0, tf);
 
     // initial_controls, initial_states, rollout
   }
 
   // Members.
-  std::unique_ptr<CarModel<KP>> car_;
-  std::unique_ptr<Objective<C>> obj_;
+  std::shared_ptr<CarModel<KP>> car_;
+  std::shared_ptr<Objective<C>> obj_;
 };
 template <int Nx, int Nu, typename T, template <int, int, typename> class C>
 using CarProblemX = CarProblem<KnotPointX<Nx, Nu, T>, C<Nx, Nu, T>>;

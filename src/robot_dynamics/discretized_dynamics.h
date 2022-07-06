@@ -21,6 +21,13 @@ public:
     return continuous_dynamics->control_dim();
   }
   int output_dim() const override { return continuous_dynamics->output_dim(); }
+  void jacobian(typename KP::jacobian_type &jaco,
+                const typename KP::state_type &y,
+                const typename KP::state_type &x,
+                const typename KP::control_type &u) const override {
+    // CHECK(0);
+    continuous_dynamics->jacobian(jaco, y, x, u);
+  }
 
   // Members
   const ContinuousDynamics<KP> *continuous_dynamics = nullptr;

@@ -268,7 +268,8 @@ iLQRSolverTemplate void dynamics_expansion(iLQRSolverDeclare &solver,
   const auto &diff = solver.opts.dynamics_diffmethod;
   const auto &model = solver.model;
   for (int k = 0; k < solver.D_vec.size(); ++k) {
-    jacobian(dynamics_signature(solver), diff, model[k], &solver.D_vec[k], Z[k]);
+    jacobian(dynamics_signature(solver), diff, model[k], &solver.D_vec[k],
+             Z[k]);
   }
   error_expansion(solver.model, solver.D_vec, solver.G_vec);
 }
