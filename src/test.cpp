@@ -30,6 +30,8 @@ TEST(CostExpansionTest, StateControl) {
   LOG(INFO) << "come to here!";
 }
 
+void test(Eigen::Ref<MatrixX<double>> in) { in.setIdentity(); }
+
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   google::InitGoogleLogging(argv[0]);
@@ -44,6 +46,12 @@ int main(int argc, char **argv) {
   haha->data(5, 6) = 100;
   LOG(INFO) << haha->grad;
   LOG(INFO) << haha->data;
+
+  Eigen::Matrix<double, 6, 8> ha;
+  Eigen::Ref<MatrixX<double>> he(ha);
+  he.setZero();
+  test(ha);
+  LOG(INFO) << he;
 
   LOG(INFO) << RUN_ALL_TESTS();
 

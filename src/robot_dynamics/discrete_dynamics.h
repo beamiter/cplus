@@ -51,13 +51,13 @@ typename KP::state_type discrete_dynamics(const DiscreteDynamics<KP> *model,
 // This method is called when using the 'InPlace'.
 template <typename KP>
 void discrete_dynamics(const DiscreteDynamics<KP> *model,
-                       typename KP::state_type *xn, const KP &z) {
+                       typename KP::state_type* xn, const KP &z) {
   discrete_dynamics<KP>(model, xn, z.state(), z.control(), z.time(),
                         z.timestep());
 }
 template <typename KP>
 void discrete_dynamics(const DiscreteDynamics<KP> *model,
-                       typename KP::state_type *xn,
+                       typename KP::state_type* xn,
                        const typename KP::state_type &x,
                        const typename KP::control_type &u,
                        typename KP::base_type t, typename KP::base_type dt) {
@@ -67,7 +67,7 @@ void discrete_dynamics(const DiscreteDynamics<KP> *model,
 // Function not support partial specialization yet.
 template <typename KP>
 void discrete_dynamics(FunctionSignature sig, const DiscreteDynamics<KP> *model,
-                       typename KP::state_type *xn, const KP &z) {
+                       typename KP::state_type* xn, const KP &z) {
   if (sig == FunctionSignature::Inplace) {
     discrete_dynamics(model, xn, z);
   } else {
@@ -87,19 +87,24 @@ void propagate_dynamics(FunctionSignature sig,
   }
 }
 
-// TODO: jacobian
+template <typename KP>
+void jacobian(const DiscreteDynamics<KP> *model, typename KP::ref_matrix_type J,
+              const typename KP::ref_vector_type y,
+              const typename KP::state_type &x,
+              const typename KP::control_type &u,
+              const typename KP::param_type &p) {
+  jacobian(model, J, y, x, u, p.first, p.second);
+}
+template <typename KP, typename P, typename Q>
+void jacobian(const DiscreteDynamics<KP> *model, typename KP::jacobian_type &J,
+              const Q &y, const typename KP::state_type &x,
+              const typename KP::control_type &u, typename KP::base_type t,
+              typename KP::base_type dt) {
+  model->jacobian(J, y, x, u, t, dt);
+}
+
 // TODO: dynamics_error
 // TODO: dynamics_error_jacobian
-
-// template <typename V, typename T, typename P>
-// void jacobian(const DiscreteDynamics<KP> *model, V J, V y, V x, V u, P p) {
-// jacobian(model, J, y, x, u, p.t, p.dt);
-//}
-// template <typename V, typename T, typename P>
-// void jacobian(const DiscreteDynamics<KP> *model, V J, V y, V x, V u, T t,
-// T dt) {
-// CHECK(0);
-//}
 
 // template <typename KP>
 // auto dynamics_error(const DiscreteDynamics<KP> *model, const KP *z2,

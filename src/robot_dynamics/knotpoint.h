@@ -17,41 +17,45 @@ using Eigen::VectorX;
   template <int Nx, int Nu, typename V, typename T>
 #define AbstractKnotPointDeclare AbstractKnotPoint<Nx, Nu, V, T>
 
+#define RegisterKnotPointType(IN)                                              \
+  typedef typename std::conditional<static_vector, Vector<T, Nx>, IN>::type    \
+      state_type;                                                              \
+  typedef typename std::conditional<static_vector, Vector<T, Nu>, IN>::type    \
+      control_type;                                                            \
+  typedef                                                                      \
+      typename std::conditional<static_vector, Vector<T, Nx + Nu>, IN>::type   \
+          value_type;                                                          \
+  typedef typename std::conditional<static_vector, Eigen::Ref<MatrixX<T>>,     \
+                                    std::vector<std::vector<T>> &>::type       \
+      ref_matrix_type;                                                         \
+  typedef typename std::conditional<static_vector, Eigen::Ref<VectorX<T>>,     \
+                                    std::vector<T> &>::type ref_vector_type;   \
+  typedef typename std::conditional<static_vector, MatrixX<T>,                 \
+                                    std::vector<std::vector<T>>>::type         \
+      matrix_type;                                                             \
+  typedef typename std::conditional<static_vector, MatrixX<T>,                 \
+                                    std::vector<std::vector<T>>>::type         \
+      vector_type;                                                             \
+  typedef std::tuple<T, T> param_type;                                         \
+  typedef T base_type;                                                         \
+  typedef value_type vectype;                                                  \
+  static constexpr int N = Nx;                                                 \
+  static constexpr int M = Nu;
+
 AbstractKnotPointTemplate class AbstractKnotPoint {
   static constexpr bool static_vector =
       std::is_base_of<Vector<T, Nx + Nu>, V>::value;
   static_assert(static_vector, "Not static vector!!!");
 
 public:
+  RegisterKnotPointType(V);
   ~AbstractKnotPoint() = default;
-  typedef typename std::conditional<static_vector, Vector<T, Nx>, V>::type
-      state_type;
-  typedef typename std::conditional<static_vector, Vector<T, Nu>, V>::type
-      control_type;
-  typedef typename std::conditional<static_vector, Vector<T, Nx + Nu>, V>::type
-      value_type;
-  typedef
-      typename std::conditional<static_vector, Eigen::Ref<MatrixX<T>>,
-                                std::vector<std::vector<T>>>::type hessian_type;
-  typedef typename std::conditional<static_vector, MatrixX<T>,
-                                    std::vector<std::vector<T>>>::type
-      jacobian_type;
-  typedef
-      typename std::conditional<static_vector, Eigen::Ref<VectorX<T>>, V>::type
-          gradient_type;
-  typedef T base_type;
-  typedef value_type vectype;
-  static constexpr int N = Nx;
-  static constexpr int M = Nu;
 
   // Pure virtual functions.
-  // virtual value_type &getdata() = 0;
-  // virtual value_type &getstate() = 0;
-  // virtual value_type &getcontrol() = 0;
   virtual void settime(T t) = 0;
   virtual void settimestep(T dt) = 0;
 
-  virtual std::tuple<T, T> params() const = 0;
+  virtual param_type params() const = 0;
 
   virtual state_type *state() = 0;
   virtual const state_type &state() const = 0;
@@ -120,25 +124,7 @@ KnotPointTemplate class KnotPoint : public AbstractKnotPointDeclare {
   static_assert(static_vector, "not static vector!!!");
 
 public:
-  typedef typename std::conditional<static_vector, Vector<T, Nx>, V>::type
-      state_type;
-  typedef typename std::conditional<static_vector, Vector<T, Nu>, V>::type
-      control_type;
-  typedef typename std::conditional<static_vector, Vector<T, Nx + Nu>, V>::type
-      value_type;
-  typedef
-      typename std::conditional<static_vector, Eigen::Ref<MatrixX<T>>,
-                                std::vector<std::vector<T>>>::type hessian_type;
-  typedef typename std::conditional<static_vector, MatrixX<T>,
-                                    std::vector<std::vector<T>>>::type
-      jacobian_type;
-  typedef
-      typename std::conditional<static_vector, Eigen::Ref<VectorX<T>>, V>::type
-          gradient_type;
-  typedef T base_type;
-  typedef value_type vectype;
-  static constexpr int N = Nx;
-  static constexpr int M = Nu;
+  RegisterKnotPointType(V);
 };
 
 template <int Nx, int Nu, typename T>
@@ -158,26 +144,8 @@ class KnotPoint<Nx, Nu, Vector<T, Nx + Nu>, T>
   static_assert(static_vector, "not static vector!!!");
 
 public:
-  typedef
-      typename std::conditional<static_vector, Vector<T, Nx>, VectorX<T>>::type
-          state_type;
-  typedef
-      typename std::conditional<static_vector, Vector<T, Nu>, VectorX<T>>::type
-          control_type;
-  typedef typename std::conditional<static_vector, Vector<T, Nx + Nu>,
-                                    VectorX<T>>::type value_type;
-  typedef
-      typename std::conditional<static_vector, Eigen::Ref<MatrixX<T>>,
-                                std::vector<std::vector<T>>>::type hessian_type;
-  typedef typename std::conditional<static_vector, MatrixX<T>,
-                                    std::vector<std::vector<T>>>::type
-      jacobian_type;
-  typedef typename std::conditional<static_vector, Eigen::Ref<VectorX<T>>,
-                                    std::vector<T>>::type gradient_type;
-  typedef T base_type;
-  typedef value_type vectype;
-  static constexpr int N = Nx;
-  static constexpr int M = Nu;
+  using V = Vector<T, Nx + Nu>;
+  RegisterKnotPointType(V);
 
   // Overrides.
   state_type *state() override { return &zx_; }
@@ -205,7 +173,7 @@ public:
 
   void settime(T t) override { t_ = t; }
   void settimestep(T dt) override { dt_ = dt; }
-  std::tuple<T, T> params() const override { return std::make_tuple(t_, dt_); }
+  param_type params() const override { return std::make_tuple(t_, dt_); }
 
   // Constructor
   KnotPoint() = default;

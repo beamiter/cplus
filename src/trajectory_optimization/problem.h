@@ -85,14 +85,6 @@ public:
     init(models, obj_in, x0_in, tf_in);
   }
 
-  void init(const ContinuousDynamics<KP> *model_in, const Objective<C> *obj_in,
-            state_type x0_in, base_type tf_in) {
-    // Can not use make_shared here!!!
-    std::shared_ptr<DiscreteDynamics<KP>> discretized_car(
-        new DiscretizedDynamics<KP, RK4>(model_in));
-    init(discretized_car, obj_in, x0_in, tf_in);
-  }
-
   // Members
   // Object length.
   int N = 0;

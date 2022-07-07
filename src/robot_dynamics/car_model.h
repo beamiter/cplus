@@ -20,8 +20,6 @@ enum class RefPos {
 };
 
 template <typename KP> class CarModel : public ContinuousDynamics<KP> {
-  using state_type = typename KP::state_type;
-  using control_type = typename KP::control_type;
 
 public:
   virtual ~CarModel() = default;
@@ -35,7 +33,9 @@ public:
   }
   int state_dim() const final { return Nx; }
   int control_dim() const final { return Nu; }
-  state_type dynamics(const state_type &x, const control_type &u) const final {
+  typename KP::state_type
+  dynamics(const typename KP::state_type &x,
+           const typename KP::control_type &u) const final {
     const auto &da = u[0];
     const auto &phi = u[1];
 
@@ -62,10 +62,11 @@ public:
     }
     const auto xd = v * c;
     const auto yd = v * s;
-    return state_type(xd, yd, omega, phi, a, da);
+    return typename KP::state_type(xd, yd, omega, phi, a, da);
   }
-  void dynamics(state_type *xdot, const state_type &x,
-                const control_type &u) const final {
+  void dynamics(typename KP::ref_vector_type xdot,
+                const typename KP::state_type &x,
+                const typename KP::control_type &u) const final {
     const auto &da = u[0];
     const auto &phi = u[1];
 
@@ -92,10 +93,10 @@ public:
     }
     const auto xd = v * c;
     const auto yd = v * s;
-    *xdot << xd, yd, omega, phi, a, da;
+    xdot << xd, yd, omega, phi, a, da;
   }
-  void jacobian(typename KP::jacobian_type &jaco,
-                const typename KP::state_type &y,
+  void jacobian(typename KP::ref_matrix_type jaco,
+                typename KP::ref_vector_type y,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u) const final {
     // CHECK(0);
@@ -140,18 +141,20 @@ public:
     R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-    obj_ = std::make_shared<Objective<C>>(
-        LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N));
-    // Model initialize.
-    car_ = std::make_shared<CarModel<KP>>(CarModel<KP>());
-    Problem<KP, C>::init(car_.get(), obj_.get(), x0, tf);
+    obj_ = LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N);
+    // Must be discretized.
+    discretized_car_ = std::make_shared<DiscretizedDynamics<KP, RK4>>(&car_);
+
+    Problem<KP, C>::init(discretized_car_, &obj_, x0, tf);
 
     // initial_controls, initial_states, rollout
   }
 
   // Members.
-  std::shared_ptr<CarModel<KP>> car_;
-  std::shared_ptr<Objective<C>> obj_;
+  // std::shared_ptr<CarModel<KP>> car_;
+  CarModel<KP> car_;
+  Objective<C> obj_;
+  std::shared_ptr<DiscretizedDynamics<KP, RK4>> discretized_car_;
 };
 template <int Nx, int Nu, typename T, template <int, int, typename> class C>
 using CarProblemX = CarProblem<KnotPointX<Nx, Nu, T>, C<Nx, Nu, T>>;

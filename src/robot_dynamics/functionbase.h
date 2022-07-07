@@ -38,23 +38,30 @@ public:
     CHECK(0);
     return 0.0;
   }
-  virtual void gradient(typename KP::gradient_type &grad,
+  virtual void gradient(typename KP::ref_vector_type grad,
                         const typename KP::state_type &x,
                         const typename KP::control_type &u,
                         bool is_terminal = false) const {
     CHECK(0);
   }
-  virtual void hessian(typename KP::hessian_type &hess,
+  virtual void hessian(typename KP::ref_matrix_type hess,
                        const typename KP::state_type &x,
                        const typename KP::control_type &u,
                        bool is_terminal = false) const {
     CHECK(0);
   }
-  virtual void jacobian(typename KP::jacobian_type &jaco,
-                        const typename KP::state_type &y,
+  virtual void jacobian(typename KP::ref_matrix_type jaco,
+                        typename KP::ref_vector_type y,
                         const typename KP::state_type &x,
                         const typename KP::control_type &u) const {
     CHECK(0);
+  }
+  virtual void
+  jacobian(typename KP::ref_matrix_type jaco, typename KP::ref_vector_type y,
+           const typename KP::state_type &x, const typename KP::control_type &u,
+           typename KP::base_type t, typename KP::base_type dt) const {
+    jacobian(jaco, y, x, u);
+    jaco *= dt;
   }
 
   /*Virtual function*/
@@ -74,7 +81,7 @@ public:
   }
 
   /*Function.*/
-  void gradient(typename KP::gradient_type &grad, const KP &z) {
+  void gradient(typename KP::ref_vector_type grad, const KP &z) {
     gradient(grad, z.state(), z.control(), z.is_terminal());
   }
 
@@ -174,35 +181,41 @@ auto evaluate(FunctionSignature sig, const AbstractFunction<KP> *fun, P y,
 }
 
 // Jacobian.
-template <typename KP, typename P, typename Q>
-void jacobian(FunctionSignature, DiffMethod diff,
-              const AbstractFunction<KP> *fun, P &J, Q &y, const KP &z) {
-  if (DiffMethod::UserDefined == diff) {
-    jacobian(fun, J, y, z);
-  } else {
-    CHECK(0);
-  }
-}
-template <typename KP, typename P, typename Q>
-void jacobian(const AbstractFunction<KP> *fun, P &J, Q &y, const KP &z) {
+// template <typename KP>
+// void jacobian(FunctionSignature, DiffMethod diff,
+//               const AbstractFunction<KP> *fun, typename KP::ref_matrix_type J,
+//               typename KP::ref_vector_type y, const KP &z) {
+//   if (DiffMethod::UserDefined == diff) {
+//     jacobian(fun, J, y, z);
+//   } else {
+//     CHECK(0);
+//   }
+// }
+template <typename KP>
+void jacobian(const AbstractFunction<KP> *fun, typename KP::ref_matrix_type J,
+              typename KP::ref_vector_type y, const KP &z) {
   jacobian(fun->functioninputs(), fun, J, y, z);
 }
-template <typename KP, typename P, typename Q>
-auto jacobian(FunctionInputs inputtype, const AbstractFunction<KP> *fun, P &J,
-              Q &y, const KP &z) {
+template <typename KP>
+auto jacobian(FunctionInputs inputtype, const AbstractFunction<KP> *fun,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
+              const KP &z) {
   jacobian(fun, J, y, z.state(), z.control(), z.params());
 }
-template <typename KP, typename P, typename Q, typename X, typename U,
-          typename O>
-auto jacobian(const AbstractFunction<KP> *fun, P &J, Q &y, const X &x,
-              const U &u, const O &p) {
+template <typename KP>
+auto jacobian(const AbstractFunction<KP> *fun, typename KP::ref_matrix_type J,
+              typename KP::ref_vector_type y, const typename KP::state_type &x,
+              const typename KP::control_type &u, const typename KP::param_type &p) {
   jacobian(fun, J, y, x, u);
 }
-template <typename KP, typename P, typename Q, typename X, typename U>
-auto jacobian(const AbstractFunction<KP> *fun, P &J, Q &y, const X &x,
-              const U &u) {
-  fun->jacobian(J, y, x, u);
-  // CHECK(0);
+template <typename KP>
+auto jacobian(const AbstractFunction<KP> *fun, typename KP::ref_matrix_type J,
+              typename KP::ref_vector_type y, const typename KP::state_type &x,
+              const typename KP::control_type &u) {
+  // fun->jacobian(J, y, x, u);
+  // TODO. Impl for specific funtion.
+  // jacobian(fun, J, y, x, u);
+  CHECK(0);
 }
 
 template <typename KP, typename P, typename Q, typename HESS>

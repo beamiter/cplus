@@ -29,10 +29,11 @@ public:
 
 template <typename C> class Objective : public AbstractObjective {
   // For template type check.
-  //static_assert(std::is_base_of<CostFunction, C>::value,
-                //"T is not derived of CostFunction");
+  // static_assert(std::is_base_of<CostFunction, C>::value,
+  //"T is not derived of CostFunction");
 
 public:
+  Objective() = default;
   // Constructors
   Objective(std::vector<C> cost_in,
             DiffMethod diff_method_in = DiffMethod::UserDefined) {

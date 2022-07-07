@@ -12,21 +12,32 @@ public:
 };
 
 template <typename KP> class ContinuousDynamics : public AbstractModel<KP> {
-  using state_type = typename KP::state_type;
-  using control_type = typename KP::control_type;
-  using value_type = typename KP::value_type;
-  using base_type = typename KP::base_type;
 
 public:
   int output_dim() const override { return this->state_dim(); }
-  virtual state_type dynamics(const state_type &x,
-                              const control_type &u) const {
+  virtual typename KP::state_type
+  dynamics(const typename KP::state_type &x,
+           const typename KP::control_type &u) const {
     CHECK(0);
     return x;
   }
-  virtual void dynamics(state_type *xdot, const state_type &x,
-                        const control_type &u) const {
+  virtual void dynamics(typename KP::ref_vector_type xdot,
+                        const typename KP::state_type &x,
+                        const typename KP::control_type &u) const {
     CHECK(0);
+  }
+  virtual void jacobian(typename KP::ref_vector_type jaco,
+                        const typename KP::state_type &y,
+                        const typename KP::state_type &x,
+                        const typename KP::control_type &u) const {
+    CHECK(0);
+  }
+  virtual void
+  jacobian(typename KP::ref_matrix_type jaco, typename KP::ref_vector_type y,
+           const typename KP::state_type &x, const typename KP::control_type &u,
+           typename KP::base_type t, typename KP::base_type dt) const {
+    jacobian(jaco, y, x, u);
+    jaco *= dt;
   }
 };
 
@@ -44,21 +55,23 @@ dynamics(const ContinuousDynamics<KP> *model, const typename KP::state_type &x,
 }
 
 // Inplace.
-template <typename KP, typename P>
-void dynamics(const ContinuousDynamics<KP> *model, P *xdot, const KP *z) {
+template <typename KP>
+void dynamics(const ContinuousDynamics<KP> *model,
+              typename KP::ref_vector_type xdot, const KP *z) {
   dynamics(model, xdot, z->state(), z->control(), z->time());
 }
-template <typename KP, typename P>
-void dynamics(const ContinuousDynamics<KP> *model, P *xdot,
+template <typename KP>
+void dynamics(const ContinuousDynamics<KP> *model,
+              typename KP::ref_vector_type xdot,
               const typename KP::state_type &x,
               const typename KP::control_type &u, typename KP::base_type t) {
-  // model->dynamics(xdot, x, u);
+  model->dynamics(xdot, x, u);
 }
 
 // Depends on the FunctionSignature.
-template <typename KP, typename P>
+template <typename KP>
 void dynamics(FunctionSignature sig, const ContinuousDynamics<KP> *model,
-              P *xdot, const KP &z) {
+              typename KP::ref_vector_type xdot, const KP &z) {
   if (FunctionSignature::Inplace == sig) {
     dynamics(model, xdot, z);
   } else if (FunctionSignature::StaticReturn == sig) {
@@ -66,18 +79,20 @@ void dynamics(FunctionSignature sig, const ContinuousDynamics<KP> *model,
   }
 }
 
-template <typename KP, typename P>
+template <typename KP>
 auto evaluate(const ContinuousDynamics<KP> *model,
               const typename KP::state_type &x,
-              const typename KP::control_type &u, P p) {
-  return dynamics(model, x, u, p.t);
+              const typename KP::control_type &u,
+              const typename KP::param_type &p) {
+  return dynamics(model, x, u, p.first);
 }
 template <typename KP, typename P>
 auto evaluate(const ContinuousDynamics<KP> *model,
               const typename KP::state_type &xdot,
               const typename KP::state_type &x,
-              const typename KP::control_type &u, P p) {
-  return dynamics(model, xdot, x, u, p.t);
+              const typename KP::control_type &u,
+              const typename KP::param_type &p) {
+  return dynamics(model, xdot, x, u, p.first);
 }
 template <typename KP, typename Q>
 auto jacobian(FunctionSignature, DiffMethod,

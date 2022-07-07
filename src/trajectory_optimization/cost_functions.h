@@ -94,7 +94,7 @@ public:
     }
     return J;
   }
-  void gradient(typename KP::gradient_type &grad,
+  void gradient(typename KP::ref_vector_type grad,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u,
                 bool is_terminal = false) const final {
@@ -105,7 +105,7 @@ public:
       grad(iu) = R * u + r;
     }
   }
-  void hessian(typename KP::hessian_type &hess,
+  void hessian(typename KP::ref_matrix_type hess,
                const typename KP::state_type &x,
                const typename KP::control_type &u,
                bool is_terminal = false) const final {
@@ -209,7 +209,7 @@ public:
     }
     return J;
   }
-  void gradient(typename KP::gradient_type &grad,
+  void gradient(typename KP::ref_vector_type grad,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u,
                 bool is_terminal = false) const final {

@@ -15,16 +15,15 @@ public:
   DiscretizedDynamics(const ContinuousDynamics<KP> *dynamics_in)
       : continuous_dynamics(dynamics_in) {}
 
-  // Overriding
   int state_dim() const override { return continuous_dynamics->state_dim(); }
   int control_dim() const override {
     return continuous_dynamics->control_dim();
   }
   int output_dim() const override { return continuous_dynamics->output_dim(); }
-  void jacobian(typename KP::jacobian_type &jaco,
-                const typename KP::state_type &y,
-                const typename KP::state_type &x,
-                const typename KP::control_type &u) const override {
+  virtual void jacobian(typename KP::ref_matrix_type jaco,
+                        typename KP::ref_vector_type y,
+                        const typename KP::state_type &x,
+                        const typename KP::control_type &u) const {
     // CHECK(0);
     continuous_dynamics->jacobian(jaco, y, x, u);
   }
@@ -55,13 +54,13 @@ discrete_dynamics(const DiscretizedDynamics<KP, Q> *model,
 // This method is called when using the 'InPlace'.
 template <typename KP, template <typename> class Q>
 void discrete_dynamics(const DiscretizedDynamics<KP, Q> *model,
-                       typename KP::state_type *xn, const KP &z) {
+                       typename KP::ref_vector_type xn, const KP &z) {
   discrete_dynamics<KP, Q>(model, xn, z.state(), z.control(), z.time(),
                            z.timestep());
 }
 template <typename KP, template <typename> class Q>
 void discrete_dynamics(const DiscretizedDynamics<KP, Q> *model,
-                       typename KP::state_type *xn,
+                       typename KP::ref_vector_type xn,
                        const typename KP::state_type &x,
                        const typename KP::control_type &u,
                        typename KP::base_type t, typename KP::base_type dt) {
@@ -78,6 +77,18 @@ void discrete_dynamics(FunctionSignature sig,
     discrete_dynamics(model, xn, z);
   } else {
     xn = discrete_dynamics(model, z);
+  }
+}
+
+template <typename KP, template <typename> class Q>
+void jacobian(FunctionSignature sig, DiffMethod diff,
+              const DiscretizedDynamics<KP, Q> *model,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
+              const KP &z) {
+  if (DiffMethod::UserDefined == diff) {
+    jacobian<KP>(&const_cast<DiscretizedDynamics<KP, Q> *>(model)->integrator,
+                 sig, model->continuous_dynamics, J, y, z.state(), z.control(),
+                 z.time(), z.timestep());
   }
 }
 

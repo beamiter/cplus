@@ -2,7 +2,7 @@
 #define DYNAMICS_EXPANSION_H
 
 #include "base/base.h"
-#include "robot_dynamics/discrete_dynamics.h"
+#include "robot_dynamics/discretized_dynamics.h"
 #include "robot_dynamics/functionbase.h"
 #include "robot_dynamics/statevectortype.h"
 #include <Eigen/Dense>
@@ -36,11 +36,15 @@ template <typename T> struct DynamicsExpansion {
         tmp(MatrixX<T>::Zero(n, e)) {}
 };
 
-template <typename M, typename KP>
-void jacobian(FunctionSignature sig, DiffMethod diff, const M &model,
+template <typename KP>
+void jacobian(FunctionSignature sig, DiffMethod diff,
+              const DiscreteDynamics<KP> *model,
               DynamicsExpansion<typename KP::base_type> *D, const KP &z) {
-  jacobian(sig, diff, model.get(), D->Df, D->f, z);
+  jacobian(sig, diff, static_cast<const DiscretizedDynamics<KP, RK4> *>(model),
+           D->Df, D->f, z);
 }
+
+// error_expansion
 template <typename M, typename P, typename Q>
 void errstate_jacobian(const std::vector<M> &model, std::vector<P> &G,
                        const Q &Z) {
