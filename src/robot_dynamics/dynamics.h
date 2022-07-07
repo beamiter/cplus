@@ -40,7 +40,6 @@ template <typename KP>
 typename KP::state_type
 dynamics(const ContinuousDynamics<KP> *model, const typename KP::state_type &x,
          const typename KP::control_type &u, typename KP::base_type t) {
-  // return dynamics(model, x, u);
   return model->dynamics(x, u);
 }
 
@@ -53,8 +52,7 @@ template <typename KP, typename P>
 void dynamics(const ContinuousDynamics<KP> *model, P *xdot,
               const typename KP::state_type &x,
               const typename KP::control_type &u, typename KP::base_type t) {
-  // dynamics(model, xdot, x, u);
-  model->dynamics(xdot, x, u);
+  // model->dynamics(xdot, x, u);
 }
 
 // Depends on the FunctionSignature.

@@ -189,63 +189,62 @@ template <typename T> struct ADVecotor {};
 //   }
 // }
 
-struct RK4 : Explicit {
-  VectorXd k1;
-  VectorXd k2;
-  VectorXd k3;
-  VectorXd k4;
-  std::array<MatrixXd, 4> A;
-  std::array<MatrixXd, 4> B;
-  std::array<MatrixXd, 4> dA;
-  std::array<MatrixXd, 4> dB;
-  RK4() = default;
-  RK4(int n, int m) {
-    k1 = VectorXd::Zero(n);
-    k2 = VectorXd::Zero(n);
-    k3 = VectorXd::Zero(n);
-    k4 = VectorXd::Zero(n);
-    loop(0, 4, [this, n, m](const int k) {
-      this->A.at(k) = MatrixXd::Zero(n, n);
-      this->B.at(k) = MatrixXd::Zero(n, m);
-      this->dA.at(k) = MatrixXd::Zero(n, n);
-      this->dB.at(k) = MatrixXd::Zero(n, m);
+template <typename KP> struct RK4 : Explicit {
+  typename KP::state_type k1;
+  typename KP::state_type k2;
+  typename KP::state_type k3;
+  typename KP::state_type k4;
+  std::array<Matrix<typename KP::base_type, KP::N, KP::N>, 4> A;
+  std::array<Matrix<typename KP::base_type, KP::N, KP::M>, 4> B;
+  std::array<Matrix<typename KP::base_type, KP::N, KP::N>, 4> dA;
+  std::array<Matrix<typename KP::base_type, KP::N, KP::M>, 4> dB;
+  RK4() {
+    k1.setZero();
+    k2.setZero();
+    k3.setZero();
+    k4.setZero();
+    loop(0, 4, [this](const int k) {
+      this->A.at(k).setZero();
+      this->B.at(k).setZero();
+      this->dA.at(k).setZero();
+      this->dB.at(k).setZero();
     });
   }
 };
-inline auto getks(RK4 inte)
+template <typename KP>
+inline auto getks(const RK4<KP> &inte)
     -> decltype(std::make_tuple(inte.k1, inte.k2, inte.k3, inte.k4)) {
   return std::make_tuple(inte.k1, inte.k2, inte.k3, inte.k4);
 }
-template <typename M, typename KP>
+template <typename KP>
 typename KP::state_type
-integrate(const RK4 &, const M *model, const typename KP::state_type &x,
-          const typename KP::control_type &u, typename KP::base_type t,
-          typename KP::base_type h) {
+integrate(const RK4<KP> &, const ContinuousDynamics<KP> *model,
+          const typename KP::state_type &x, const typename KP::control_type &u,
+          typename KP::base_type t, typename KP::base_type h) {
   const auto k1 = dynamics<KP>(model, x, u, t) * h;
   const auto k2 = dynamics<KP>(model, x + k1 / 2, u, t + h / 2) * h;
   const auto k3 = dynamics<KP>(model, x + k2 / 2, u, t + h / 2) * h;
   const auto k4 = dynamics<KP>(model, x + k3, u, t + h) * h;
   return x + (k1 + 2 * k2 + 2 * k3 + k4) / 6;
 }
-// template<typename KP> void
-// integrate(RK4 *inte, const ContinuousDynamics *model,
-//           typename KP::state_type *xn,
-//           const typename KP::state_type &x,
-//           const typename KP::control_type &u, T t, T h)
-//           {
-//   auto &k1 = inte->k1;
-//   auto &k2 = inte->k2;
-//   auto &k3 = inte->k3;
-//   auto &k4 = inte->k4;
-//   dynamics<VectorXd, Nx, Nu, V, T>(model, &k1, x, u, t);
-//   *xn = x + k1 * h / 2;
-//   dynamics<VectorXd, Nx, Nu, V, T>(model, &k2, *xn, u, t + h / 2);
-//   *xn = x + k2 * h / 2;
-//   dynamics<VectorXd, Nx, Nu, V, T>(model, &k3, *xn, u, t + h / 2);
-//   *xn = x + k3 * h;
-//   dynamics<VectorXd, Nx, Nu, V, T>(model, &k4, *xn, u, t + h);
-//   *xn = x + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
-// }
+template <typename KP>
+void integrate(RK4<KP> *inte, const ContinuousDynamics<KP> *model,
+               typename KP::state_type *xn, const typename KP::state_type &x,
+               const typename KP::control_type &u, typename KP::base_type t,
+               typename KP::base_type h) {
+  auto &k1 = inte->k1;
+  auto &k2 = inte->k2;
+  auto &k3 = inte->k3;
+  auto &k4 = inte->k4;
+  dynamics<KP>(model, &k1, x, u, t);
+  *xn = x + k1 * h / 2;
+  dynamics<KP>(model, &k2, *xn, u, t + h / 2);
+  *xn = x + k2 * h / 2;
+  dynamics<KP>(model, &k3, *xn, u, t + h / 2);
+  *xn = x + k3 * h;
+  dynamics<KP>(model, &k4, *xn, u, t + h);
+  *xn = x + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+}
 // template <typename P, AbstractKnotPointTypeName>
 // void jacobian(RK4 *inte, FunctionSignature sig, const ContinuousDynamics
 // *model,

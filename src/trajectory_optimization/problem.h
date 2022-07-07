@@ -89,7 +89,7 @@ public:
             state_type x0_in, base_type tf_in) {
     // Can not use make_shared here!!!
     std::shared_ptr<DiscreteDynamics<KP>> discretized_car(
-        new DiscretizedDynamics<RK4, KP>(model_in));
+        new DiscretizedDynamics<KP, RK4>(model_in));
     init(discretized_car, obj_in, x0_in, tf_in);
   }
 
