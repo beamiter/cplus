@@ -27,7 +27,6 @@ TEST(CostExpansionTest, StateControl) {
   iLQRSolverSd<6, 2, DiagonalCostS> solver(
       &prob, opts, stats, DiffMethod::UserDefined, Valbool<true>());
   solve(solver);
-  LOG(INFO) << "come to here!";
 }
 
 void test(Eigen::Ref<MatrixX<double>> in) { in.setIdentity(); }
@@ -51,7 +50,7 @@ int main(int argc, char **argv) {
   Eigen::Ref<MatrixX<double>> he(ha);
   he.setZero();
   test(ha);
-  LOG(INFO) << he;
+  LOG(INFO) << ha.rows() << ha.cols();
 
   LOG(INFO) << RUN_ALL_TESTS();
 

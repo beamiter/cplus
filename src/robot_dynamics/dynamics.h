@@ -26,18 +26,11 @@ public:
                         const typename KP::control_type &u) const {
     CHECK(0);
   }
-  virtual void jacobian(typename KP::ref_vector_type jaco,
-                        const typename KP::state_type &y,
+  virtual void jacobian(typename KP::ref_matrix_type jaco,
+                        typename KP::ref_vector_type y,
                         const typename KP::state_type &x,
-                        const typename KP::control_type &u) const {
+                        const typename KP::control_type &u) const override {
     CHECK(0);
-  }
-  virtual void
-  jacobian(typename KP::ref_matrix_type jaco, typename KP::ref_vector_type y,
-           const typename KP::state_type &x, const typename KP::control_type &u,
-           typename KP::base_type t, typename KP::base_type dt) const {
-    jacobian(jaco, y, x, u);
-    jaco *= dt;
   }
 };
 
@@ -80,25 +73,36 @@ void dynamics(FunctionSignature sig, const ContinuousDynamics<KP> *model,
 }
 
 template <typename KP>
-auto evaluate(const ContinuousDynamics<KP> *model,
-              const typename KP::state_type &x,
-              const typename KP::control_type &u,
-              const typename KP::param_type &p) {
+typename KP::state_type
+evaluate(const ContinuousDynamics<KP> *model, const typename KP::state_type &x,
+         const typename KP::control_type &u, const typename KP::param_type &p) {
   return dynamics(model, x, u, p.first);
 }
-template <typename KP, typename P>
-auto evaluate(const ContinuousDynamics<KP> *model,
-              const typename KP::state_type &xdot,
+template <typename KP>
+void evaluate(const ContinuousDynamics<KP> *model,
+              const typename KP::ref_vector_type xdot,
               const typename KP::state_type &x,
               const typename KP::control_type &u,
               const typename KP::param_type &p) {
-  return dynamics(model, xdot, x, u, p.first);
+  dynamics(model, xdot, x, u, p.first);
 }
-template <typename KP, typename Q>
-auto jacobian(FunctionSignature, DiffMethod,
-              const ContinuousDynamics<KP> *model, Q &J,
-              typename KP::state_type &xdot, const KP &z) {
-  jacobian(model, J, xdot, z.state(), z.constrol(), z.time());
+template <typename KP>
+void jacobian(FunctionSignature, DiffMethod diff,
+              const ContinuousDynamics<KP> *model,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type xdot,
+              const KP &z) {
+  if (DiffMethod::UserDefined == diff) {
+    jacobian(model, J, xdot, z.state(), z.constrol(), z.time());
+  } else {
+    CHECK(0);
+  }
+}
+template <typename KP>
+void jacobian(const ContinuousDynamics<KP> *model,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type xdot,
+              const typename KP::state_type &x,
+              const typename KP::control_type &u, typename KP::base_type t) {
+  model->jacobian(J, xdot, x, u);
 }
 
 #endif

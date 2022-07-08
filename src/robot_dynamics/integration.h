@@ -110,7 +110,7 @@ template <typename T> struct ADVecotor {};
 //   if (FunctionSignature::StaticReturn == sig) {
 //     int n, m, p;
 //     std::tie(n, m, p) = model->dims();
-//     const auto ix = Eigen::seq(0, n);
+//     const auto ix = Eigen::seq(0, n - 1);
 //     const auto iu = Eigen::seqN(n, m);
 //     const auto k1 = dynamics(model, x, u, t) * h;
 //     const auto k2 = dynamics(model, x + k1 / 2, u, t + h / 2) * h;
@@ -155,7 +155,7 @@ template <typename T> struct ADVecotor {};
 //     auto &dB3 = inte->dB[2];
 //     int n, m, p;
 //     std::tie(n, m, p) = model->dims();
-//     const auto ix = Eigen::seq(0, n);
+//     const auto ix = Eigen::seq(0, n - 1);
 //     const auto iu = Eigen::seqN(n, m);
 //
 //     jacobian(model, J, k1, x, u, t);
@@ -256,7 +256,7 @@ void jacobian(RK4<KP> *inte, FunctionSignature sig,
   if (FunctionSignature::StaticReturn == sig) {
     int n, m, p;
     std::tie(n, m, p) = model->dims();
-    const auto ix = Eigen::seq(0, n);
+    const auto ix = Eigen::seq(0, n - 1);
     const auto iu = Eigen::seqN(n, m);
     const auto k1 = dynamics(model, x, u, t) * h;
     const auto k2 = dynamics(model, x + k1 / 2, u, t + h / 2) * h;
@@ -316,7 +316,7 @@ void jacobian(RK4<KP> *inte, FunctionSignature sig,
     auto &dB4 = inte->dB[3];
     int n, m, p;
     std::tie(n, m, p) = model->dims();
-    const auto ix = Eigen::seq(0, n);
+    const auto ix = Eigen::seq(0, n - 1);
     const auto iu = Eigen::seqN(n, m);
 
     jacobian(model, J, inte->k1, x, u, t);
