@@ -185,6 +185,87 @@ public:
   KP &operator[](int i) { return data[i]; }
 
   // Methods.
+  bool has_terminal_control(SampledTrajectory<KP> Z) {
+    return !is_terminal(Z.back());
+  }
+  int state_dim() const { return KP::Nx; }
+  int control_dim() const { return KP::Nu; }
+  int state_dim(int k) const { return data[k].state_dim(); }
+  int control_dim(int k) const { return data[k].control_dim(); }
+  std::tuple<std::vector<int>, std::vector<int>, int> dims() const {
+    std::vector<int> nx;
+    std::vector<int> nu;
+    for (const auto &z : data) {
+      nx.push_back(z.state_dim());
+      nu.push_back(z.control_dim());
+    }
+    return std::make_tuple(nx, nu, length(data));
+  }
+  int num_vars() const {
+    int num = 0;
+    for (const auto &z : data) {
+      num += z.state_dim() + (is_terminal(z) ? 0 : z.control_dim());
+    }
+    return num;
+  }
+  std::vector<int> eachcontrol() const {
+    std::vector<int> rtn;
+    has_terminal_control() ? rtn.resize(length(data))
+                           : rtn.resize(length(data) - 1);
+    std::iota(rtn.begin(), rtn.end(), 0);
+    return rtn;
+  }
+  std::vector<typename KP::state_type> states() const {
+    std::vector<typename KP::state_type> rtn;
+    for (int k = 0; k < data.size(); ++k) {
+      rtn.push_back(data[k].state());
+    }
+    return rtn;
+  }
+  std::vector<typename KP::base_type> states(int ind) {
+    std::vector<typename KP::base_type> rtn;
+    for (int k = 0; k < data.size(); ++k) {
+      rtn.push_back(data[k].state()[ind]);
+    }
+    return rtn;
+  }
+  std::vector<std::vector<typename KP::base_type>>
+  states(const std::vector<int> &inds) {
+    std::vector<std::vector<typename KP::base_type>> rtn;
+    for (auto k = 0; k < inds.size(); ++k) {
+      rtn.push_back(states(k));
+    }
+    return rtn;
+  }
+  std::vector<typename KP::control_type> controls() {
+    std::vector<typename KP::control_type> rtn;
+    for (int k = 0; k < eachcontrol().size(); ++k) {
+      rtn.push_back(data[k].control());
+    }
+    return rtn;
+  }
+  std::vector<typename KP::base_type> controls(int ind) {
+    std::vector<typename KP::base_type> rtn;
+    for (int k = 0; k < eachcontrol().size(); ++k) {
+      rtn.push_back(data[k].control()[ind]);
+    }
+    return rtn;
+  }
+  std::vector<std::vector<typename KP::base_type>>
+  controls(std::vector<int> inds) {
+    std::vector<std::vector<typename KP::base_type>> rtn;
+    for (auto k = 0; k < inds.size(); ++k) {
+      rtn.push_back(controls(k));
+    }
+    return rtn;
+  }
+  std::vector<typename KP::base_type> gettimes() {
+    std::vector<typename KP::base_type> rtn;
+    for (const auto &z : data) {
+      rtn.push_back(z.time());
+    }
+    return rtn;
+  }
 
   // Members.
   std::vector<KP> data;
@@ -198,118 +279,15 @@ protected:
     }
     return std::distance(iter, times.begin());
   }
+  int num_vars(int n, int m, int N, bool equal = false) {
+    auto Nu = equal ? N : N - 1;
+    return N * n + Nu * m;
+  }
 };
 template <int n, int m, typename T>
 using SampledTrajectoryS = SampledTrajectory<KnotPointS<n, m, T>>;
 template <int n, int m>
 using SampledTrajectorySd = SampledTrajectory<KnotPointSd<n, m>>;
-
-template <typename KP> auto has_terminal_control(SampledTrajectory<KP> Z) {
-  return !is_terminal(Z.back());
-}
-template <typename KP> auto state_dim(SampledTrajectory<KP> Z) {
-  return KP::Nx;
-}
-template <typename KP> auto control_dim(SampledTrajectory<KP> Z) {
-  return KP::Nu;
-}
-template <typename KP> auto state_dim(SampledTrajectory<KP> Z, int k) {
-  return state_dim(Z[k]);
-}
-template <typename KP> auto control_dim(SampledTrajectory<KP> Z, int k) {
-  return control_dim(Z[k]);
-}
-
-template <typename KP>
-std::tuple<std::vector<int>, std::vector<int>, int>
-dims(SampledTrajectory<KP> Z) {
-  std::vector<int> nx;
-  std::vector<int> nu;
-  for (const auto z : Z) {
-    nx.push_back(state_dim(z));
-    nu.push_back(control_dim(z));
-  }
-  return std::make_tuple(nx, nu, length(Z));
-}
-template <typename KP> auto num_vars(SampledTrajectory<KP> Z) {
-  int num = 0;
-  for (const auto z : Z) {
-    num += state_dim(z) + (is_terminal(z) ? 0 : control_dim(z));
-  }
-  return num;
-}
-
-inline auto num_vars(int n, int m, int N, bool equal = false) {
-  auto Nu = equal ? N : N - 1;
-  return N * n + Nu * m;
-}
-
-template <typename KP> auto eachcontrol(SampledTrajectory<KP> Z) {
-  std::vector<int> rtn;
-  has_terminal_control(Z) ? rtn.resize(length(Z) - 1)
-                          : rtn.resize(length(Z) - 2);
-  std::iota(rtn.begin(), rtn.end(), 0);
-  return rtn;
-}
-
-template <typename KP> auto states(SampledTrajectory<KP> Z) {
-  std::vector<typename KP::state_type> rtn;
-  for (int k = 0; k < Z.size(); ++k) {
-    rtn.push_back(state(Z[k]));
-  }
-  return rtn;
-}
-
-template <typename KP> auto states(SampledTrajectory<KP> Z, int ind) {
-  std::vector<typename KP::base_type> rtn;
-  for (int k = 0; k < Z.size(); ++k) {
-    rtn.push_back(state(Z[k])(ind));
-  }
-  return rtn;
-}
-
-template <typename KP>
-auto states(SampledTrajectory<KP> Z, std::vector<int> inds) {
-  std::vector<std::vector<typename KP::state_type>> rtn;
-  for (auto k = 0; k < inds.size(); ++k) {
-    rtn.push_back(states(Z, k));
-  }
-  return rtn;
-}
-
-template <typename KP> auto controls(SampledTrajectory<KP> Z) {
-  std::vector<typename KP::control_type> rtn;
-  for (int k = 0; k < eachcontrol(Z).size(); ++k) {
-    rtn.push_back(control(Z[k]));
-  }
-  return rtn;
-}
-
-template <typename KP> auto controls(SampledTrajectory<KP> Z, int ind) {
-  std::vector<typename KP::base_type> rtn;
-  for (int k = 0; k < eachcontrol(Z).size(); ++k) {
-    rtn.push_back(control(Z[k](ind)));
-  }
-  return rtn;
-}
-
-template <typename KP>
-auto controls(SampledTrajectory<KP> Z, std::vector<int> inds) {
-  std::vector<std::vector<typename KP::control_type>> rtn;
-  for (auto k = 0; k < inds.size(); ++k) {
-    rtn.push_back(controls(Z, k));
-  }
-  return rtn;
-}
-
-template <typename KP>
-std::vector<typename KP::base_type> gettimes(SampledTrajectory<KP> Z) {
-  std::vector<typename KP::base_type> rtn;
-  for (const auto z : Z) {
-    rtn.push_back(time(z));
-  }
-  return rtn;
-}
 
 template <typename KP> auto getdata(SampledTrajectory<KP> Z) {
   std::vector<typename KP::value_type> rtn;
