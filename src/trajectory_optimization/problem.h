@@ -71,7 +71,7 @@ public:
     param.tf = tf_in;
     param.dt = 0.1;
     param.N = N;
-    this->Z = SampledTrajectoryHelper::init<Nx, Nu>(X0, U0, param);
+    this->Z = SampledTrajectory<KP>(X0, U0, param);
     ::setinitialtime<KP>(Z, 0.0);
   }
 

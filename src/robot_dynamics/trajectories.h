@@ -71,28 +71,16 @@ inline auto gettimeinfo(std::vector<double> dt, double t0 = 0.,
   return std::partial_sum(dt.begin(), dt.end(), dt.begin());
 }
 
-#define AbstractTrajectoryDeclare AbstractTrajectory<KP>
 template <typename KP> class AbstractTrajectory {
 public:
-  using state_type = typename KP::state_type;
-  using control_type = typename KP::control_type;
-  using value_type = typename KP::value_type;
-  using base_type = typename KP::base_type;
-  using vectype = value_type;
-
   virtual ~AbstractTrajectory() = default;
-  virtual const state_type getstate(double t) const = 0;
-  virtual const control_type getcontrol(double t) const = 0;
-  virtual base_type getinitialtime() const = 0;
-  virtual base_type getfinaltime() const = 0;
+  virtual const typename KP::state_type getstate(double t) const = 0;
+  virtual const typename KP::control_type getcontrol(double t) const = 0;
+  virtual typename KP::base_type getinitialtime() const = 0;
+  virtual typename KP::base_type getfinaltime() const = 0;
 };
 
-#define SampledTrajectoryTypeName typename KP
-#define SampledTrajectoryTemplate template <typename KP>
-#define SampledTrajectoryDeclare SampledTrajectory<KP>
-
-SampledTrajectoryTemplate class SampledTrajectory
-    : public AbstractTrajectoryDeclare {
+template <typename KP> class SampledTrajectory : public AbstractTrajectory<KP> {
 public:
   using state_type = typename KP::state_type;
   using control_type = typename KP::control_type;
@@ -100,18 +88,94 @@ public:
   using base_type = typename KP::base_type;
   using vectype = value_type;
 
+  // Constructors.
   SampledTrajectory() = default;
   SampledTrajectory(std::vector<KP> data_in, std::vector<base_type> times_in)
       : data(std::move(data_in)), times(std::move(times_in)) {}
-  SampledTrajectory(const SampledTrajectoryDeclare &traj)
+  SampledTrajectory(const SampledTrajectory<KP> &traj)
       : data(traj.data), times(traj.times) {}
+  SampledTrajectory(const std::vector<KP> &Z) {
+    times.resize(length(Z));
+    for (auto k = 0; k < length(Z); ++k) {
+      times[k] = Z[k].time();
+    }
+    data = Z;
+  }
+  SampledTrajectory(TrivialParam param, bool equal = false) {
+    times = gettimeinfo(param);
+    std::vector<double> dt_vec;
+    dt_vec.reserve(times.size() + 1);
+    std::adjacent_difference(times.begin(), times.end(), dt_vec.begin());
+    // Since the first value is not adjacent_difference.
+    dt_vec[0] = dt_vec[1];
+    dt_vec.push_back(0.0);
+    data.clear();
+    for (int k = 0; k < times.size(); ++k) {
+      data.emplace_back(Vector<typename KP::base_type, KP::N + KP::M>::Zero(),
+                        times[k], dt_vec[k]);
+    }
+  }
+  SampledTrajectory(const std::vector<state_type> &X,
+                    const std::vector<control_type> &U, TrivialParam param) {
+    auto N = X.size();
+    if (std::isnan(param.tf) && std::isnan(param.dt)) {
+      CHECK(0);
+    }
+    if (!std::isnan(param.N) && param.N != N) {
+      CHECK(0);
+    }
+    times = gettimeinfo(param);
+    std::vector<double> dt_vec;
+    dt_vec.reserve(times.size());
+    std::adjacent_difference(times.begin(), times.end(), dt_vec.begin());
+    // Since the first value is not adjacent_difference.
+    dt_vec[0] = dt_vec[1];
+    data.clear();
+    for (int k = 0; k < N - 1; ++k) {
+      VectorXd joined(X[k].size() + U[k].size());
+      // LOG(INFO) << X[k] << ", " << U[k] << ", " << dt_vec[k];
+      joined << X[k], U[k];
+      // LOG(INFO) << joined;
+      data.emplace_back(joined, times[k], dt_vec[k]);
+    }
+    if (length(X) == length(U)) {
+      VectorXd joined(X.back().size() + U.back().size());
+      joined << X.back(), U.back();
+      data.emplace_back(joined, times.back(),
+                        std::numeric_limits<double>::infinity());
+    } else {
+      VectorXd joined(X.back().size() + U.back().size());
+      joined << X.back(), U.back() * 0.0;
+      data.emplace_back(joined, times.back(), 0.0);
+    }
+  }
 
-  SampledTrajectoryDeclare &operator=(const SampledTrajectoryDeclare &traj) {
+  // Overrides.
+  const state_type getstate(double t) const final {
+    CHECK(!data.empty());
+    return data[getk(t)].state();
+  }
+  const control_type getcontrol(double t) const final {
+    CHECK(!data.empty());
+    return data[getk(t)].control();
+  }
+  base_type getinitialtime() const final {
+    CHECK(!data.empty());
+    return data.front().time();
+  }
+  base_type getfinaltime() const final {
+    CHECK(!data.empty());
+    return data.back().time();
+  }
+
+  // Operators.
+  SampledTrajectory<KP> &operator=(const SampledTrajectory<KP> &traj) {
     this->data = traj.data;
     this->times = traj.times;
     return *this;
   }
 
+  // Iterators.
   auto begin() { return data.begin(); }
   auto end() { return data.end(); }
   auto front() { return data.front(); }
@@ -120,27 +184,13 @@ public:
   const KP &operator[](int i) const { return data[i]; }
   KP &operator[](int i) { return data[i]; }
 
-  const state_type getstate(double t) const override {
-    CHECK(!data.empty());
-    return data[getk(t)].state();
-  }
-  const control_type getcontrol(double t) const override {
-    CHECK(!data.empty());
-    return data[getk(t)].control();
-  }
-  base_type getinitialtime() const override {
-    CHECK(!data.empty());
-    return data.front().time();
-  }
-  base_type getfinaltime() const override {
-    CHECK(!data.empty());
-    return data.back().time();
-  }
+  // Methods.
 
+  // Members.
   std::vector<KP> data;
   std::vector<base_type> times;
 
-private:
+protected:
   int getk(double t) const {
     auto iter = std::lower_bound(times.begin(), times.end(), t);
     if (iter == times.end()) {
@@ -149,97 +199,30 @@ private:
     return std::distance(iter, times.begin());
   }
 };
-
 template <int n, int m, typename T>
 using SampledTrajectoryS = SampledTrajectory<KnotPointS<n, m, T>>;
 template <int n, int m>
 using SampledTrajectorySd = SampledTrajectory<KnotPointSd<n, m>>;
 
-struct SampledTrajectoryHelper {
-  KnotPointTemplate static auto init(std::vector<KnotPointS<Nx, Nu, T>> Z) {
-    SampledTrajectoryS<Nx, Nu, T> traj;
-    traj.times.resize(length(Z));
-    for (auto k = 0; k < length(Z); ++k) {
-      traj.times[k] = Z[k].time();
-    }
-    traj.data = Z;
-    return traj;
-  }
-
-  template <int Nx, int Nu>
-  static auto init(int n, int m, TrivialParam param, bool equal = false) {
-    auto times = gettimeinfo(param);
-    std::vector<double> dt_vec;
-    dt_vec.reserve(times.size() + 1);
-    std::adjacent_difference(times.begin(), times.end(), dt_vec.begin());
-    // Since the first value is not adjacent_difference.
-    dt_vec[0] = dt_vec[1];
-    dt_vec.push_back(0.0);
-    std::vector<KnotPointSd<Nx, Nu>> Z;
-    for (int k = 0; k < Z.size(); ++k) {
-      Z.emplace_back(n, m, VectorXd::Zero(n + m), times[k], dt_vec[k]);
-    }
-    return init<Nx, Nu, double>(Z);
-  }
-
-  template <int Nx, int Nu>
-  static auto init(const std::vector<Vector<double, Nx>> &X,
-                   const std::vector<Vector<double, Nu>> &U,
-                   TrivialParam param) {
-    auto N = X.size();
-    if (std::isnan(param.tf) && std::isnan(param.dt)) {
-      CHECK(0);
-    }
-    if (!std::isnan(param.N) && param.N != N) {
-      CHECK(0);
-    }
-    auto times = gettimeinfo(param);
-    std::vector<double> dt_vec;
-    dt_vec.reserve(times.size());
-    std::adjacent_difference(times.begin(), times.end(), dt_vec.begin());
-    // Since the first value is not adjacent_difference.
-    dt_vec[0] = dt_vec[1];
-    std::vector<KnotPointSd<Nx, Nu>> Z;
-    for (int k = 0; k < N - 1; ++k) {
-      VectorXd joined(X[k].size() + U[k].size());
-      // LOG(INFO) << X[k] << ", " << U[k] << ", " << dt_vec[k];
-      joined << X[k], U[k];
-      // LOG(INFO) << joined;
-      Z.emplace_back(joined, times[k], dt_vec[k]);
-    }
-    if (length(X) == length(U)) {
-      VectorXd joined(X.back().size() + U.back().size());
-      joined << X.back(), U.back();
-      Z.emplace_back(joined, times.back(),
-                     std::numeric_limits<double>::infinity());
-    } else {
-      VectorXd joined(X.back().size() + U.back().size());
-      joined << X.back(), U.back() * 0.0;
-      Z.emplace_back(joined, times.back(), 0.0);
-    }
-    return init<Nx, Nu, double>(Z);
-  }
-};
-
-SampledTrajectoryTemplate auto
-has_terminal_control(SampledTrajectoryDeclare Z) {
+template <typename KP> auto has_terminal_control(SampledTrajectory<KP> Z) {
   return !is_terminal(Z.back());
 }
-SampledTrajectoryTemplate auto state_dim(SampledTrajectoryDeclare Z) {
+template <typename KP> auto state_dim(SampledTrajectory<KP> Z) {
   return KP::Nx;
 }
-SampledTrajectoryTemplate auto control_dim(SampledTrajectoryDeclare Z) {
+template <typename KP> auto control_dim(SampledTrajectory<KP> Z) {
   return KP::Nu;
 }
-SampledTrajectoryTemplate auto state_dim(SampledTrajectoryDeclare Z, int k) {
+template <typename KP> auto state_dim(SampledTrajectory<KP> Z, int k) {
   return state_dim(Z[k]);
 }
-SampledTrajectoryTemplate auto control_dim(SampledTrajectoryDeclare Z, int k) {
+template <typename KP> auto control_dim(SampledTrajectory<KP> Z, int k) {
   return control_dim(Z[k]);
 }
 
-SampledTrajectoryTemplate std::tuple<std::vector<int>, std::vector<int>, int>
-dims(SampledTrajectoryDeclare Z) {
+template <typename KP>
+std::tuple<std::vector<int>, std::vector<int>, int>
+dims(SampledTrajectory<KP> Z) {
   std::vector<int> nx;
   std::vector<int> nu;
   for (const auto z : Z) {
@@ -248,7 +231,7 @@ dims(SampledTrajectoryDeclare Z) {
   }
   return std::make_tuple(nx, nu, length(Z));
 }
-SampledTrajectoryTemplate auto num_vars(SampledTrajectoryDeclare Z) {
+template <typename KP> auto num_vars(SampledTrajectory<KP> Z) {
   int num = 0;
   for (const auto z : Z) {
     num += state_dim(z) + (is_terminal(z) ? 0 : control_dim(z));
@@ -261,7 +244,7 @@ inline auto num_vars(int n, int m, int N, bool equal = false) {
   return N * n + Nu * m;
 }
 
-SampledTrajectoryTemplate auto eachcontrol(SampledTrajectoryDeclare Z) {
+template <typename KP> auto eachcontrol(SampledTrajectory<KP> Z) {
   std::vector<int> rtn;
   has_terminal_control(Z) ? rtn.resize(length(Z) - 1)
                           : rtn.resize(length(Z) - 2);
@@ -269,7 +252,7 @@ SampledTrajectoryTemplate auto eachcontrol(SampledTrajectoryDeclare Z) {
   return rtn;
 }
 
-SampledTrajectoryTemplate auto states(SampledTrajectoryDeclare Z) {
+template <typename KP> auto states(SampledTrajectory<KP> Z) {
   std::vector<typename KP::state_type> rtn;
   for (int k = 0; k < Z.size(); ++k) {
     rtn.push_back(state(Z[k]));
@@ -277,7 +260,7 @@ SampledTrajectoryTemplate auto states(SampledTrajectoryDeclare Z) {
   return rtn;
 }
 
-SampledTrajectoryTemplate auto states(SampledTrajectoryDeclare Z, int ind) {
+template <typename KP> auto states(SampledTrajectory<KP> Z, int ind) {
   std::vector<typename KP::base_type> rtn;
   for (int k = 0; k < Z.size(); ++k) {
     rtn.push_back(state(Z[k])(ind));
@@ -285,8 +268,8 @@ SampledTrajectoryTemplate auto states(SampledTrajectoryDeclare Z, int ind) {
   return rtn;
 }
 
-SampledTrajectoryTemplate auto states(SampledTrajectoryDeclare Z,
-                                      std::vector<int> inds) {
+template <typename KP>
+auto states(SampledTrajectory<KP> Z, std::vector<int> inds) {
   std::vector<std::vector<typename KP::state_type>> rtn;
   for (auto k = 0; k < inds.size(); ++k) {
     rtn.push_back(states(Z, k));
@@ -294,7 +277,7 @@ SampledTrajectoryTemplate auto states(SampledTrajectoryDeclare Z,
   return rtn;
 }
 
-SampledTrajectoryTemplate auto controls(SampledTrajectoryDeclare Z) {
+template <typename KP> auto controls(SampledTrajectory<KP> Z) {
   std::vector<typename KP::control_type> rtn;
   for (int k = 0; k < eachcontrol(Z).size(); ++k) {
     rtn.push_back(control(Z[k]));
@@ -302,7 +285,7 @@ SampledTrajectoryTemplate auto controls(SampledTrajectoryDeclare Z) {
   return rtn;
 }
 
-SampledTrajectoryTemplate auto controls(SampledTrajectoryDeclare Z, int ind) {
+template <typename KP> auto controls(SampledTrajectory<KP> Z, int ind) {
   std::vector<typename KP::base_type> rtn;
   for (int k = 0; k < eachcontrol(Z).size(); ++k) {
     rtn.push_back(control(Z[k](ind)));
@@ -310,8 +293,8 @@ SampledTrajectoryTemplate auto controls(SampledTrajectoryDeclare Z, int ind) {
   return rtn;
 }
 
-SampledTrajectoryTemplate auto controls(SampledTrajectoryDeclare Z,
-                                        std::vector<int> inds) {
+template <typename KP>
+auto controls(SampledTrajectory<KP> Z, std::vector<int> inds) {
   std::vector<std::vector<typename KP::control_type>> rtn;
   for (auto k = 0; k < inds.size(); ++k) {
     rtn.push_back(controls(Z, k));
@@ -319,8 +302,8 @@ SampledTrajectoryTemplate auto controls(SampledTrajectoryDeclare Z,
   return rtn;
 }
 
-SampledTrajectoryTemplate std::vector<typename KP::base_type>
-gettimes(SampledTrajectoryDeclare Z) {
+template <typename KP>
+std::vector<typename KP::base_type> gettimes(SampledTrajectory<KP> Z) {
   std::vector<typename KP::base_type> rtn;
   for (const auto z : Z) {
     rtn.push_back(time(z));
@@ -328,7 +311,7 @@ gettimes(SampledTrajectoryDeclare Z) {
   return rtn;
 }
 
-SampledTrajectoryTemplate auto getdata(SampledTrajectoryDeclare Z) {
+template <typename KP> auto getdata(SampledTrajectory<KP> Z) {
   std::vector<typename KP::value_type> rtn;
   for (const auto z : Z) {
     rtn.push_back(get_data(z));
@@ -336,65 +319,65 @@ SampledTrajectoryTemplate auto getdata(SampledTrajectoryDeclare Z) {
   return rtn;
 }
 
-template <typename Q, SampledTrajectoryTypeName>
-auto setstates(SampledTrajectoryDeclare Z, Q X) {
+template <typename Q, typename KP>
+auto setstates(SampledTrajectory<KP> Z, Q X) {
   for (int k = 0; k < Z.size(); ++k) {
     Z[k].setstate(X[k]);
   }
 }
 
-SampledTrajectoryTemplate auto setstates(SampledTrajectoryDeclare Z,
-                                         MatrixX<typename KP::base_type> X) {
+template <typename KP>
+auto setstates(SampledTrajectory<KP> Z, MatrixX<typename KP::base_type> X) {
   for (int k = 0; k < Z.size(); ++k) {
     Z[k].setstate(X(all, k));
   }
 }
 
-template <typename Q, SampledTrajectoryTypeName>
-auto setcontrols(SampledTrajectoryDeclare Z, Q U) {
+template <typename Q, typename KP>
+auto setcontrols(SampledTrajectory<KP> Z, Q U) {
   for (int k = 0; k < Z.size() - 1; ++k) {
     Z[k].setcontrol(U[k]);
   }
 }
 
-SampledTrajectoryTemplate auto setcontrols(SampledTrajectoryDeclare Z,
-                                           MatrixX<typename KP::base_type> U) {
+template <typename KP>
+auto setcontrols(SampledTrajectory<KP> Z, MatrixX<typename KP::base_type> U) {
   for (int k = 0; k < Z.size() - 1; ++k) {
     Z[k].setcontrol(U(all, k));
   }
 }
 
-SampledTrajectoryTemplate auto setcontrols(SampledTrajectoryDeclare Z,
-                                           VectorX<typename KP::base_type> u) {
+template <typename KP>
+auto setcontrols(SampledTrajectory<KP> Z, VectorX<typename KP::base_type> u) {
   for (int k = 0; k < Z.size() - 1; ++k) {
     setcontrol(Z[k], u);
   }
 }
 
-template <typename Q, SampledTrajectoryTypeName>
-auto setdata(SampledTrajectoryDeclare Z, Q data) {
+template <typename Q, typename KP>
+auto setdata(SampledTrajectory<KP> Z, Q data) {
   for (int k = 0; k < Z.size() - 1; ++k) {
     setdata(Z[k], data[k]);
   }
 }
 
-SampledTrajectoryTemplate auto setdata(SampledTrajectoryDeclare Z,
-                                       MatrixX<typename KP::base_type> data) {
+template <typename KP>
+auto setdata(SampledTrajectory<KP> Z, MatrixX<typename KP::base_type> data) {
   for (int k = 0; k < Z.size() - 1; ++k) {
     setdata(Z[k], data(all, k));
   }
 }
 
-SampledTrajectoryTemplate auto
-settimes(SampledTrajectoryDeclare Z, std::vector<typename KP::base_type> ts) {
+template <typename KP>
+auto settimes(SampledTrajectory<KP> Z, std::vector<typename KP::base_type> ts) {
   for (auto k = 0; k < ts.size(); ++k) {
     Z[k].t = ts[k];
     k < ts.size() - 1 && (Z[k].dt = ts[k + 1] - ts[k]);
   }
 }
 
-SampledTrajectoryTemplate auto set_dt(SampledTrajectoryDeclare Z,
-                                      typename KP::base_type dt) {
+template <typename KP>
+auto set_dt(SampledTrajectory<KP> Z, typename KP::base_type dt) {
   double t = Z[0].t;
   for (auto &z : Z) {
     z.t = t;
@@ -406,8 +389,8 @@ SampledTrajectoryTemplate auto set_dt(SampledTrajectoryDeclare Z,
   return t;
 }
 
-SampledTrajectoryTemplate void setinitialtime(SampledTrajectoryDeclare Z,
-                                              typename KP::base_type t0) {
+template <typename KP>
+void setinitialtime(SampledTrajectory<KP> Z, typename KP::base_type t0) {
   double t0_prev = Z[0].time();
   double Dt = t0 - t0_prev;
   for (auto &z : Z) {
@@ -416,14 +399,13 @@ SampledTrajectoryTemplate void setinitialtime(SampledTrajectoryDeclare Z,
   }
 }
 
-SampledTrajectoryTemplate int length(const SampledTrajectoryDeclare &z) {
+template <typename KP> int length(const SampledTrajectory<KP> &z) {
   return length(z.data);
 }
 
-SampledTrajectoryTemplate void rollout(FunctionSignature sig,
-                                       const DiscreteDynamics<KP> *model,
-                                       SampledTrajectoryDeclare &Z,
-                                       typename KP::state_type x0) {
+template <typename KP>
+void rollout(FunctionSignature sig, const DiscreteDynamics<KP> *model,
+             SampledTrajectory<KP> &Z, typename KP::state_type x0) {
   Z[0].setstate(x0);
   for (auto k = 1; k < length(Z); ++k) {
     propagate_dynamics(sig, model, &Z[k], Z[k - 1]);
@@ -431,9 +413,9 @@ SampledTrajectoryTemplate void rollout(FunctionSignature sig,
 }
 
 // DiscretizedDynamics need to specify the Quadrature rule.
-template <template <typename> class Q, SampledTrajectoryTypeName>
+template <template <typename> class Q, typename KP>
 void rollout(FunctionSignature sig, const DiscretizedDynamics<KP, Q> *model,
-             SampledTrajectoryDeclare &Z, typename KP::state_type x0) {
+             SampledTrajectory<KP> &Z, typename KP::state_type x0) {
   Z[0].setstate(x0);
   for (auto k = 1; k < length(Z); ++k) {
     propagate_dynamics(sig, model, &Z[k], Z[k - 1]);
