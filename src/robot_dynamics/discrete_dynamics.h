@@ -26,8 +26,8 @@ typename KP::state_type evaluate(const DiscreteDynamics<KP> *model,
 }
 // Evaluate for in-place.
 template <typename KP>
-void evaluate(const DiscreteDynamics<KP> *model, typename KP::state_type *xn,
-              const KP &z) {
+void evaluate(const DiscreteDynamics<KP> *model,
+              typename KP::ref_vector_type xn, const KP &z) {
   discrete_dynamics(model, xn, z);
 }
 
@@ -51,13 +51,13 @@ typename KP::state_type discrete_dynamics(const DiscreteDynamics<KP> *model,
 // This method is called when using the 'InPlace'.
 template <typename KP>
 void discrete_dynamics(const DiscreteDynamics<KP> *model,
-                       typename KP::state_type* xn, const KP &z) {
+                       typename KP::ref_vector_type xn, const KP &z) {
   discrete_dynamics<KP>(model, xn, z.state(), z.control(), z.time(),
                         z.timestep());
 }
 template <typename KP>
 void discrete_dynamics(const DiscreteDynamics<KP> *model,
-                       typename KP::state_type* xn,
+                       typename KP::ref_vector_type xn,
                        const typename KP::state_type &x,
                        const typename KP::control_type &u,
                        typename KP::base_type t, typename KP::base_type dt) {
@@ -67,7 +67,7 @@ void discrete_dynamics(const DiscreteDynamics<KP> *model,
 // Function not support partial specialization yet.
 template <typename KP>
 void discrete_dynamics(FunctionSignature sig, const DiscreteDynamics<KP> *model,
-                       typename KP::state_type* xn, const KP &z) {
+                       typename KP::ref_vector_type xn, const KP &z) {
   if (sig == FunctionSignature::Inplace) {
     discrete_dynamics(model, xn, z);
   } else {

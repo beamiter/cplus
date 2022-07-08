@@ -81,8 +81,8 @@ public:
   using vectype = value_type;
 
   virtual ~AbstractTrajectory() = default;
-  virtual const state_type &getstate(double t) const = 0;
-  virtual const control_type &getcontrol(double t) const = 0;
+  virtual const state_type getstate(double t) const = 0;
+  virtual const control_type getcontrol(double t) const = 0;
   virtual base_type getinitialtime() const = 0;
   virtual base_type getfinaltime() const = 0;
 };
@@ -120,11 +120,11 @@ public:
   const KP &operator[](int i) const { return data[i]; }
   KP &operator[](int i) { return data[i]; }
 
-  const state_type &getstate(double t) const override {
+  const state_type getstate(double t) const override {
     CHECK(!data.empty());
     return data[getk(t)].state();
   }
-  const control_type &getcontrol(double t) const override {
+  const control_type getcontrol(double t) const override {
     CHECK(!data.empty());
     return data[getk(t)].control();
   }

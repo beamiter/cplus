@@ -233,18 +233,14 @@ void integrate(RK4<KP> *inte, const ContinuousDynamics<KP> *model,
                const typename KP::state_type &x,
                const typename KP::control_type &u, typename KP::base_type t,
                typename KP::base_type h) {
-  auto &k1 = inte->k1;
-  auto &k2 = inte->k2;
-  auto &k3 = inte->k3;
-  auto &k4 = inte->k4;
-  dynamics<KP>(model, &k1, x, u, t);
-  xn = x + k1 * h / 2;
-  dynamics<KP>(model, &k2, xn, u, t + h / 2);
-  xn = x + k2 * h / 2;
-  dynamics<KP>(model, &k3, xn, u, t + h / 2);
-  xn = x + k3 * h;
-  dynamics<KP>(model, &k4, xn, u, t + h);
-  xn = x + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+  dynamics<KP>(model, inte->k1, x, u, t);
+  xn = x + inte->k1 * h / 2;
+  dynamics<KP>(model, inte->k2, xn, u, t + h / 2);
+  xn = x + inte->k2 * h / 2;
+  dynamics<KP>(model, inte->k3, xn, u, t + h / 2);
+  xn = x + inte->k3 * h;
+  dynamics<KP>(model, inte->k4, xn, u, t + h);
+  xn = x + h * (inte->k1 + 2 * inte->k2 + 2 * inte->k3 + inte->k4) / 6;
 }
 template <typename KP>
 void jacobian(RK4<KP> *inte, FunctionSignature sig,

@@ -127,7 +127,7 @@ public:
       this->Ne = samestatedim ? ne.front() : 0;
     }
 
-    if (std::any_of(Z[0].state()->begin(), Z[0].state()->end(),
+    if (std::any_of(Z[0].state().begin(), Z[0].state().end(),
                     [](const auto &s) { return std::isnan(s); })) {
       ::rollout(dynamics_signature(Z), prob->model[0].get(), Z, prob->x0);
     }

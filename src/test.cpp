@@ -29,28 +29,12 @@ TEST(CostExpansionTest, StateControl) {
   solve(solver);
 }
 
-void test(Eigen::Ref<MatrixX<double>> in) { in.setIdentity(); }
-
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   google::InitGoogleLogging(argv[0]);
 
   // Set logging level
   google::SetStderrLogging(google::GLOG_INFO);
-
-  CostExpansion<double> ce(4, 2, 5);
-  LOG(INFO) << ce.data.size();
-  auto &haha = ce.data[0];
-  haha->grad(3) = 908;
-  haha->data(5, 6) = 100;
-  LOG(INFO) << haha->grad;
-  LOG(INFO) << haha->data;
-
-  Eigen::Matrix<double, 6, 8> ha;
-  Eigen::Ref<MatrixX<double>> he(ha);
-  he.setZero();
-  test(ha);
-  LOG(INFO) << ha.rows() << ha.cols();
 
   LOG(INFO) << RUN_ALL_TESTS();
 

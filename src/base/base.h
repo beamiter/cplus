@@ -53,6 +53,8 @@ template <typename T> int length(const T &) {
 template <typename T> int length(const std::vector<T> &t) { return t.size(); }
 template <typename T> int length(const MatrixX<T> &t) { return t.size(); }
 template <typename T> int length(const VectorX<T> &t) { return t.size(); }
+template <typename T> int length(Eigen::Ref<MatrixX<T>> t) { return t.size(); }
+template <typename T> int length(Eigen::Ref<VectorX<T>> t) { return t.size(); }
 template <typename T, int N> auto length(const Vector<T, N> &t) { return N; }
 template <typename T, int N, int M> auto length(const Matrix<T, N, M> &t) {
   return N * M;

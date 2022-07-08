@@ -8,6 +8,7 @@
 
 #include <base/base.h>
 
+using Eigen::seq;
 using Eigen::seqN;
 using Eigen::Vector;
 using Eigen::VectorX;
@@ -57,16 +58,16 @@ public:
 
   virtual param_type params() const = 0;
 
-  virtual state_type *state() = 0;
-  virtual const state_type &state() const = 0;
+  virtual ref_vector_type state() = 0;
+  virtual const state_type state() const = 0;
   virtual void setstate(const state_type &x) = 0;
 
   // TODO: check is_terminal()
-  virtual control_type *control() = 0;
-  virtual const control_type &control() const = 0;
+  virtual ref_vector_type control() = 0;
+  virtual const control_type control() const = 0;
   virtual void setcontrol(const control_type &u) = 0;
 
-  virtual value_type *data() = 0;
+  virtual ref_vector_type data() = 0;
   virtual const value_type &data() const = 0;
   virtual void setdata(const value_type &v) = 0;
 
@@ -79,9 +80,9 @@ public:
   }
 
   // Functions.
-  value_type getinput(StateControl) const { return data(); }
-  state_type getinput(StateOnly) const { return state(); }
-  control_type getinput(ControlOnly) const { return control(); }
+  const value_type getinput(StateControl) const { return data(); }
+  const state_type getinput(StateOnly) const { return state(); }
+  const control_type getinput(ControlOnly) const { return control(); }
   std::tuple<state_type, control_type, std::tuple<int, int>>
   getargs(StateControl) const {
     return std::make_tuple(state(), control(), params());
@@ -148,71 +149,57 @@ public:
   RegisterKnotPointType(V);
 
   // Overrides.
-  state_type *state() override { return &zx_; }
-  const state_type &state() const override { return zx_; }
-  void setstate(const state_type &zx) override {
-    zx_ = zx;
-    z_ << zx_, zu_;
-  }
+  ref_vector_type state() override { return zx_; }
+  const state_type state() const override { return zx_; }
+  void setstate(const state_type &zx) override { zx_ = zx; }
 
   // TODO: check is_terminal()
-  control_type *control() override { return &zu_; }
-  const control_type &control() const override { return zu_; }
-  void setcontrol(const control_type &zu) override {
-    zu_ = zu;
-    z_ << zx_, zu_;
-  }
+  ref_vector_type control() override { return zu_; }
+  const control_type control() const override { return zu_; }
+  void setcontrol(const control_type &zu) override { zu_ = zu; }
 
-  value_type *data() override { return &z_; }
+  ref_vector_type data() override { return z_; }
   const value_type &data() const override { return z_; }
-  void setdata(const value_type &z) override {
-    z_ = z;
-    zx_ = z_(seqN(0, Nx));
-    zu_ = z_(seqN(Nx, Nu));
-  }
+  void setdata(const value_type &z) override { z_ = z; }
 
   void settime(T t) override { t_ = t; }
   void settimestep(T dt) override { dt_ = dt; }
   param_type params() const override { return std::make_tuple(t_, dt_); }
 
   // Constructor
-  KnotPoint() = default;
-  KnotPoint(value_type z, T t, T dt) {
+  KnotPoint() : zx_(z_(seq(0, Nx - 1))), zu_(z_(seqN(Nx, Nu))) {}
+  KnotPoint(value_type z, T t, T dt) : KnotPoint() {
     CHECK(Nx + Nu == length(z));
     z_ = z;
-    zx_ = z_(seqN(0, Nx));
-    zu_ = z_(seqN(Nx, Nu));
     t_ = t;
     dt_ = dt;
   }
-  KnotPoint(state_type x, control_type u, T t, T dt) {
+  KnotPoint(state_type x, control_type u, T t, T dt)
+      : KnotPoint() {
     CHECK(Nx == length(x));
     CHECK(Nu == length(u));
     zx_ = x;
     zu_ = u;
-    z_ << zx_, zu_;
     t_ = t;
     dt_ = dt;
   }
-  KnotPoint(const KnotPointS<Nx, Nu, T> &in) {
-    CHECK(length(z_) == length(in.z_));
+  KnotPoint(const KnotPointS<Nx, Nu, T> &in)
+      : KnotPoint() {
+    CHECK(Nx + Nu == length(in.z_));
     CHECK(Nx == length(in.zx_));
     CHECK(Nu == length(in.zu_));
     z_ = in.z_;
-    zx_ = in.zx_;
-    zu_ = in.zu_;
     t_ = in.t_;
     dt_ = in.dt_;
   }
 
 private:
   // Members
-  // Need to sync all data after updating.
   value_type z_;
-  state_type zx_;
-  control_type zu_;
-  T t_;
-  T dt_;
+  ref_vector_type zx_;
+  ref_vector_type zu_;
+  T t_ = 0.0;
+  T dt_ = 0.1;
 };
 
 #endif
