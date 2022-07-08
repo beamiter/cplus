@@ -53,7 +53,7 @@ public:
   static_assert(!state_control, "For only state!!!");
 
   // m is not essential
-  StateControlExpansion(int n, int m = -1)
+  StateControlExpansion(int n)
       : ix(0, n), data(MatrixX<T>::Zero(n, n + 1)),
         hess(data(all, seq(0, last - 1))), grad(data(all, last)),
         xx(data(ix, ix)), x(grad(ix)) {
