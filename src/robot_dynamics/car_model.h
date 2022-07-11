@@ -99,7 +99,6 @@ public:
                 typename KP::ref_vector_type y,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u) const final {
-    // CHECK(0);
     const double s2 = sin(x(2));
     const double c2 = cos(x(2));
     jaco(0, 2) = -s2 * x(4);
@@ -128,6 +127,7 @@ template <typename KP, typename C> class CarProblem : public Problem<KP, C> {
 public:
   CarProblem(std::vector<base_type> x0_in, std::vector<base_type> xf_in,
              std::vector<base_type> uf_in, int N, double tf) {
+    CHECK(x0_in.size() == Nx && xf_in.size() == Nx && uf_in.size() == Nu);
     VectorXd x0 = Map<VectorXd>(x0_in.data(), x0_in.size());
     VectorXd xf = Map<VectorXd>(xf_in.data(), xf_in.size());
     VectorXd uf = Map<VectorXd>(uf_in.data(), uf_in.size());
@@ -147,7 +147,13 @@ public:
 
     Problem<KP, C>::init(discretized_car_, &obj_, x0, tf);
 
-    // initial_controls, initial_states, rollout
+    // Initial_controls.
+    Problem<KP, C>::initial_controls(uf);
+
+    // Initial_states.
+
+    // Rollout.
+    rollout(this);
   }
 
   // Members.

@@ -6,15 +6,9 @@
 #include "robot_dynamics/functionbase.h"
 #include "robot_dynamics/knotpoint.h"
 
+// AbstractModel.
 template <typename KP> class AbstractModel : public AbstractFunction<KP> {
 public:
-  int output_dim() const override { return this->state_dim(); }
-};
-
-template <typename KP> class ContinuousDynamics : public AbstractModel<KP> {
-
-public:
-  int output_dim() const override { return this->state_dim(); }
   virtual typename KP::state_type
   dynamics(const typename KP::state_type &x,
            const typename KP::control_type &u) const {
@@ -26,13 +20,18 @@ public:
                         const typename KP::control_type &u) const {
     CHECK(0);
   }
-  virtual void jacobian(typename KP::ref_matrix_type jaco,
-                        typename KP::ref_vector_type y,
-                        const typename KP::state_type &x,
-                        const typename KP::control_type &u) const override {
-    CHECK(0);
-  }
+  // Overrides.
+  int output_dim() const override { return this->state_dim(); }
+  // virtual void jacobian(typename KP::ref_matrix_type jaco,
+  //                       typename KP::ref_vector_type y,
+  //                       const typename KP::state_type &x,
+  //                       const typename KP::control_type &u) const override {
+  //   CHECK(0);
+  // }
 };
+
+// ContinuousDynamics.
+template <typename KP> class ContinuousDynamics : public AbstractModel<KP> {};
 
 // StaticReturn.
 template <typename KP>

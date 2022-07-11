@@ -176,14 +176,20 @@ public:
   }
 
   // Iterators.
-  auto begin() { return data.begin(); }
-  auto end() { return data.end(); }
-  auto front() { return data.front(); }
-  auto back() { return data.back(); }
-  int size() const { return data.size(); }
-  int length() { return data.size(); }
+  typename std::vector<KP>::iterator begin() { return data.begin(); }
+  typename std::vector<KP>::iterator end() { return data.end(); }
+  KP front() const { return data.front(); }
+  KP back() const { return data.back(); }
+  KP &front() { return data.front(); }
+  KP &back() { return data.back(); }
   const KP &operator[](int i) const { return data[i]; }
   KP &operator[](int i) { return data[i]; }
+  KP &at(int i) {
+    CHECK(i >= 0 && i < data.size());
+    return (*this)[i];
+  }
+  int size() const { return data.size(); }
+  int length() { return data.size(); }
 
   // Methods.
   bool has_terminal_control(SampledTrajectory<KP> Z) {
@@ -223,7 +229,7 @@ public:
     }
     return rtn;
   }
-  std::vector<typename KP::base_type> states(int ind) {
+  std::vector<typename KP::base_type> states(int ind) const {
     std::vector<typename KP::base_type> rtn;
     for (int k = 0; k < data.size(); ++k) {
       rtn.push_back(data[k].state()[ind]);
@@ -231,21 +237,21 @@ public:
     return rtn;
   }
   std::vector<std::vector<typename KP::base_type>>
-  states(const std::vector<int> &inds) {
+  states(const std::vector<int> &inds) const {
     std::vector<std::vector<typename KP::base_type>> rtn;
     for (auto k = 0; k < inds.size(); ++k) {
       rtn.push_back(states(k));
     }
     return rtn;
   }
-  std::vector<typename KP::control_type> controls() {
+  std::vector<typename KP::control_type> controls() const {
     std::vector<typename KP::control_type> rtn;
     for (int k = 0; k < eachcontrol().size(); ++k) {
       rtn.push_back(data[k].control());
     }
     return rtn;
   }
-  std::vector<typename KP::base_type> controls(int ind) {
+  std::vector<typename KP::base_type> controls(int ind) const {
     std::vector<typename KP::base_type> rtn;
     for (int k = 0; k < eachcontrol().size(); ++k) {
       rtn.push_back(data[k].control()[ind]);
@@ -253,21 +259,21 @@ public:
     return rtn;
   }
   std::vector<std::vector<typename KP::base_type>>
-  controls(std::vector<int> inds) {
+  controls(std::vector<int> inds) const {
     std::vector<std::vector<typename KP::base_type>> rtn;
     for (auto k = 0; k < inds.size(); ++k) {
       rtn.push_back(controls(k));
     }
     return rtn;
   }
-  std::vector<typename KP::base_type> gettimes() {
+  std::vector<typename KP::base_type> gettimes() const {
     std::vector<typename KP::base_type> rtn;
     for (const auto &z : data) {
       rtn.push_back(z.time());
     }
     return rtn;
   }
-  std::vector<typename KP::value_type> getdata() {
+  std::vector<typename KP::value_type> getdata() const {
     std::vector<typename KP::value_type> rtn;
     for (const auto z : data) {
       rtn.push_back(z.data());
@@ -366,20 +372,20 @@ using SampledTrajectorySd = SampledTrajectory<KnotPointSd<n, m>>;
 
 template <typename KP>
 void rollout(FunctionSignature sig, const DiscreteDynamics<KP> *model,
-             SampledTrajectory<KP> &Z, typename KP::state_type x0) {
-  Z[0].setstate(x0);
-  for (auto k = 1; k < Z.length(); ++k) {
-    propagate_dynamics(sig, model, &Z[k], Z[k - 1]);
+             SampledTrajectory<KP> *Z, const typename KP::state_type &x0) {
+  Z->at(0).setstate(x0);
+  for (auto k = 1; k < Z->length(); ++k) {
+    propagate_dynamics(sig, model, &Z->at(k), Z->at(k - 1));
   }
 }
 
 // DiscretizedDynamics need to specify the Quadrature rule.
-template <template <typename> class Q, typename KP>
+template <typename KP, template <typename> class Q>
 void rollout(FunctionSignature sig, const DiscretizedDynamics<KP, Q> *model,
-             SampledTrajectory<KP> &Z, typename KP::state_type x0) {
-  Z[0].setstate(x0);
-  for (auto k = 1; k < Z.length(); ++k) {
-    propagate_dynamics(sig, model, &Z[k], Z[k - 1]);
+             SampledTrajectory<KP> *Z, const typename KP::state_type &x0) {
+  Z->at(0).setstate(x0);
+  for (auto k = 1; k < Z->length(); ++k) {
+    propagate_dynamics(sig, model, &Z->at(k), Z->at(k - 1));
   }
 }
 

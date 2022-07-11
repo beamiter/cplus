@@ -1,9 +1,10 @@
 #ifndef DISCRETE_DYNAMICS_H
 #define DISCRETE_DYNAMICS_H
 
+#include <memory>
+
 #include "dynamics.h"
 #include "robot_dynamics/knotpoint.h"
-#include <memory>
 
 template <typename KP> class DiscreteDynamics : public AbstractModel<KP> {
 public:
@@ -44,8 +45,7 @@ typename KP::state_type discrete_dynamics(const DiscreteDynamics<KP> *model,
                                           const typename KP::control_type &u,
                                           typename KP::base_type t,
                                           typename KP::base_type dt) {
-  CHECK(0);
-  return x;
+  return x + model->dynamics(x, u) * dt;
 }
 
 // This method is called when using the 'InPlace'.
@@ -61,7 +61,9 @@ void discrete_dynamics(const DiscreteDynamics<KP> *model,
                        const typename KP::state_type &x,
                        const typename KP::control_type &u,
                        typename KP::base_type t, typename KP::base_type dt) {
-  CHECK(0);
+  model->dynamics(xn, x, u);
+  xn *= dt;
+  xn += x;
 }
 
 // Function not support partial specialization yet.

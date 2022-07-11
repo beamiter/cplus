@@ -106,32 +106,36 @@ public:
   int state_dim(int k) const { return state_dim(model[k]); }
   int control_dim(int k) const { return control_dim(model[k]); }
   int horizonlength() const { return N; }
-  auto controls() { return controls(get_trajectory()); }
-  auto states() { return states(get_trajectory()); }
-  auto gettimes() { return gettimes(get_trajectory()); }
-  auto get_initial_time() { return get_trajectory().front().time(); }
-  auto get_final_time() { return get_trajectory().back().time(); }
+  auto controls() const { return get_trajectory()->controls(); }
+  auto states() const { return get_trajectory()->states(); }
+  auto gettimes() const { return get_trajectory()->gettimes(); }
+  double get_initial_time() const { return get_trajectory()->front().time(); }
+  double get_final_time() const { return get_trajectory()->back().time(); }
   auto get_constraints() { return this->constraints; }
   auto num_constraints() { return get_constraints().p; }
-  auto get_model() { return this->model; }
-  auto get_model(int k) { return this->model[k]; }
+  const std::vector<std::shared_ptr<DiscreteDynamics<KP>>> &get_model() const {
+    return this->model;
+  }
+  const std::shared_ptr<DiscreteDynamics<KP>> &get_model(int k) const {
+    return this->model[k];
+  }
   auto get_objective() { return this->obj; }
-  auto get_trajectory() { return this->Z; }
+  const SampledTrajectory<KP> *get_trajectory() const { return &this->Z; }
+  SampledTrajectory<KP> *get_trajectory() { return &this->Z; }
   bool is_constrained() { return get_constraints().empty(); }
-  auto get_initial_state() { return this->x0; }
-  auto get_final_state() { return this->xf; }
+  state_type get_initial_state() const { return this->x0; }
+  state_type get_final_state() const { return this->xf; }
+
   void initial_trajectory(const SampledTrajectory<KP> &Z0) { this->Z = Z0; }
   template <typename P> void initial_states(const P &X0) {
-    setstates(get_trajectory(), X0);
+    get_trajectory()->setstates(X0);
   }
   template <typename Q> void initial_controls(const Q &U0) {
-    setcontrols(get_trajectory(), U0);
+    get_trajectory()->setcontrols(U0);
   }
+
   void set_initial_state(const state_type &x0) { this->x0 = x0; }
-  void setinitialtime(double t0) {
-    auto Z = get_trajectory();
-    setinitialtime(Z, t0);
-  }
+  void setinitialtime(double t0) { get_trajectory()->setinitialtime(Z, t0); }
   void set_goal_state(const state_type &xf, bool objective = true,
                       bool constraint = true) {
     if (objective) {
@@ -153,21 +157,23 @@ public:
   auto cost() { return this->obj->cost(this->Z); }
 };
 
-template <typename KP, typename C> auto rollout(const Problem<KP, C> &prob) {
-  return rollout(FunctionSignature::StaticReturn, prob);
-}
 template <typename KP, typename C>
-auto rollout(FunctionSignature sig, const Problem<KP, C> &prob) {
-  return rollout(sig, prob.get_model(), prob.get_trajectory(),
-                 prob.get_initial_state());
-}
-template <typename KP, typename C>
-auto rollout(FunctionSignature sig, std::vector<DiscreteDynamics<KP>> &models,
-             SampledTrajectory<KP> Z, typename KP::state_type x0) {
-  Z[0].setstate(x0);
-  for (int k = 1; k < length(Z); ++k) {
-    propagate_dynamics(sig, models[k - 1], Z[k], Z[k - 1]);
+void rollout(FunctionSignature sig,
+             const std::vector<std::shared_ptr<DiscreteDynamics<KP>>> &models,
+             SampledTrajectory<KP> *Z, const typename KP::state_type &x0) {
+  Z->at(0).setstate(x0);
+  for (int k = 1; k < Z->length(); ++k) {
+    propagate_dynamics(sig, models[k - 1].get(), &Z->at(k), Z->at(k - 1));
   }
+}
+template <typename KP, typename C>
+void rollout(FunctionSignature sig, const Problem<KP, C> *prob) {
+  rollout<KP, C>(sig, prob->get_model(),
+                 const_cast<Problem<KP, C> *>(prob)->get_trajectory(),
+                 prob->get_initial_state());
+}
+template <typename KP, typename C> void rollout(const Problem<KP, C> *prob) {
+  rollout<KP, C>(FunctionSignature::StaticReturn, prob);
 }
 
 #endif

@@ -183,8 +183,8 @@ auto evaluate(FunctionSignature sig, const AbstractFunction<KP> *fun, P y,
 // Jacobian.
 // template <typename KP>
 // void jacobian(FunctionSignature, DiffMethod diff,
-//               const AbstractFunction<KP> *fun, typename KP::ref_matrix_type J,
-//               typename KP::ref_vector_type y, const KP &z) {
+//               const AbstractFunction<KP> *fun, typename KP::ref_matrix_type
+//               J, typename KP::ref_vector_type y, const KP &z) {
 //   if (DiffMethod::UserDefined == diff) {
 //     jacobian(fun, J, y, z);
 //   } else {
@@ -205,7 +205,8 @@ auto jacobian(FunctionInputs inputtype, const AbstractFunction<KP> *fun,
 template <typename KP>
 auto jacobian(const AbstractFunction<KP> *fun, typename KP::ref_matrix_type J,
               typename KP::ref_vector_type y, const typename KP::state_type &x,
-              const typename KP::control_type &u, const typename KP::param_type &p) {
+              const typename KP::control_type &u,
+              const typename KP::param_type &p) {
   jacobian(fun, J, y, x, u);
 }
 template <typename KP>

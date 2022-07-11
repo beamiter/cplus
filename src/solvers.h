@@ -25,7 +25,6 @@ public:
   virtual const Objective<C> *get_objective() const = 0;
   virtual state_type get_initial_state() const = 0;
   virtual state_type *get_initial_state() = 0;
-  virtual void rollout() = 0;
 
   // Virtual functions.
   virtual bool is_constrained() { return true; }

@@ -46,6 +46,7 @@ enum class DiffMethod {
   UserDefined,
 };
 
+// Deprecated.
 template <typename T> int length(const T &) {
   CHECK(0);
   return -1;

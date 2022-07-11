@@ -16,39 +16,38 @@ template <typename T> struct ADVecotor {};
  * Explicit Methods
  */
 
-// struct Euler : Explicit {};
-// template<typename KP> typename KP::state_type
-// integrate(Euler, const ContinuousDynamics *model,
-//           const typename KP::state_type &x,
-//           const typename KP::control_type &u, T t, T h)
-//           {
-//   auto xdot = dynamics<Nx, Nu, V, T>(model, x, u, t);
-//   return x + h * xdot;
-// }
-// template<typename KP> void
-// integrate(Euler, const ContinuousDynamics *model,
-//           typename KP::state_type *xn,
-//           const typename KP::state_type &x,
-//           const typename KP::control_type &u, T t, T h)
-//           {
-//   dynamics<Nx, Nu, V, T>(model, xn, x, u, t);
-//   xn *= h;
-//   xn += x;
-// }
-// template <typename P, AbstractKnotPointTypeName>
-// void jacobian(Euler, FunctionSignature, const ContinuousDynamics *model, P
-// *J,
-//               const typename KP::state_type &xn,
-//               const typename KP::state_type &x,
-//               const typename KP::control_type &u, T t,
-//               T h) {
-//   jacobian(model, J, xn, x, u, t);
-//   J *= h;
-//   for (auto i = 0; i < model->state_dim(); ++i) {
-//     J(i, i) += 1.0;
-//   }
-// }
-//
+struct Euler : Explicit {};
+template <typename KP>
+typename KP::state_type
+integrate(Euler, const AbstractModel<KP> *model,
+          const typename KP::state_type &x, const typename KP::control_type &u,
+          typename KP::base_type t, typename KP::base_type h) {
+  auto xdot = dynamics<KP>(model, x, u, t);
+  return x + h * xdot;
+}
+template <typename KP>
+void integrate(Euler, const AbstractModel<KP> *model,
+               typename KP::ref_vector_type xn,
+               const typename KP::state_type &x,
+               const typename KP::control_type &u, typename KP::base_type t,
+               typename KP::base_type h) {
+  dynamics<KP>(model, xn, x, u, t);
+  xn *= h;
+  xn += x;
+}
+template <typename KP>
+void jacobian(Euler, FunctionSignature, const AbstractModel<KP> *model,
+              typename KP::ref_matrix_type J, const typename KP::state_type &xn,
+              const typename KP::state_type &x,
+              const typename KP::control_type &u, typename KP::base_type t,
+              typename KP::base_type h) {
+  jacobian(model, J, xn, x, u, t);
+  J *= h;
+  for (auto i = 0; i < model->state_dim(); ++i) {
+    J(i, i) += 1.0;
+  }
+}
+
 // struct RK3 : Explicit {
 //   VectorXd k1;
 //   VectorXd k2;
