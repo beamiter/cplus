@@ -2,6 +2,7 @@
 #define TRAJECTORIES_H
 
 #include <cmath>
+#include <iostream>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
@@ -178,6 +179,10 @@ public:
   // Iterators.
   typename std::vector<KP>::iterator begin() { return data.begin(); }
   typename std::vector<KP>::iterator end() { return data.end(); }
+  typename std::vector<KP>::const_iterator begin() const {
+    return data.begin();
+  }
+  typename std::vector<KP>::const_iterator end() const { return data.end(); }
   KP front() const { return data.front(); }
   KP back() const { return data.back(); }
   KP &front() { return data.front(); }
@@ -346,6 +351,13 @@ public:
       double t = z.time();
       z.settime(t + Dt);
     }
+  }
+  friend std::ostream &operator<<(std::ostream &output,
+                                  const SampledTrajectory<KP> &Z) {
+    for (const auto &pt : Z.data) {
+      output << "Point : " << pt[0] << "\n";
+    }
+    return output;
   }
 
   // Members.

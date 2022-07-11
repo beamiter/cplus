@@ -19,7 +19,7 @@ TEST(CostExpansionTest, StateControl) {
   stats.parent = SolverName::iLQR;
   std::vector<double> x0({0, 0, 0, 0, 4, 0});
   std::vector<double> xf({13, -1.0, 0, 0, 1.0, 0});
-  std::vector<double> uf({0, 0});
+  std::vector<double> uf({0.5, 0});
   const int N = 51;
   const double dt = 0.1;
   const double tf = 5.0;

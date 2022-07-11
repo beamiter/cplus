@@ -2,6 +2,7 @@
 #define KNOT_POINT_H
 
 #include <Eigen/Dense>
+#include <iostream>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -105,6 +106,12 @@ public:
   base_type time() const { return std::get<0>(params()); }
   base_type timestep() const { return std::get<1>(params()); }
   bool is_terminal() const { return timestep() == 0.0; }
+
+  friend std::ostream &operator<<(std::ostream &output,
+                                  const AbstractKnotPointDeclare &kp) {
+    output << kp.data();
+    return output;
+  }
 };
 template <int Nx, int Nu, typename T>
 using AbstractKnotPointX = AbstractKnotPoint<Nx, Nu, VectorX<T>, T>;
@@ -174,8 +181,7 @@ public:
     t_ = t;
     dt_ = dt;
   }
-  KnotPoint(state_type x, control_type u, T t, T dt)
-      : KnotPoint() {
+  KnotPoint(state_type x, control_type u, T t, T dt) : KnotPoint() {
     CHECK(Nx == length(x));
     CHECK(Nu == length(u));
     zx_ = x;
@@ -183,8 +189,7 @@ public:
     t_ = t;
     dt_ = dt;
   }
-  KnotPoint(const KnotPointS<Nx, Nu, T> &in)
-      : KnotPoint() {
+  KnotPoint(const KnotPointS<Nx, Nu, T> &in) : KnotPoint() {
     CHECK(Nx + Nu == length(in.z_));
     CHECK(Nx == length(in.zx_));
     CHECK(Nu == length(in.zu_));

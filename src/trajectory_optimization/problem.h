@@ -12,8 +12,6 @@
 #include "constraint_list.h"
 #include "objective.h"
 
-namespace {} // namespace
-
 // Knot point type, objective type
 template <typename KP, typename C> class Problem {
   using state_type = typename KP::state_type;
@@ -106,9 +104,15 @@ public:
   int state_dim(int k) const { return state_dim(model[k]); }
   int control_dim(int k) const { return control_dim(model[k]); }
   int horizonlength() const { return N; }
-  auto controls() const { return get_trajectory()->controls(); }
-  auto states() const { return get_trajectory()->states(); }
-  auto gettimes() const { return get_trajectory()->gettimes(); }
+  std::vector<typename KP::control_type> controls() const {
+    return get_trajectory()->controls();
+  }
+  std::vector<typename KP::state_type> states() const {
+    return get_trajectory()->states();
+  }
+  std::vector<typename KP::base_type> gettimes() const {
+    return get_trajectory()->gettimes();
+  }
   double get_initial_time() const { return get_trajectory()->front().time(); }
   double get_final_time() const { return get_trajectory()->back().time(); }
   auto get_constraints() { return this->constraints; }
@@ -119,7 +123,7 @@ public:
   const std::shared_ptr<DiscreteDynamics<KP>> &get_model(int k) const {
     return this->model[k];
   }
-  auto get_objective() { return this->obj; }
+  const Objective<C> *get_objective() { return this->obj; }
   const SampledTrajectory<KP> *get_trajectory() const { return &this->Z; }
   SampledTrajectory<KP> *get_trajectory() { return &this->Z; }
   bool is_constrained() { return get_constraints().empty(); }

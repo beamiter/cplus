@@ -131,10 +131,10 @@ public:
     VectorXd x0 = Map<VectorXd>(x0_in.data(), x0_in.size());
     VectorXd xf = Map<VectorXd>(xf_in.data(), xf_in.size());
     VectorXd uf = Map<VectorXd>(uf_in.data(), uf_in.size());
-    init(x0, xf, uf, N, tf);
+    initialize(x0, xf, uf, N, tf);
   }
-  void init(const state_type &x0, const state_type &xf, const control_type &uf,
-            int N, double tf) {
+  void initialize(const state_type &x0, const state_type &xf,
+                  const control_type &uf, int N, double tf) {
     DiagonalMatrix<double, Nx> Q(10, 10, 50, 1, 1, 1);
     auto R = DiagonalMatrix<double, Nu>(1, 1);
     const double rho = 1.0;
@@ -145,15 +145,16 @@ public:
     // Must be discretized.
     discretized_car_ = std::make_shared<DiscretizedDynamics<KP, RK4>>(&car_);
 
-    Problem<KP, C>::init(discretized_car_, &obj_, x0, tf);
+    this->init(discretized_car_, &obj_, x0, tf);
 
     // Initial_controls.
-    Problem<KP, C>::initial_controls(uf);
+    this->initial_controls(uf);
 
     // Initial_states.
 
     // Rollout.
     rollout(this);
+    LOG(INFO) << *this->get_trajectory();
   }
 
   // Members.
