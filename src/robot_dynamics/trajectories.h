@@ -138,7 +138,7 @@ public:
       // LOG(INFO) << joined;
       data.emplace_back(joined, times[k], dt_vec[k]);
     }
-    if (length(X) == length(U)) {
+    if (X.size() == U.size()) {
       VectorXd joined(X.back().size() + U.back().size());
       joined << X.back(), U.back();
       data.emplace_back(joined, times.back(),
@@ -181,6 +181,7 @@ public:
   auto front() { return data.front(); }
   auto back() { return data.back(); }
   int size() const { return data.size(); }
+  int length() { return data.size(); }
   const KP &operator[](int i) const { return data[i]; }
   KP &operator[](int i) { return data[i]; }
 
@@ -266,6 +267,80 @@ public:
     }
     return rtn;
   }
+  std::vector<typename KP::value_type> getdata() {
+    std::vector<typename KP::value_type> rtn;
+    for (const auto z : data) {
+      rtn.push_back(z.data());
+    }
+    return rtn;
+  }
+  void setstates(const std::vector<typename KP::state_type> &X) {
+    CHECK(X.size() == data.size());
+    for (int k = 0; k < X.size(); ++k) {
+      data[k].setstate(X[k]);
+    }
+  }
+  void setstates(const MatrixX<typename KP::base_type> &X) {
+    CHECK(X.rows() == KP::N);
+    CHECK(X.cols() == data.size());
+    for (int k = 0; k < data.size(); ++k) {
+      data[k].setstate(X(all, k));
+    }
+  }
+  void setcontrols(const std::vector<typename KP::control_type> &U) {
+    for (int k = 0; k < data.size() - 1; ++k) {
+      data[k].setcontrol(U[k]);
+    }
+  }
+  void setcontrols(const MatrixX<typename KP::base_type> &U) {
+    CHECK(U.rows() == KP::M);
+    CHECK(U.cols() == data.size());
+    for (int k = 0; k < data.size() - 1; ++k) {
+      data[k].setcontrol(U(all, k));
+    }
+  }
+  void setcontrols(const typename KP::control_type &u) {
+    for (int k = 0; k < data.size() - 1; ++k) {
+      data[k].setcontrol(u);
+    }
+  }
+  void setdata(const std::vector<KP> &data_in) {
+    for (int k = 0; k < data.size() - 1; ++k) {
+      data[k].setdata(data_in[k]);
+    }
+  }
+  void setdata(const MatrixX<typename KP::base_type> &data_in) {
+    CHECK(data_in.rows() == KP::N + KP::M);
+    CHECK(data_in.cols() == data.size());
+    for (int k = 0; k < data.size() - 1; ++k) {
+      data[k].setdata(data_in(all, k));
+    }
+  }
+  void settimes(const std::vector<typename KP::base_type> &ts) {
+    for (auto k = 0; k < ts.size(); ++k) {
+      data[k].t = ts[k];
+      k < ts.size() - 1 && (data[k].dt = ts[k + 1] - ts[k]);
+    }
+  }
+  typename KP::base_type set_dt(typename KP::base_type dt) {
+    double t = data[0].t;
+    for (auto &z : data) {
+      z.t = t;
+      if (!is_terminal(z)) {
+        z.dt = dt;
+        t += dt;
+      }
+    }
+    return t;
+  }
+  void setinitialtime(typename KP::base_type t0) {
+    double t0_prev = data[0].time();
+    double Dt = t0 - t0_prev;
+    for (auto &z : data) {
+      double t = z.time();
+      z.settime(t + Dt);
+    }
+  }
 
   // Members.
   std::vector<KP> data;
@@ -289,103 +364,11 @@ using SampledTrajectoryS = SampledTrajectory<KnotPointS<n, m, T>>;
 template <int n, int m>
 using SampledTrajectorySd = SampledTrajectory<KnotPointSd<n, m>>;
 
-template <typename KP> auto getdata(SampledTrajectory<KP> Z) {
-  std::vector<typename KP::value_type> rtn;
-  for (const auto z : Z) {
-    rtn.push_back(get_data(z));
-  }
-  return rtn;
-}
-
-template <typename Q, typename KP>
-auto setstates(SampledTrajectory<KP> Z, Q X) {
-  for (int k = 0; k < Z.size(); ++k) {
-    Z[k].setstate(X[k]);
-  }
-}
-
-template <typename KP>
-auto setstates(SampledTrajectory<KP> Z, MatrixX<typename KP::base_type> X) {
-  for (int k = 0; k < Z.size(); ++k) {
-    Z[k].setstate(X(all, k));
-  }
-}
-
-template <typename Q, typename KP>
-auto setcontrols(SampledTrajectory<KP> Z, Q U) {
-  for (int k = 0; k < Z.size() - 1; ++k) {
-    Z[k].setcontrol(U[k]);
-  }
-}
-
-template <typename KP>
-auto setcontrols(SampledTrajectory<KP> Z, MatrixX<typename KP::base_type> U) {
-  for (int k = 0; k < Z.size() - 1; ++k) {
-    Z[k].setcontrol(U(all, k));
-  }
-}
-
-template <typename KP>
-auto setcontrols(SampledTrajectory<KP> Z, VectorX<typename KP::base_type> u) {
-  for (int k = 0; k < Z.size() - 1; ++k) {
-    setcontrol(Z[k], u);
-  }
-}
-
-template <typename Q, typename KP>
-auto setdata(SampledTrajectory<KP> Z, Q data) {
-  for (int k = 0; k < Z.size() - 1; ++k) {
-    setdata(Z[k], data[k]);
-  }
-}
-
-template <typename KP>
-auto setdata(SampledTrajectory<KP> Z, MatrixX<typename KP::base_type> data) {
-  for (int k = 0; k < Z.size() - 1; ++k) {
-    setdata(Z[k], data(all, k));
-  }
-}
-
-template <typename KP>
-auto settimes(SampledTrajectory<KP> Z, std::vector<typename KP::base_type> ts) {
-  for (auto k = 0; k < ts.size(); ++k) {
-    Z[k].t = ts[k];
-    k < ts.size() - 1 && (Z[k].dt = ts[k + 1] - ts[k]);
-  }
-}
-
-template <typename KP>
-auto set_dt(SampledTrajectory<KP> Z, typename KP::base_type dt) {
-  double t = Z[0].t;
-  for (auto &z : Z) {
-    z.t = t;
-    if (!is_terminal(z)) {
-      z.dt = dt;
-      t += dt;
-    }
-  }
-  return t;
-}
-
-template <typename KP>
-void setinitialtime(SampledTrajectory<KP> Z, typename KP::base_type t0) {
-  double t0_prev = Z[0].time();
-  double Dt = t0 - t0_prev;
-  for (auto &z : Z) {
-    double t = z.time();
-    z.settime(t + Dt);
-  }
-}
-
-template <typename KP> int length(const SampledTrajectory<KP> &z) {
-  return length(z.data);
-}
-
 template <typename KP>
 void rollout(FunctionSignature sig, const DiscreteDynamics<KP> *model,
              SampledTrajectory<KP> &Z, typename KP::state_type x0) {
   Z[0].setstate(x0);
-  for (auto k = 1; k < length(Z); ++k) {
+  for (auto k = 1; k < Z.length(); ++k) {
     propagate_dynamics(sig, model, &Z[k], Z[k - 1]);
   }
 }
@@ -395,7 +378,7 @@ template <template <typename> class Q, typename KP>
 void rollout(FunctionSignature sig, const DiscretizedDynamics<KP, Q> *model,
              SampledTrajectory<KP> &Z, typename KP::state_type x0) {
   Z[0].setstate(x0);
-  for (auto k = 1; k < length(Z); ++k) {
+  for (auto k = 1; k < Z.length(); ++k) {
     propagate_dynamics(sig, model, &Z[k], Z[k - 1]);
   }
 }

@@ -72,7 +72,7 @@ public:
     param.dt = 0.1;
     param.N = N;
     this->Z = SampledTrajectory<KP>(X0, U0, param);
-    ::setinitialtime<KP>(Z, 0.0);
+    this->Z.setinitialtime(0.0);
   }
 
   void init(const std::shared_ptr<DiscreteDynamics<KP>> &model_in,
