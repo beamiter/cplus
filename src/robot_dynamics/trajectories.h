@@ -382,8 +382,11 @@ using SampledTrajectoryS = SampledTrajectory<KnotPointS<n, m, T>>;
 template <int n, int m>
 using SampledTrajectorySd = SampledTrajectory<KnotPointSd<n, m>>;
 
+template <typename KP, typename FS = FunctionSignature>
+void rollout(FS sig, const DiscreteDynamics<KP> *model,
+             SampledTrajectory<KP> *Z, const typename KP::state_type &x0) {}
 template <typename KP>
-void rollout(FunctionSignature sig, const DiscreteDynamics<KP> *model,
+void rollout(Inplace sig, const DiscreteDynamics<KP> *model,
              SampledTrajectory<KP> *Z, const typename KP::state_type &x0) {
   Z->at(0).setstate(x0);
   for (auto k = 1; k < Z->length(); ++k) {
@@ -392,8 +395,12 @@ void rollout(FunctionSignature sig, const DiscreteDynamics<KP> *model,
 }
 
 // DiscretizedDynamics need to specify the Quadrature rule.
+template <typename KP, template <typename> class Q,
+          typename FS = FunctionSignature>
+void rollout(FS sig, const DiscretizedDynamics<KP, Q> *model,
+             SampledTrajectory<KP> *Z, const typename KP::state_type &x0) {}
 template <typename KP, template <typename> class Q>
-void rollout(FunctionSignature sig, const DiscretizedDynamics<KP, Q> *model,
+void rollout(Inplace sig, const DiscretizedDynamics<KP, Q> *model,
              SampledTrajectory<KP> *Z, const typename KP::state_type &x0) {
   Z->at(0).setstate(x0);
   for (auto k = 1; k < Z->length(); ++k) {

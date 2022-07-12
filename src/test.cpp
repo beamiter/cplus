@@ -24,9 +24,9 @@ TEST(CostExpansionTest, StateControl) {
   const double dt = 0.1;
   const double tf = 5.0;
   CarProblemSd<6, 2, DiagonalCostS> prob(x0, xf, uf, N, dt);
-  iLQRSolverSd<6, 2, DiagonalCostS> solver(
-      &prob, opts, stats, DiffMethod::UserDefined, Valbool<true>());
-  solve(solver);
+  iLQRSolverSd<6, 2, DiagonalCostS> solver(&prob, opts, stats, UserDefined(),
+                                           Valbool<true>());
+  solve(&solver);
 }
 
 int main(int argc, char **argv) {

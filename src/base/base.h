@@ -21,30 +21,37 @@ using Eigen::VectorXf;
 #define DERIVE(Base, Derived)                                                  \
   struct Derived : Base {};
 
-struct FunctionInputs {};
+#define DECLARE(Base)                                                          \
+  struct Base {};
+
+DECLARE(FunctionInputs);
 DERIVE(FunctionInputs, StateOnly);
 DERIVE(FunctionInputs, ControlOnly);
 DERIVE(FunctionInputs, StateControl);
 
-// struct StateVectorType {};
-// struct EuclideanState : StateVectorType {};
-// struct RotationState : StateVectorType {};
-// struct FunctionSignature {};
-// struct Inplace : FunctionSignature {};
-// struct StaticReturn : FunctionSignature {};
-enum class StateVectorType {
-  EuclideanState,
-  RotationState,
-};
-enum class FunctionSignature {
-  Inplace,
-  StaticReturn,
-};
-enum class DiffMethod {
-  ForwardAD,
-  FiniteDifference,
-  UserDefined,
-};
+// enum class StateVectorType {
+// EuclideanState,
+// RotationState,
+//};
+DECLARE(StateVectorType);
+DERIVE(StateVectorType, EuclideanState);
+DERIVE(StateVectorType, RotationState);
+// enum class FunctionSignature {
+// Inplace,
+// StaticReturn,
+//};
+DECLARE(FunctionSignature);
+DERIVE(FunctionSignature, Inplace);
+DERIVE(FunctionSignature, StaticReturn);
+// enum class DiffMethod {
+// ForwardAD,
+// FiniteDifference,
+// UserDefined,
+//};
+struct DiffMethod {};
+DERIVE(DiffMethod, ForwardAD);
+DERIVE(DiffMethod, FiniteDifference);
+DERIVE(DiffMethod, UserDefined);
 
 // Deprecated.
 template <typename T> int length(const T &) {

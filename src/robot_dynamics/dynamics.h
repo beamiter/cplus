@@ -61,14 +61,21 @@ void dynamics(const ContinuousDynamics<KP> *model,
 }
 
 // Depends on the FunctionSignature.
-template <typename KP>
-void dynamics(FunctionSignature sig, const ContinuousDynamics<KP> *model,
+template <typename KP, typename TP = FunctionSignature>
+void dynamics(TP sig, const ContinuousDynamics<KP> *model,
               typename KP::ref_vector_type xdot, const KP &z) {
-  if (FunctionSignature::Inplace == sig) {
-    dynamics(model, xdot, z);
-  } else if (FunctionSignature::StaticReturn == sig) {
-    xdot = dynamics(model, z);
-  }
+  static_assert(std::is_base_of<FunctionSignature, TP>::value,
+                "TP is not derived of FunctionSignature");
+}
+template <typename KP>
+void dynamics(Inplace, const ContinuousDynamics<KP> *model,
+              typename KP::ref_vector_type xdot, const KP &z) {
+  dynamics(model, xdot, z);
+}
+template <typename KP>
+void dynamics(StaticReturn, const ContinuousDynamics<KP> *model,
+              typename KP::ref_vector_type xdot, const KP &z) {
+  xdot = dynamics(model, z);
 }
 
 template <typename KP>
@@ -85,16 +92,16 @@ void evaluate(const ContinuousDynamics<KP> *model,
               const typename KP::param_type &p) {
   dynamics(model, xdot, x, u, p.first);
 }
+template <typename KP, typename DM = DiffMethod>
+void jacobian(FunctionSignature, DM diff, const ContinuousDynamics<KP> *model,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type xdot,
+              const KP &z) {}
 template <typename KP>
-void jacobian(FunctionSignature, DiffMethod diff,
+void jacobian(FunctionSignature, UserDefined,
               const ContinuousDynamics<KP> *model,
               typename KP::ref_matrix_type J, typename KP::ref_vector_type xdot,
               const KP &z) {
-  if (DiffMethod::UserDefined == diff) {
-    jacobian(model, J, xdot, z.state(), z.constrol(), z.time());
-  } else {
-    CHECK(0);
-  }
+  jacobian(model, J, xdot, z.state(), z.constrol(), z.time());
 }
 template <typename KP>
 void jacobian(const ContinuousDynamics<KP> *model,

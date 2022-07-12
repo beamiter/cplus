@@ -66,27 +66,33 @@ void discrete_dynamics(const DiscreteDynamics<KP> *model,
   xn += x;
 }
 
-// Function not support partial specialization yet.
+template <typename KP, typename TP = FunctionSignature>
+void discrete_dynamics(TP sig, const DiscreteDynamics<KP> *model,
+                       typename KP::ref_vector_type xn, const KP &z) {}
 template <typename KP>
-void discrete_dynamics(FunctionSignature sig, const DiscreteDynamics<KP> *model,
+void discrete_dynamics(Inplace sig, const DiscreteDynamics<KP> *model,
                        typename KP::ref_vector_type xn, const KP &z) {
-  if (sig == FunctionSignature::Inplace) {
-    discrete_dynamics(model, xn, z);
-  } else {
-    xn = discrete_dynamics(model, z);
-  }
+  discrete_dynamics(model, xn, z);
+}
+template <typename KP>
+void discrete_dynamics(StaticReturn sig, const DiscreteDynamics<KP> *model,
+                       typename KP::ref_vector_type xn, const KP &z) {
+  xn = discrete_dynamics(model, z);
 }
 
 // Propagate dynamics.
+template <typename KP, typename TP = FunctionSignature>
+void propagate_dynamics(TP sig, const DiscreteDynamics<KP> *model, KP *z2,
+                        const KP &z1) {}
 template <typename KP>
-void propagate_dynamics(FunctionSignature sig,
-                        const DiscreteDynamics<KP> *model, KP *z2,
+void propagate_dynamics(Inplace, const DiscreteDynamics<KP> *model, KP *z2,
                         const KP &z1) {
-  if (sig == FunctionSignature::Inplace) {
-    discrete_dynamics(model, z2->state(), z1);
-  } else {
-    z2->setstate(discrete_dynamics(model, z1));
-  }
+  discrete_dynamics(model, z2->state(), z1);
+}
+template <typename KP>
+void propagate_dynamics(StaticReturn, const DiscreteDynamics<KP> *model, KP *z2,
+                        const KP &z1) {
+  z2->setstate(discrete_dynamics(model, z1));
 }
 
 template <typename KP>

@@ -9,16 +9,6 @@
 #include "robot_dynamics/knotpoint.h"
 
 template <typename KP> class AbstractFunction {
-  // For template type check.
-  // static_assert(std::is_base_of<FunctionSignature, F>::value,
-  //               "T is not derived of FunctionSignature");
-  // static_assert(std::is_base_of<StateVectorType, S>::value,
-  //               "P is not derived of StateVectorType");
-  // typedef typename std::enable_if<std::is_base_of<FunctionSignature,
-  // F>::value,
-  //                                 F>::type default_signature;
-  // typedef typename std::enable_if<std::is_base_of<StateVectorType, S>::value,
-  //                                 S>::type statevectortype;
 public:
   ~AbstractFunction() = default;
   /*Pure virtual function*/
@@ -27,12 +17,11 @@ public:
   virtual int output_dim() const = 0;
   /////////////////////
   // Minimal call that must be implemented.
-  // TODO: What's the type of P?
-  // virtual void evaluate(P y, const typename KP::state_type &x,
-  // const typename KP::control_type &u) {
-  // CHECK(0);
-  // return;
-  //}
+  virtual void evaluate(typename KP::ref_vector_type y,
+                        const typename KP::state_type &x,
+                        const typename KP::control_type &u) {
+    CHECK(0);
+  }
   virtual double evaluate(const typename KP::state_type &x,
                           const typename KP::control_type &u) const {
     CHECK(0);
@@ -64,34 +53,16 @@ public:
     jaco *= dt;
   }
 
-  /*Virtual function*/
-  virtual DiffMethod default_diffmethod() const {
-    return DiffMethod::UserDefined;
-  }
-  virtual FunctionSignature default_signature() const {
-    return FunctionSignature::StaticReturn;
-  }
-  virtual StateVectorType statevectortype() const {
-    return StateVectorType::EuclideanState;
-  }
-  // Default for EuclideanState
-  virtual int errstate_dim(StateVectorType type) const {
-    assert(type == StateVectorType::EuclideanState);
-    return state_dim();
-  }
-
   /*Function.*/
   void gradient(typename KP::ref_vector_type grad, const KP &z) {
     gradient(grad, z.state(), z.control(), z.is_terminal());
   }
 
-  constexpr StateControl functioninputs() const { return StateControl(); }
-  int errstate_dim() const { return errstate_dim(statevectortype()); }
   std::tuple<int, int, int> dims() const {
     return std::make_tuple(state_dim(), control_dim(), output_dim());
   }
-  int jacobian_width() const { return errstate_dim() + control_dim(); }
-  int input_dim() { return input_dim(functioninputs()); }
+  int jacobian_width() const { return errstate_dim(this) + control_dim(); }
+  int input_dim() { return input_dim(functioninputs(this)); }
   int input_dim(StateOnly) { return state_dim(); }
   int input_dim(ControlOnly) { return control_dim(); }
   int input_dim(StateControl) { return state_dim() + control_dim(); }
@@ -99,61 +70,111 @@ public:
 private:
 };
 
+template <typename KP>
+UserDefined default_diffmethod(const AbstractFunction<KP> *) {
+  return UserDefined();
+}
+template <typename KP>
+StaticReturn default_signature(const AbstractFunction<KP> *) {
+  return StaticReturn();
+}
+template <typename KP>
+StateControl functioninputs(const AbstractFunction<KP> *) {
+  return StateControl();
+}
+template <typename KP>
+EuclideanState statevectortype(const AbstractFunction<KP> *) {
+  return EuclideanState();
+}
+template <typename KP> int errstate_dim(const AbstractFunction<KP> *fun) {
+  return errstate_dim(statevectortype(fun), fun);
+}
+template <typename KP, typename TP = StateVectorType>
+int errstate_dim(TP tp, const AbstractFunction<KP> *fun) {
+  static_assert(std::is_base_of<StateVectorType, TP>::value,
+                "TP is not derived of FunctionInputs");
+}
+template <typename KP>
+int errstate_dim(EuclideanState, const AbstractFunction<KP> *fun) {
+  return fun->state_dim();
+}
+
 // TODO: need support vadiatic parameters
 // Evaluate.
 // Top-level command that can be overridden.
 // Should only be overridden if using hand-written Jacobian methods.
-template <typename P, typename KP>
-void evaluate(const AbstractFunction<KP> *fun, P y, const KP &z) {
+template <typename KP>
+void evaluate(const AbstractFunction<KP> *fun, typename KP::ref_vector_type y,
+              const KP &z) {
   evaluate(fun->functioninputs(), fun, y, z);
-  return;
 }
 template <typename KP>
 auto evaluate(const AbstractFunction<KP> *fun, const KP &z) {
-  return evaluate(fun->functioninputs(), fun, z);
+  return evaluate(functioninputs(fun), fun, z);
 }
 //////////////////////////////////
-template <typename P, typename KP, typename TP = FunctionInputs>
-void evaluate(TP tp, const AbstractFunction<KP> *fun, P y, const KP &z) {
+template <typename KP, typename TP = FunctionInputs>
+void evaluate(TP tp, const AbstractFunction<KP> *fun,
+              typename KP::ref_vector_type y, const KP &z) {
+  static_assert(std::is_base_of<FunctionInputs, TP>::value,
+                "TP is not derived of FunctionInputs");
+}
+template <typename KP>
+void evaluate(StateControl tp, const AbstractFunction<KP> *fun,
+              typename KP::ref_vector_type y, const KP &z) {
   typename KP::state_type state;
   typename KP::control_type control;
   std::tuple<typename KP::base_type, typename KP::base_type> param(0, 0);
-  if constexpr (is_same_type<StateControl, decltype(tp)>::value) {
-    std::tie(state, control, param) = z.getargs(tp);
-  } else if constexpr (is_same_type<StateOnly, decltype(tp)>::value) {
-    std::tie(state) = z.getargs(tp);
-  } else if constexpr (is_same_type<ControlOnly, decltype(tp)>::value) {
-    std::tie(control) = z.getargs(tp);
-  } else {
-    CHECK(0);
-  }
-  evaluate<P, KP, decltype(param)>(fun, y, state, control, param);
-  return;
+  std::tie(state, control, param) = z.getargs(tp);
+  evaluate<KP, decltype(param)>(fun, y, state, control, param);
 }
+template <typename KP>
+void evaluate(StateOnly tp, const AbstractFunction<KP> *fun,
+              typename KP::ref_vector_type y, const KP &z) {
+  typename KP::state_type state;
+  std::tie(state) = z.getargs(tp);
+  evaluate<KP>(fun, y, state);
+}
+template <typename KP>
+void evaluate(ControlOnly tp, const AbstractFunction<KP> *fun,
+              typename KP::ref_vector_type y, const KP &z) {
+  typename KP::control_type control;
+  std::tie(control) = z.getargs(tp);
+  evaluate<KP>(fun, y, control);
+}
+
 template <typename KP, typename TP = FunctionInputs>
 auto evaluate(TP tp, const AbstractFunction<KP> *fun, const KP &z) {
+  static_assert(std::is_base_of<FunctionInputs, TP>::value,
+                "TP is not derived of FunctionInputs");
+}
+template <typename KP>
+auto evaluate(StateControl tp, const AbstractFunction<KP> *fun, const KP &z) {
   typename KP::state_type state;
   typename KP::control_type control;
   std::tuple<typename KP::base_type, typename KP::base_type> param(0, 0);
-  if constexpr (is_same_type<StateControl, TP>::value) {
-    std::tie(state, control, param) = z.getargs(tp);
-  } else if constexpr (is_same_type<StateOnly, TP>::value) {
-    std::tie(state) = z.getargs(tp);
-  } else if constexpr (is_same_type<ControlOnly, TP>::value) {
-    std::tie(control) = z.getargs(tp);
-  } else {
-    CHECK(0);
-  }
+  std::tie(state, control, param) = z.getargs(tp);
   return evaluate<KP, decltype(param)>(fun, state, control, param);
+}
+template <typename KP>
+auto evaluate(StateOnly tp, const AbstractFunction<KP> *fun, const KP &z) {
+  typename KP::state_type state;
+  std::tie(state) = z.getargs(tp);
+  return evaluate<KP>(fun, state);
+}
+template <typename KP>
+auto evaluate(ControlOnly tp, const AbstractFunction<KP> *fun, const KP &z) {
+  typename KP::control_type control;
+  std::tie(control) = z.getargs(tp);
+  return evaluate<KP>(fun, control);
 }
 /////////////////////////////////
 // Strip the parameter.
-template <typename P, typename KP, typename Q>
-void evaluate(const AbstractFunction<KP> *fun, P y,
+template <typename KP, typename Q>
+void evaluate(const AbstractFunction<KP> *fun, typename KP::ref_vector_type y,
               const typename KP::state_type &x,
               const typename KP::control_type &u, const Q &p) {
   fun->evaluate(y, x, u);
-  return;
 }
 template <typename KP, typename Q>
 auto evaluate(const AbstractFunction<KP> *fun, const typename KP::state_type &x,
@@ -162,39 +183,44 @@ auto evaluate(const AbstractFunction<KP> *fun, const typename KP::state_type &x,
 }
 ///////////////////////////////////////
 // Dispatch on function signature.
-template <typename KP, typename P>
-void evaluate(FunctionSignature sig, const AbstractFunction<KP> *fun, P y,
-              const KP &z) {
-  if (sig == FunctionSignature::StaticReturn) {
-    y = evaluate(fun, z);
-  } else {
-    evaluate(fun, y, z);
-  }
+template <typename KP, typename TP = FunctionSignature>
+void evaluate(FunctionSignature sig, const AbstractFunction<KP> *fun,
+              typename KP::ref_vector_type y, const KP &z) {
+  static_assert(std::is_base_of<FunctionSignature, TP>::value,
+                "TP is not derived of FunctionSignature");
 }
-template <typename KP, typename P, typename... Args>
-auto evaluate(FunctionSignature sig, const AbstractFunction<KP> *fun, P y,
-              Args... args) {
-  if (sig == FunctionSignature::StaticReturn) {
-    return evaluate(fun, args...);
-  }
+template <typename KP>
+void evaluate(StaticReturn, const AbstractFunction<KP> *fun,
+              typename KP::ref_vector_type y, const KP &z) {
+  return evaluate(fun, z);
+}
+template <typename KP>
+void evaluate(Inplace, const AbstractFunction<KP> *fun,
+              typename KP::ref_vector_type y, const KP &z) {
+  return evaluate(fun, y, z);
+}
+template <typename KP, typename... Args>
+auto evaluate(StaticReturn, const AbstractFunction<KP> *fun,
+              typename KP::ref_vector_type y, Args... args) {
+  return evaluate(fun, args...);
+}
+template <typename KP, typename... Args>
+auto evaluate(Inplace, const AbstractFunction<KP> *fun,
+              typename KP::ref_vector_type y, Args... args) {
   evaluate(fun, y, args...);
 }
 
 // Jacobian.
-// template <typename KP>
-// void jacobian(FunctionSignature, DiffMethod diff,
-//               const AbstractFunction<KP> *fun, typename KP::ref_matrix_type
-//               J, typename KP::ref_vector_type y, const KP &z) {
-//   if (DiffMethod::UserDefined == diff) {
-//     jacobian(fun, J, y, z);
-//   } else {
-//     CHECK(0);
-//   }
-// }
+template <typename KP>
+void jacobian(FunctionSignature, UserDefined, const AbstractFunction<KP> *fun,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
+              const KP &z) {
+  jacobian(fun, J, y, z);
+}
 template <typename KP>
 void jacobian(const AbstractFunction<KP> *fun, typename KP::ref_matrix_type J,
               typename KP::ref_vector_type y, const KP &z) {
-  jacobian(fun->functioninputs(), fun, J, y, z);
+  jacobian(functioninputs(fun), fun, J, y, z);
 }
 template <typename KP>
 auto jacobian(FunctionInputs inputtype, const AbstractFunction<KP> *fun,
@@ -220,14 +246,9 @@ auto jacobian(const AbstractFunction<KP> *fun, typename KP::ref_matrix_type J,
 }
 
 template <typename KP, typename P, typename Q, typename HESS>
-auto d_jacobian(FunctionSignature, DiffMethod diff,
-                const AbstractFunction<KP> *fun, HESS H, P b, Q y,
-                const KP &z) {
-  if (DiffMethod::UserDefined == diff) {
-    d_jacobian(fun, H, b, y, z);
-  } else {
-    CHECK(0);
-  }
+auto d_jacobian(FunctionSignature, UserDefined, const AbstractFunction<KP> *fun,
+                HESS H, P b, Q y, const KP &z) {
+  d_jacobian(fun, H, b, y, z);
 }
 template <typename KP, typename P, typename Q, typename HESS>
 auto d_jacobian(FunctionSignature, const AbstractFunction<KP> *fun, HESS H, P b,

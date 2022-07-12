@@ -14,6 +14,22 @@ using namespace google;
 
 using namespace std;
 
+struct Base { /* ... */
+};
+struct Derived : public Base { /* ... */
+};
+
+struct B {
+  Base *func() { return nullptr; }
+  virtual ~B() {}
+};
+struct D : public B {
+  Derived *func() { return nullptr; }
+};
+
+void test(const Base *) { LOG(INFO) << "base"; }
+void test(const Derived *) { LOG(INFO) << "derived"; }
+
 struct Knot {
   Knot() : state(data(Eigen::seq(0, 3), Eigen::seq(0, 3))) {}
   Eigen::Matrix<double, 6, 8> data;

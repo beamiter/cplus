@@ -78,40 +78,50 @@ void discretized_dynamics(const DiscretizedDynamics<KP, Q> *model,
                 model->continuous_dynamics, xn, x, u, t, dt);
 }
 
-// Function not support partial specialization yet.
+template <typename KP, template <typename> class Q,
+          typename TP = FunctionSignature>
+void discretized_dynamics(TP sig, const DiscretizedDynamics<KP, Q> *model,
+                          typename KP::state_type *xn, const KP &z) {}
 template <typename KP, template <typename> class Q>
-void discretized_dynamics(FunctionSignature sig,
-                          const DiscretizedDynamics<KP, Q> *model,
+void discretized_dynamics(Inplace, const DiscretizedDynamics<KP, Q> *model,
                           typename KP::state_type *xn, const KP &z) {
-  if (sig == FunctionSignature::Inplace) {
-    discretized_dynamics(model, xn, z);
-  } else {
-    xn = discretized_dynamics(model, z);
-  }
+  discretized_dynamics(model, xn, z);
+}
+template <typename KP, template <typename> class Q>
+void discretized_dynamics(StaticReturn, const DiscretizedDynamics<KP, Q> *model,
+                          typename KP::state_type *xn, const KP &z) {
+  xn = discretized_dynamics(model, z);
 }
 
-template <typename KP, template <typename> class Q>
-void jacobian(FunctionSignature sig, DiffMethod diff,
-              const DiscretizedDynamics<KP, Q> *model,
+template <typename KP, template <typename> class Q,
+          typename FS = FunctionSignature, typename DM = DiffMethod>
+void jacobian(FS sig, DM diff, const DiscretizedDynamics<KP, Q> *model,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
+              const KP &z) {}
+template <typename KP, template <typename> class Q,
+          typename FS = FunctionSignature>
+void jacobian(FS sig, UserDefined, const DiscretizedDynamics<KP, Q> *model,
               typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
               const KP &z) {
-  if (DiffMethod::UserDefined == diff) {
-    jacobian<KP>(&const_cast<DiscretizedDynamics<KP, Q> *>(model)->integrator,
-                 sig, model->continuous_dynamics, J, y, z.state(), z.control(),
-                 z.time(), z.timestep());
-  }
+  jacobian<KP>(&const_cast<DiscretizedDynamics<KP, Q> *>(model)->integrator,
+               sig, model->continuous_dynamics, J, y, z.state(), z.control(),
+               z.time(), z.timestep());
 }
 
 // Propagate dynamics.
+template <typename KP, template <typename> class Q,
+          typename FS = FunctionSignature>
+void propagate_dynamics(FS sig, const DiscretizedDynamics<KP, Q> *model, KP *z2,
+                        const KP &z1) {}
 template <typename KP, template <typename> class Q>
-void propagate_dynamics(FunctionSignature sig,
-                        const DiscretizedDynamics<KP, Q> *model, KP *z2,
-                        const KP &z1) {
-  if (sig == FunctionSignature::Inplace) {
-    discretized_dynamics(model, z2->state(), z1);
-  } else {
-    z2->setstate(discretized_dynamics<KP, Q>(model, z1));
-  }
+void propagate_dynamics(Inplace, const DiscretizedDynamics<KP, Q> *model,
+                        KP *z2, const KP &z1) {
+  discretized_dynamics(model, z2->state(), z1);
+}
+template <typename KP, template <typename> class Q>
+void propagate_dynamics(StaticReturn, const DiscretizedDynamics<KP, Q> *model,
+                        KP *z2, const KP &z1) {
+  z2->setstate(discretized_dynamics<KP, Q>(model, z1));
 }
 
 #endif

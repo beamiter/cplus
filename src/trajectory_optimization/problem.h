@@ -177,7 +177,7 @@ void rollout(FunctionSignature sig, const Problem<KP, C> *prob) {
                  prob->get_initial_state());
 }
 template <typename KP, typename C> void rollout(const Problem<KP, C> *prob) {
-  rollout<KP, C>(FunctionSignature::StaticReturn, prob);
+  rollout<KP, C>(StaticReturn(), prob);
 }
 
 #endif

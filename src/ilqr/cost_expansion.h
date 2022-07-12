@@ -106,20 +106,20 @@ template <typename KP, bool B>
 CostExpansion<typename KP::base_type, B>
 FullStateExpansion(const CostExpansion<typename KP::base_type, B> &E,
                    const DiscreteDynamics<KP> *model) {
-  return FullStateExpansion(model->statevectortype(), E, model);
+  return FullStateExpansion(statevectortype(model), E, model);
 }
+template <typename KP, bool B, typename SV = StateVectorType>
+CostExpansion<typename KP::base_type, B>
+FullStateExpansion(SV type, const CostExpansion<typename KP::base_type, B> &E,
+                   const DiscreteDynamics<KP> *model) {}
 template <typename KP, bool B>
 CostExpansion<typename KP::base_type, B>
-FullStateExpansion(StateVectorType type,
+FullStateExpansion(RotationState type,
                    const CostExpansion<typename KP::base_type, B> &E,
                    const DiscreteDynamics<KP> *model) {
-  if (type == StateVectorType::EuclideanState) {
-    return E;
-  } else {
-    const int n = model->state_dim();
-    const int m = model->control_dim();
-    return CostExpansion<typename KP::base_type, B>(n, m, E.length());
-  }
+  const int n = model->state_dim();
+  const int m = model->control_dim();
+  return CostExpansion<typename KP::base_type, B>(n, m, E.length());
 }
 
 template <typename O, typename C, typename P>
@@ -132,22 +132,22 @@ void cost_expansion(const O *obj, C &E, const P &Z) {
 template <typename M, typename C, typename P, typename Q>
 void error_expansion(const std::vector<M> &models, C &Eerr, const C &Efull,
                      P &G, const Q &Z) {
-  _error_expansion(models.front()->statevectortype(), models, Eerr, Efull, G,
+  _error_expansion(statevectortype(models.front().get()), models, Eerr, Efull, G,
                    Z);
 }
+template <typename M, typename C, typename P, typename Q,
+          typename SV = StateVectorType>
+void _error_expansion(SV type, const std::vector<M> &models, C &Eerr,
+                      const C &Efull, P &G, const Q &Z) {}
 template <typename M, typename C, typename P, typename Q>
-void _error_expansion(StateVectorType type, const std::vector<M> &models,
-                      C &Eerr, const C &Efull, P &G, const Q &Z) {
+void _error_expansion(RotationState type, const std::vector<M> &models, C &Eerr,
+                      const C &Efull, P &G, const Q &Z) {
   // TODO. Need to check equality.
   // CHECK(Eerr == Efull);
-  if (StateVectorType::EuclideanState == type) {
-    return;
-  } else if (StateVectorType::RotationState == type) {
-    const int N = length(Z);
-    for (int k = 0; k < Eerr.size(); ++k) {
-      const auto &model = models[std::min(k, N - 2)];
-      _error_expansion(model, Eerr[k], Efull[k], G[k], G.back(), Z[k]);
-    }
+  const int N = length(Z);
+  for (int k = 0; k < Eerr.size(); ++k) {
+    const auto &model = models[std::min(k, N - 2)];
+    _error_expansion(model, Eerr[k], Efull[k], G[k], G.back(), Z[k]);
   }
 }
 template <typename M, typename C, typename P, typename Q>

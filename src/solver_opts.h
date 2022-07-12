@@ -84,9 +84,8 @@ template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
   T rho_dual = 1.0e-8;
   T r_threshold = 1.1;
 
-  FunctionSignature dynamics_funsig = FunctionSignature::StaticReturn;
-  DiffMethod dynamics_diffmethod =
-      DiffMethod::UserDefined; // Default is DiffMethod::ForwardDiff;
+  StaticReturn dynamics_funsig;
+  UserDefined dynamics_diffmethod; // Default is ForwardDiff;
   bool projected_newton = true;
   bool reuse_jacobians = false;
   bool trim_stats = true;

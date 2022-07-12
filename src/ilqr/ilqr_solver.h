@@ -37,20 +37,17 @@ public:
   T d_rou;
 };
 
-template <typename O> bool usestatic(const O &) {
-  return !std::is_base_of<std::vector<double>, typename O::vectype>::value;
-}
-template <typename T> FunctionSignature dynamics_signature(const T &obj) {
-  return usestatic(obj) ? FunctionSignature::StaticReturn
-                        : FunctionSignature::Inplace;
-}
-template <typename T> FunctionSignature function_signature(const T &obj) {
-  return usestatic(obj) ? FunctionSignature::StaticReturn
-                        : FunctionSignature::Inplace;
-}
+template <bool> struct dynamics_signature {};
+template <> struct dynamics_signature<true> {
+  static constexpr StaticReturn value = StaticReturn();
+};
+template <> struct dynamics_signature<false> {
+  static constexpr Inplace value = Inplace();
+};
+
 template <typename KP>
 bool usestaticdefault(const AbstractFunction<KP> *model) {
-  return model->default_signature() == FunctionSignature::StaticReturn;
+  return default_signature(model) == StaticReturn();
 }
 
 #define iLQRSolverTypeName typename KP, typename C, bool B
@@ -92,8 +89,7 @@ public:
         reg(reg_in), grad(grad_in), xdot(xdot_in) {}
 
   iLQRSolver(Problem<KP, C> *prob, SolverOptions<T> opts_in,
-             SolverStats<T> stats_in, DiffMethod dynamics_diffmethod,
-             Valbool<B>) {
+             SolverStats<T> stats_in, DiffMethod diff, Valbool<B>) {
     model = prob->model;
     // TODO: Many empty item.
     obj = prob->obj;
@@ -108,7 +104,7 @@ public:
     std::vector<int> nx, nu, ne;
     std::tie(nx, nu) = prob->dims();
     for (const auto &m : prob->model) {
-      ne.push_back(m->errstate_dim());
+      ne.push_back(::errstate_dim(m.get()));
     }
     ne.push_back(ne.back());
 
@@ -129,7 +125,7 @@ public:
 
     if (std::any_of(Z[0].state().begin(), Z[0].state().end(),
                     [](const auto &s) { return std::isnan(s); })) {
-      rollout(dynamics_signature(Z), prob->model[0].get(), &Z, prob->x0);
+      rollout(dynamics_signature<B>::value, prob->model[0].get(), &Z, prob->x0);
     }
     VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
     Z[0].setstate(v);
@@ -262,15 +258,15 @@ iLQRSolverTemplate void reset(iLQRSolverDeclare &solver) {
   solver.reg.d_rou = 0.0;
 }
 
-iLQRSolverTemplate void dynamics_expansion(iLQRSolverDeclare &solver,
+iLQRSolverTemplate void dynamics_expansion(iLQRSolverDeclare *solver,
                                            const SampledTrajectory<KP> &Z) {
-  const auto &diff = solver.opts.dynamics_diffmethod;
-  const auto &model = solver.model;
-  for (int k = 0; k < solver.D_vec.size(); ++k) {
-    jacobian(dynamics_signature(solver), diff, model[k].get(), &solver.D_vec[k],
-             Z[k]);
+  const auto &diff = solver->opts.dynamics_diffmethod;
+  const auto &model = solver->model;
+  for (int k = 0; k < solver->D_vec.size(); ++k) {
+    jacobian(dynamics_signature<true>::value, diff, model[k].get(),
+             &solver->D_vec[k], Z[k]);
   }
-  error_expansion(solver.model, solver.D_vec, solver.G_vec);
+  error_expansion(solver->model, solver->D_vec, solver->G_vec);
 }
 
 #endif

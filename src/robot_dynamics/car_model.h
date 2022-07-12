@@ -141,7 +141,7 @@ public:
     R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-    obj_ = LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N);
+    obj_ = LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N, UserDefined());
     // Must be discretized.
     discretized_car_ = std::make_shared<DiscretizedDynamics<KP, RK4>>(&car_);
 
