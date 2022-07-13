@@ -241,14 +241,14 @@ void integrate(RK4<KP> *inte, const ContinuousDynamics<KP> *model,
   dynamics<KP>(model, inte->k4, xn, u, t + h);
   xn = x + h * (inte->k1 + 2 * inte->k2 + 2 * inte->k3 + inte->k4) / 6;
 }
-template <typename KP, typename TP = FunctionSignature>
-void jacobian(RK4<KP> *inte, TP sig, const ContinuousDynamics<KP> *model,
+template <typename KP, typename FS = FunctionSignature>
+void jacobian(RK4<KP> *inte, FS sig, const ContinuousDynamics<KP> *model,
               typename KP::ref_matrix_type J, typename KP::ref_vector_type xn,
               const typename KP::state_type &x,
               const typename KP::control_type &u, typename KP::base_type t,
               typename KP::base_type h) {
-  static_assert(std::is_base_of<FunctionSignature, TP>::value,
-                "TP is not derived of FunctionSignature");
+  static_assert(std::is_base_of<FunctionSignature, FS>::value,
+                "FS is not derived of FunctionSignature");
 }
 template <typename KP>
 void jacobian(RK4<KP> *inte, StaticReturn, const ContinuousDynamics<KP> *model,

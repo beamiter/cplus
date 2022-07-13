@@ -89,10 +89,10 @@ EuclideanState statevectortype(const AbstractFunction<KP> *) {
 template <typename KP> int errstate_dim(const AbstractFunction<KP> *fun) {
   return errstate_dim(statevectortype(fun), fun);
 }
-template <typename KP, typename TP = StateVectorType>
-int errstate_dim(TP tp, const AbstractFunction<KP> *fun) {
-  static_assert(std::is_base_of<StateVectorType, TP>::value,
-                "TP is not derived of FunctionInputs");
+template <typename KP, typename SV = StateVectorType>
+int errstate_dim(SV, const AbstractFunction<KP> *fun) {
+  static_assert(std::is_base_of<StateVectorType, SV>::value,
+                "SV is not derived of FunctionInputs");
 }
 template <typename KP>
 int errstate_dim(EuclideanState, const AbstractFunction<KP> *fun) {
@@ -113,11 +113,15 @@ auto evaluate(const AbstractFunction<KP> *fun, const KP &z) {
   return evaluate(functioninputs(fun), fun, z);
 }
 //////////////////////////////////
-template <typename KP, typename TP = FunctionInputs>
-void evaluate(TP tp, const AbstractFunction<KP> *fun,
-              typename KP::ref_vector_type y, const KP &z) {
-  static_assert(std::is_base_of<FunctionInputs, TP>::value,
-                "TP is not derived of FunctionInputs");
+
+// SFINAE: Substitution failure is not an error.
+template <typename KP, typename FI = FunctionInputs>
+void evaluate(typename std::enable_if<
+                  std::is_base_of<FunctionInputs, FI>::value, FI>::type tp,
+              const AbstractFunction<KP> *fun, typename KP::ref_vector_type y,
+              const KP &z) {
+  static_assert(std::is_base_of<FunctionInputs, FI>::value,
+                "FI is not derived of FunctionInputs");
 }
 template <typename KP>
 void evaluate(StateControl tp, const AbstractFunction<KP> *fun,
@@ -143,10 +147,10 @@ void evaluate(ControlOnly tp, const AbstractFunction<KP> *fun,
   evaluate<KP>(fun, y, control);
 }
 
-template <typename KP, typename TP = FunctionInputs>
-auto evaluate(TP tp, const AbstractFunction<KP> *fun, const KP &z) {
-  static_assert(std::is_base_of<FunctionInputs, TP>::value,
-                "TP is not derived of FunctionInputs");
+template <typename KP, typename FI = FunctionInputs>
+auto evaluate(FI tp, const AbstractFunction<KP> *fun, const KP &z) {
+  static_assert(std::is_base_of<FunctionInputs, FI>::value,
+                "FI is not derived of FunctionInputs");
 }
 template <typename KP>
 auto evaluate(StateControl tp, const AbstractFunction<KP> *fun, const KP &z) {
@@ -183,11 +187,14 @@ auto evaluate(const AbstractFunction<KP> *fun, const typename KP::state_type &x,
 }
 ///////////////////////////////////////
 // Dispatch on function signature.
-template <typename KP, typename TP = FunctionSignature>
-void evaluate(FunctionSignature sig, const AbstractFunction<KP> *fun,
-              typename KP::ref_vector_type y, const KP &z) {
-  static_assert(std::is_base_of<FunctionSignature, TP>::value,
-                "TP is not derived of FunctionSignature");
+template <typename KP, typename FS = FunctionSignature>
+void evaluate(
+    typename std::enable_if<std::is_base_of<FunctionSignature, FS>::value, FS>
+        sig,
+    const AbstractFunction<KP> *fun, typename KP::ref_vector_type y,
+    const KP &z) {
+  static_assert(std::is_base_of<FunctionSignature, FS>::value,
+                "FS is not derived of FunctionSignature");
 }
 template <typename KP>
 void evaluate(StaticReturn, const AbstractFunction<KP> *fun,

@@ -30,7 +30,7 @@ public:
 template <typename C, typename DM = DiffMethod>
 class Objective : public AbstractObjective {
   static_assert(std::is_base_of<DiffMethod, DM>::value,
-                "TP is not derived of DiffMethod");
+                "DM is not derived of DiffMethod");
 
 public:
   Objective() = default;
