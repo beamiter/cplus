@@ -114,6 +114,13 @@ FullStateExpansion(SV type, const CostExpansion<typename KP::base_type, B> &E,
                    const DiscreteDynamics<KP> *model) {}
 template <typename KP, bool B>
 CostExpansion<typename KP::base_type, B>
+FullStateExpansion(EuclideanState type,
+                   const CostExpansion<typename KP::base_type, B> &E,
+                   const DiscreteDynamics<KP> *model) {
+  return E;
+}
+template <typename KP, bool B>
+CostExpansion<typename KP::base_type, B>
 FullStateExpansion(RotationState type,
                    const CostExpansion<typename KP::base_type, B> &E,
                    const DiscreteDynamics<KP> *model) {
@@ -125,15 +132,15 @@ FullStateExpansion(RotationState type,
 template <typename O, typename C, typename P>
 void cost_expansion(const O *obj, C &E, const P &Z) {
   for (int k = 0; k < Z.size(); ++k) {
-    gradient(obj->diff_method[k], obj->cost_[k], E[k]->grad, Z[k]);
-    hessian(obj->diff_method[k], obj->cost_[k], E[k]->hess, Z[k]);
+    gradient(default_diffmethod(obj), obj->cost_[k], E[k]->grad, Z[k]);
+    hessian(default_diffmethod(obj), obj->cost_[k], E[k]->hess, Z[k]);
   }
 }
 template <typename M, typename C, typename P, typename Q>
 void error_expansion(const std::vector<M> &models, C &Eerr, const C &Efull,
                      P &G, const Q &Z) {
-  _error_expansion(statevectortype(models.front().get()), models, Eerr, Efull, G,
-                   Z);
+  _error_expansion(statevectortype(models.front().get()), models, Eerr, Efull,
+                   G, Z);
 }
 template <typename M, typename C, typename P, typename Q,
           typename SV = StateVectorType>

@@ -27,30 +27,21 @@ public:
   virtual std::vector<double> get_J() const = 0;
 };
 
-template <typename C, typename DM = DiffMethod>
-class Objective : public AbstractObjective {
-  static_assert(std::is_base_of<DiffMethod, DM>::value,
-                "DM is not derived of DiffMethod");
+UserDefined default_diffmethod(const AbstractObjective *) {
+  return UserDefined();
+}
+
+template <typename C> class Objective : public AbstractObjective {
 
 public:
   Objective() = default;
   // Constructors
-  Objective(std::vector<C> cost_in, DiffMethod diff_method_in = UserDefined()) {
+  Objective(std::vector<C> cost_in) {
     cost_ = cost_in;
     int N = cost_.size();
     J.resize(N, 0);
     const_grad.resize(N, false);
     const_hess.resize(N, false);
-    diff_method.resize(N, diff_method_in);
-  }
-
-  Objective(std::vector<C> cost_in, std::vector<DiffMethod> diff_method_in) {
-    cost_ = cost_in;
-    int N = cost_.size();
-    J.resize(N, 0);
-    const_grad.resize(N, false);
-    const_hess.resize(N, false);
-    diff_method = diff_method_in;
   }
 
   static Objective<C> init(C cost_in, int N) {
@@ -123,14 +114,46 @@ public:
   std::vector<double> J;
   std::vector<bool> const_grad;
   std::vector<bool> const_hess;
-  std::vector<DM> diff_method;
+  // TODO, support DIY diff method.
+  // std::vector<DM> diff_method;
 };
 
 template <int n, int m, typename T, typename DM = DiffMethod>
-Objective<QuadraticCostS<n, m, T>, DM>
+Objective<QuadraticCostS<n, m, T>>
 LQRObjective(const MatrixX<T> &Q, const MatrixX<T> &R, const MatrixX<T> &Qf,
              const VectorX<T> &xf, const VectorX<T> &uf, int N, DM diff,
-             bool checks = true) {}
+             bool checks = true) {
+  CHECK(0);
+}
+template <int n, int m, typename T>
+Objective<QuadraticCostS<n, m, T>>
+LQRObjective(const MatrixX<T> &Q, const MatrixX<T> &R, const MatrixX<T> &Qf,
+             const VectorX<T> &xf, const VectorX<T> &uf, int N, UserDefined,
+             bool checks = true) {
+  assert(Q.rows() == xf.size());
+  assert(Qf.rows() == xf.size());
+  assert(R.rows() == uf.size());
+  assert(n == Q.rows());
+  assert(m == R.rows());
+  const auto &H = MatrixX<T>::Zero(m, n);
+  const auto &q = -1.0 * Q * xf;
+  const auto &r = -1.0 * R * uf;
+  double c = 0.5 * xf.adjoint() * Q * xf;
+  c += 0.5 * uf.adjoint() * R * uf;
+  const auto &qf = -1.0 * Qf * xf;
+  const double cf = 0.5 * xf.adjoint() * Qf * xf;
+
+  const auto &l = QuadraticCostS<n, m, T>(Q, R, H, q, r, c, checks, false);
+  const auto &lN = QuadraticCostS<n, m, T>(Qf, R, H, qf, r, cf, false, true);
+  return Objective<QuadraticCostS<n, m, T>>::init(l, lN, N);
+}
+template <int n, int m, typename T, typename DM = DiffMethod>
+Objective<DiagonalCostS<n, m, T>>
+LQRObjective(const DiagonalMatrix<T, n> &Q, const DiagonalMatrix<T, m> &R,
+             const DiagonalMatrix<T, n> &Qf, const VectorX<T> &xf,
+             const VectorX<T> &uf, int N, DM diff, bool checks = true) {
+  CHECK(0);
+}
 template <int n, int m, typename T>
 Objective<DiagonalCostS<n, m, T>>
 LQRObjective(const DiagonalMatrix<T, n> &Q, const DiagonalMatrix<T, m> &R,
