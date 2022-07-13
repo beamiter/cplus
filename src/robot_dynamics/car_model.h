@@ -153,7 +153,7 @@ public:
     // Initial_states.
 
     // Rollout.
-    // rollout(this);
+    rollout(this);
     LOG(INFO) << *this->get_trajectory();
   }
 

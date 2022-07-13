@@ -24,6 +24,7 @@ template <typename T> struct DynamicsExpansion {
   MatrixX<T> Df; // (Nx, Nx+Nu)
   Ref<MatrixX<T>> A;
   Ref<MatrixX<T>> B;
+  // TODO: Need to bound with Df in case of (Nx, Nx+Nu)
   MatrixX<T> De; // (Ne, Ne+Nu) or (Nx, Nx+Nu)
   Ref<MatrixX<T>> fx;
   Ref<MatrixX<T>> fu;
@@ -36,9 +37,9 @@ template <typename T> struct DynamicsExpansion {
         tmp(MatrixX<T>::Zero(n, e)) {}
 };
 
-template <typename KP>
-void jacobian(FunctionSignature sig, DiffMethod diff,
-              const DiscreteDynamics<KP> *model,
+template <typename KP, typename FS = FunctionSignature,
+          typename DM = DiffMethod>
+void jacobian(FS sig, DM diff, const DiscreteDynamics<KP> *model,
               DynamicsExpansion<typename KP::base_type> *D, const KP &z) {
   jacobian(sig, diff, static_cast<const DiscretizedDynamics<KP, RK4> *>(model),
            D->Df, D->f, z);
