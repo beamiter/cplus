@@ -89,19 +89,19 @@ template <typename T> struct is_same_type<MatrixX<T>, MatrixX<T>> {
   constexpr static bool value = true;
 };
 
-template <typename T> struct UseStatic { static constexpr bool val = false; };
-template <> struct UseStatic<MatrixXd> { static constexpr bool val = true; };
-template <> struct UseStatic<MatrixXf> { static constexpr bool val = true; };
-template <> struct UseStatic<VectorXd> { static constexpr bool val = true; };
-template <> struct UseStatic<VectorXf> { static constexpr bool val = true; };
+template <typename T> struct UseStatic { static constexpr bool value = true; };
+template <typename T> struct UseStatic<std::vector<T>> {
+  static constexpr bool value = false;
+};
+template <> struct UseStatic<MatrixXd> { static constexpr bool value = false; };
+template <> struct UseStatic<MatrixXf> { static constexpr bool value = false; };
+template <> struct UseStatic<VectorXd> { static constexpr bool value = false; };
+template <> struct UseStatic<VectorXf> { static constexpr bool value = false; };
 
 #define VAL(type)                                                              \
   template <type T> struct Val##type {};
 VAL(bool);
 VAL(int);
-
-// template <bool T> struct ValBool {};
-// template <int T> struct ValInt {};
 
 template <typename Func> void loop(int start, int end, const Func &f) {
   for (int k = start; k < end; ++k) {

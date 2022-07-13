@@ -2,6 +2,7 @@
 #define ILQR_SOLVER_H
 
 #include <Eigen/Dense>
+#include <iomanip>
 #include <type_traits>
 
 #include "base/base.h"
@@ -37,13 +38,33 @@ public:
   T d_rou;
 };
 
-template <bool> struct dynamics_signature {};
-template <> struct dynamics_signature<true> {
-  static constexpr StaticReturn value = StaticReturn();
-};
-template <> struct dynamics_signature<false> {
-  static constexpr Inplace value = Inplace();
-};
+// First way.
+// template <typename O>
+// typename std::enable_if<UseStatic<typename O::vectype>::value,
+//                         StaticReturn>::type
+// dynamics_signature(const O &obj) {
+//   return StaticReturn();
+// }
+// template <typename O>
+// typename std::enable_if<!UseStatic<typename O::vectype>::value,
+// Inplace>::type dynamics_signature(const O &obj) {
+//   return Inplace();
+// }
+// Second way.
+template <typename O>
+auto dynamics_signature(const O &obj) ->
+    typename std::conditional<UseStatic<typename O::vectype>::value,
+                              StaticReturn, Inplace>::type {
+  if constexpr (UseStatic<typename O::vectype>::value) {
+    return StaticReturn();
+  } else {
+    return Inplace();
+  }
+  // Third way.
+  // typedef typename std::conditional<UseStatic<typename O::vectype>::value,
+  //                                   StaticReturn, Inplace>::type type;
+  // return type();
+}
 
 template <typename KP>
 bool usestaticdefault(const AbstractFunction<KP> *model) {
@@ -125,7 +146,7 @@ public:
 
     if (std::any_of(Z[0].state().begin(), Z[0].state().end(),
                     [](const auto &s) { return std::isnan(s); })) {
-      rollout(dynamics_signature<B>::value, prob->model[0].get(), &Z, prob->x0);
+      rollout(dynamics_signature(Z), prob->model[0].get(), &Z, prob->x0);
     }
     VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
     Z[0].setstate(v);
@@ -263,7 +284,7 @@ iLQRSolverTemplate void dynamics_expansion(iLQRSolverDeclare *solver,
   const auto &diff = solver->opts.dynamics_diffmethod;
   const auto &model = solver->model;
   for (int k = 0; k < solver->D_vec.size(); ++k) {
-    jacobian(dynamics_signature<true>::value, diff, model[k].get(),
+    jacobian(dynamics_signature(*solver), diff, model[k].get(),
              &solver->D_vec[k], Z[k]);
   }
   error_expansion(solver->model, solver->D_vec, solver->G_vec);

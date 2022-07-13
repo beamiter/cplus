@@ -161,8 +161,8 @@ public:
   auto cost() { return this->obj->cost(this->Z); }
 };
 
-template <typename KP, typename C>
-void rollout(FunctionSignature sig,
+template <typename KP, typename C, typename FS = FunctionSignature>
+void rollout(FS sig,
              const std::vector<std::shared_ptr<DiscreteDynamics<KP>>> &models,
              SampledTrajectory<KP> *Z, const typename KP::state_type &x0) {
   Z->at(0).setstate(x0);
@@ -170,8 +170,8 @@ void rollout(FunctionSignature sig,
     propagate_dynamics(sig, models[k - 1].get(), &Z->at(k), Z->at(k - 1));
   }
 }
-template <typename KP, typename C>
-void rollout(FunctionSignature sig, const Problem<KP, C> *prob) {
+template <typename KP, typename C, typename FS = FunctionSignature>
+void rollout(FS sig, const Problem<KP, C> *prob) {
   rollout<KP, C>(sig, prob->get_model(),
                  const_cast<Problem<KP, C> *>(prob)->get_trajectory(),
                  prob->get_initial_state());
