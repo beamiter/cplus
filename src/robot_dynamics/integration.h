@@ -16,17 +16,17 @@ template <typename T> struct ADVecotor {};
  * Explicit Methods
  */
 
-struct Euler : Explicit {};
+template <typename KP> struct Euler : Explicit {};
 template <typename KP>
 typename KP::state_type
-integrate(Euler, const AbstractModel<KP> *model,
+integrate(Euler<KP>, const ContinuousDynamics<KP> *model,
           const typename KP::state_type &x, const typename KP::control_type &u,
           typename KP::base_type t, typename KP::base_type h) {
   auto xdot = dynamics<KP>(model, x, u, t);
   return x + h * xdot;
 }
 template <typename KP>
-void integrate(Euler, const AbstractModel<KP> *model,
+void integrate(Euler<KP>, const ContinuousDynamics<KP> *model,
                typename KP::ref_vector_type xn,
                const typename KP::state_type &x,
                const typename KP::control_type &u, typename KP::base_type t,
@@ -35,9 +35,30 @@ void integrate(Euler, const AbstractModel<KP> *model,
   xn *= h;
   xn += x;
 }
+template <typename KP, typename FS = FunctionSignature>
+void jacobian(Euler<KP> *, FS, const ContinuousDynamics<KP> *model,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type xn,
+              const typename KP::state_type &x,
+              const typename KP::control_type &u, typename KP::base_type t,
+              typename KP::base_type h) {
+  static_assert(std::is_base_of<FunctionSignature, FS>::value,
+                "FS is not derived of FunctionSignature");
+}
 template <typename KP>
-void jacobian(Euler, FunctionSignature, const AbstractModel<KP> *model,
-              typename KP::ref_matrix_type J, const typename KP::state_type &xn,
+void jacobian(Euler<KP> *, StaticReturn, const ContinuousDynamics<KP> *model,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type xn,
+              const typename KP::state_type &x,
+              const typename KP::control_type &u, typename KP::base_type t,
+              typename KP::base_type h) {
+  jacobian(model, J, xn, x, u, t);
+  J *= h;
+  for (auto i = 0; i < model->state_dim(); ++i) {
+    J(i, i) += 1.0;
+  }
+}
+template <typename KP>
+void jacobian(Euler<KP> *, Inplace, const ContinuousDynamics<KP> *model,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type xn,
               const typename KP::state_type &x,
               const typename KP::control_type &u, typename KP::base_type t,
               typename KP::base_type h) {
@@ -300,7 +321,7 @@ void jacobian(RK4<KP> *inte, StaticReturn, const ContinuousDynamics<KP> *model,
 
   const auto dB1 = B1 * h;
   const auto dB2 = B2 * h + 0.5 * A2 * dB1 * h;
-  const auto dB3 = B2 * h + 0.5 * A3 * dB2 * h;
+  const auto dB3 = B3 * h + 0.5 * A3 * dB2 * h;
   const auto dB4 = B4 * h + A4 * dB3 * h;
 
   J(ix, ix).setIdentity();

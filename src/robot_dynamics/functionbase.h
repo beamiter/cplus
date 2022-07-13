@@ -218,8 +218,9 @@ auto evaluate(Inplace, const AbstractFunction<KP> *fun,
 }
 
 // Jacobian.
-template <typename KP>
-void jacobian(FunctionSignature, UserDefined, const AbstractFunction<KP> *fun,
+template <typename KP, typename FS = FunctionSignature,
+          typename DM = DiffMethod>
+void jacobian(FS, DM, const AbstractFunction<KP> *fun,
               typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
               const KP &z) {
   jacobian(fun, J, y, z);
@@ -229,8 +230,15 @@ void jacobian(const AbstractFunction<KP> *fun, typename KP::ref_matrix_type J,
               typename KP::ref_vector_type y, const KP &z) {
   jacobian(functioninputs(fun), fun, J, y, z);
 }
+template <typename KP, typename FI = FunctionInputs>
+auto jacobian(FI, const AbstractFunction<KP> *fun,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
+              const KP &z) {
+  static_assert(std::is_base_of<FunctionInputs, FI>::value,
+                "FI is not derived of FunctionInputs");
+}
 template <typename KP>
-auto jacobian(FunctionInputs inputtype, const AbstractFunction<KP> *fun,
+auto jacobian(StateControl, const AbstractFunction<KP> *fun,
               typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
               const KP &z) {
   jacobian(fun, J, y, z.state(), z.control(), z.params());
@@ -246,10 +254,7 @@ template <typename KP>
 auto jacobian(const AbstractFunction<KP> *fun, typename KP::ref_matrix_type J,
               typename KP::ref_vector_type y, const typename KP::state_type &x,
               const typename KP::control_type &u) {
-  // fun->jacobian(J, y, x, u);
-  // TODO. Impl for specific funtion.
-  // jacobian(fun, J, y, x, u);
-  CHECK(0);
+  fun->jacobian(J, y, x, u);
 }
 
 template <typename KP, typename P, typename Q, typename HESS>

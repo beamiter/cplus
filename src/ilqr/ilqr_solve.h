@@ -18,9 +18,8 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
     // time using “Run-Time Type Information“.
     // If there is a surety we will never cast to wrong object then always avoid
     // dynamic_cast and use static_cast.
-    const DiscretizedDynamics<KP, RK4> *tmp =
-        static_cast<const DiscretizedDynamics<KP, RK4> *>(
-            solver->model[0].get());
+    const auto *tmp = static_cast<const DiscretizedDynamics<KP, Euler> *>(
+        solver->model[0].get());
     rollout(dynamics_signature(*solver), tmp, &solver->Z, solver->x0);
     LOG(INFO) << solver->Z;
   }

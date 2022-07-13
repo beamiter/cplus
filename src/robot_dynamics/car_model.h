@@ -124,6 +124,8 @@ template <typename KP, typename C> class CarProblem : public Problem<KP, C> {
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
 
+  using discretized_type = DiscretizedDynamics<KP, Euler>;
+
 public:
   CarProblem(std::vector<base_type> x0_in, std::vector<base_type> xf_in,
              std::vector<base_type> uf_in, int N, double tf) {
@@ -143,7 +145,7 @@ public:
 
     obj_ = LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N, UserDefined());
     // Must be discretized.
-    discretized_car_ = std::make_shared<DiscretizedDynamics<KP, RK4>>(&car_);
+    discretized_car_ = std::make_shared<discretized_type>(&car_);
 
     this->init(discretized_car_, &obj_, x0, tf);
 
@@ -161,7 +163,7 @@ public:
   // std::shared_ptr<CarModel<KP>> car_;
   CarModel<KP> car_;
   Objective<C> obj_;
-  std::shared_ptr<DiscretizedDynamics<KP, RK4>> discretized_car_;
+  std::shared_ptr<discretized_type> discretized_car_;
 };
 template <int Nx, int Nu, typename T, template <int, int, typename> class C>
 using CarProblemX = CarProblem<KnotPointX<Nx, Nu, T>, C<Nx, Nu, T>>;

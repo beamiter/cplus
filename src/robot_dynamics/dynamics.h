@@ -22,12 +22,6 @@ public:
   }
   // Overrides.
   int output_dim() const override { return this->state_dim(); }
-  // virtual void jacobian(typename KP::ref_matrix_type jaco,
-  //                       typename KP::ref_vector_type y,
-  //                       const typename KP::state_type &x,
-  //                       const typename KP::control_type &u) const override {
-  //   CHECK(0);
-  // }
 };
 
 // ContinuousDynamics.
@@ -92,13 +86,13 @@ void evaluate(const ContinuousDynamics<KP> *model,
               const typename KP::param_type &p) {
   dynamics(model, xdot, x, u, p.first);
 }
-template <typename KP, typename DM = DiffMethod>
-void jacobian(FunctionSignature, DM diff, const ContinuousDynamics<KP> *model,
+template <typename KP, typename FS = FunctionSignature,
+          typename DM = DiffMethod>
+void jacobian(FS, DM, const ContinuousDynamics<KP> *model,
               typename KP::ref_matrix_type J, typename KP::ref_vector_type xdot,
               const KP &z) {}
-template <typename KP>
-void jacobian(FunctionSignature, UserDefined,
-              const ContinuousDynamics<KP> *model,
+template <typename KP, typename FS = FunctionSignature>
+void jacobian(FS, UserDefined, const ContinuousDynamics<KP> *model,
               typename KP::ref_matrix_type J, typename KP::ref_vector_type xdot,
               const KP &z) {
   jacobian(model, J, xdot, z.state(), z.constrol(), z.time());
