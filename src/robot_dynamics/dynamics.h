@@ -61,11 +61,11 @@ void dynamics(const ContinuousDynamics<KP> *model,
 }
 
 // Depends on the FunctionSignature.
-template <typename KP, typename TP = FunctionSignature>
-void dynamics(TP sig, const ContinuousDynamics<KP> *model,
+template <typename KP, typename FS = FunctionSignature>
+void dynamics(FS sig, const ContinuousDynamics<KP> *model,
               typename KP::ref_vector_type xdot, const KP &z) {
-  static_assert(std::is_base_of<FunctionSignature, TP>::value,
-                "TP is not derived of FunctionSignature");
+  static_assert(std::is_base_of<FunctionSignature, FS>::value,
+                "FS is not derived of FunctionSignature");
 }
 template <typename KP>
 void dynamics(Inplace, const ContinuousDynamics<KP> *model,

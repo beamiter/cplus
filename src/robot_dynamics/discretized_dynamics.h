@@ -79,8 +79,8 @@ void discretized_dynamics(const DiscretizedDynamics<KP, Q> *model,
 }
 
 template <typename KP, template <typename> class Q,
-          typename TP = FunctionSignature>
-void discretized_dynamics(TP sig, const DiscretizedDynamics<KP, Q> *model,
+          typename FS = FunctionSignature>
+void discretized_dynamics(FS sig, const DiscretizedDynamics<KP, Q> *model,
                           typename KP::state_type *xn, const KP &z) {}
 template <typename KP, template <typename> class Q>
 void discretized_dynamics(Inplace, const DiscretizedDynamics<KP, Q> *model,
