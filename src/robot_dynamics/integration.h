@@ -52,8 +52,8 @@ void jacobian(Euler<KP> *, StaticReturn, const ContinuousDynamics<KP> *model,
               typename KP::base_type h) {
   jacobian(model, J, xn, x, u, t);
   J *= h;
-  for (auto i = 0; i < model->state_dim(); ++i) {
-    J(i, i) += 1.0;
+   for (auto i = 0; i < model->state_dim(); ++i) {
+   J(i, i) += 1.0;
   }
 }
 template <typename KP>
@@ -64,8 +64,8 @@ void jacobian(Euler<KP> *, Inplace, const ContinuousDynamics<KP> *model,
               typename KP::base_type h) {
   jacobian(model, J, xn, x, u, t);
   J *= h;
-  for (auto i = 0; i < model->state_dim(); ++i) {
-    J(i, i) += 1.0;
+   for (auto i = 0; i < model->state_dim(); ++i) {
+   J(i, i) += 1.0;
   }
 }
 

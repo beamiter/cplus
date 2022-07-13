@@ -29,26 +29,15 @@ DERIVE(FunctionInputs, StateOnly);
 DERIVE(FunctionInputs, ControlOnly);
 DERIVE(FunctionInputs, StateControl);
 
-// enum class StateVectorType {
-// EuclideanState,
-// RotationState,
-//};
 DECLARE(StateVectorType);
 DERIVE(StateVectorType, EuclideanState);
 DERIVE(StateVectorType, RotationState);
-// enum class FunctionSignature {
-// Inplace,
-// StaticReturn,
-//};
+
 DECLARE(FunctionSignature);
 DERIVE(FunctionSignature, Inplace);
 DERIVE(FunctionSignature, StaticReturn);
-// enum class DiffMethod {
-// ForwardAD,
-// FiniteDifference,
-// UserDefined,
-//};
-struct DiffMethod {};
+
+DECLARE(DiffMethod);
 DERIVE(DiffMethod, ForwardAD);
 DERIVE(DiffMethod, FiniteDifference);
 DERIVE(DiffMethod, UserDefined);

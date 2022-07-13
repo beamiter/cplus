@@ -25,8 +25,7 @@ public:
   virtual ~CarModel() = default;
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
-  CarModel(RefPos ref_in = RefPos::rear, double L_in = 2.7,
-           double lr_in = 1.5) {
+  CarModel(RefPos ref_in, double L_in, double lr_in) {
     this->ref = ref_in;
     this->L = L_in;
     this->lr = lr_in;
@@ -99,22 +98,29 @@ public:
                 typename KP::ref_vector_type y,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u) const final {
-    const double s2 = sin(x(2));
-    const double c2 = cos(x(2));
-    jaco(0, 2) = -s2 * x(4);
-    jaco(0, 4) = c2;
-    jaco(1, 2) = c2 * x(4);
-    jaco(1, 4) = s2;
-    jaco(2, 4) = tan(x(3)) / L;
-    jaco(2, 3) = x(4) / (std::pow(cos(x(3)), 2) * L);
-    jaco(3, 7) = 1;
-    jaco(4, 5) = 1;
-    jaco(5, 6) = 1;
+    if (RefPos::rear == ref) {
+      const double s2 = sin(x(2));
+      const double c2 = cos(x(2));
+      jaco(0, 2) = -s2 * x(4);
+      jaco(0, 4) = c2;
+      jaco(1, 2) = c2 * x(4);
+      jaco(1, 4) = s2;
+      jaco(2, 4) = tan(x(3)) / L;
+      jaco(2, 3) = x(4) / (std::pow(cos(x(3)), 2) * L);
+      jaco(3, 7) = 1;
+      jaco(4, 5) = 1;
+      jaco(5, 6) = 1;
+    } else {
+      CHECK(0);
+    }
   }
 
   RefPos ref;
   double L = 0.0;
   double lr = 0.0;
+
+private:
+  CarModel() = delete;
 };
 
 template <typename KP, typename C> class CarProblem : public Problem<KP, C> {
@@ -143,9 +149,10 @@ public:
     R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
+    car_ = std::make_shared<CarModel<KP>>(RefPos::rear, 3.8, 1.0);
     obj_ = LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N, UserDefined());
     // Must be discretized.
-    discretized_car_ = std::make_shared<discretized_type>(&car_);
+    discretized_car_ = std::make_shared<discretized_type>(car_.get());
 
     this->init(discretized_car_, &obj_, x0, tf);
 
@@ -160,8 +167,7 @@ public:
   }
 
   // Members.
-  // std::shared_ptr<CarModel<KP>> car_;
-  CarModel<KP> car_;
+  std::shared_ptr<CarModel<KP>> car_;
   Objective<C> obj_;
   std::shared_ptr<discretized_type> discretized_car_;
 };

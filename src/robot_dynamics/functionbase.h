@@ -51,6 +51,9 @@ public:
            typename KP::base_type t, typename KP::base_type dt) const {
     jacobian(jaco, y, x, u);
     jaco *= dt;
+    for (auto i = 0; i < KP::N; ++i) {
+      jaco(i, i) += 1.0;
+    }
   }
 
   /*Function.*/
