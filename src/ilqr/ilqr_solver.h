@@ -97,8 +97,9 @@ public:
              std::vector<Ref<matrix_type>> K_in,
              std::vector<Ref<vector_type>> d_in,
              std::vector<std::unique_ptr<DynamicsExpansion<T>>> D_in,
-             std::vector<matrix_type> G_in, CostExpansion<T> Efull_in,
-             CostExpansion<T> Eerr_in,
+             std::vector<matrix_type> G_in,
+             std::shared_ptr<CostExpansion<T>> Efull_in,
+             std::shared_ptr<CostExpansion<T>> Eerr_in,
              std::vector<std::unique_ptr<StateControlExpansion<T, true>>> Q_in,
              std::vector<std::unique_ptr<StateControlExpansion<T, false>>> S_in,
              std::vector<T> DV_in, StateControlExpansion<T, true> Qtmp_in,
@@ -108,10 +109,10 @@ public:
       : model(model_in), obj(obj_in), x0(x0_in), tf(tf_in), N(N_in),
         opts(opts_in), stats_(stats_in), Z(Z_in), Z_dot(Z_dot_in), dx(dx_in),
         du(du_in), gains(gains_in), K_vec(K_in), d_vec(d_in),
-        D_vec(std::move(D_in)), G_vec(G_in), Efull(Efull_in), Eerr(Eerr_in),
-        Q_vec(std::move(Q_in)), S_vec(std::move(S_in)), DV(DV_in),
-        Qtmp(Qtmp_in), Quu_reg(Quu_reg_in), Qux_reg(Qux_reg_in), reg(reg_in),
-        grad(grad_in), xdot(xdot_in) {}
+        D_vec(std::move(D_in)), G_vec(G_in), Efull_(std::move(Efull_in)),
+        Eerr_(std::move(Eerr_in)), Q_vec(std::move(Q_in)),
+        S_vec(std::move(S_in)), DV(DV_in), Qtmp(Qtmp_in), Quu_reg(Quu_reg_in),
+        Qux_reg(Qux_reg_in), reg(reg_in), grad(grad_in), xdot(xdot_in) {}
 
   iLQRSolver(Problem<KP, C> *prob, SolverOptions<T> opts_in,
              SolverStats<T> stats_in, DiffMethod diff, Valbool<B>) {
@@ -180,8 +181,8 @@ public:
       G_vec.push_back(a);
     });
 
-    Eerr = CostExpansion<T>(ne, nu);
-    Efull = FullStateExpansion(Eerr, prob->model.front().get());
+    Eerr_ = std::make_shared<CostExpansion<T>>(ne, nu);
+    Efull_ = FullStateExpansion(Eerr_, prob->model.front().get());
 
     loop(0, N, [&ne, &nu, this](const int k) {
       Q_vec.push_back(
@@ -250,8 +251,8 @@ public:
   std::vector<std::unique_ptr<DynamicsExpansion<T>>> D_vec;
   std::vector<matrix_type> G_vec;
 
-  CostExpansion<T> Efull;
-  CostExpansion<T> Eerr;
+  std::shared_ptr<CostExpansion<T>> Eerr_;
+  std::shared_ptr<CostExpansion<T>> Efull_;
 
   std::vector<std::unique_ptr<StateControlExpansion<T, true>>> Q_vec;
   std::vector<std::unique_ptr<StateControlExpansion<T, false>>> S_vec;

@@ -79,7 +79,7 @@ public:
     const_grad_.resize(N, false);
     for (auto k = 0; k < N; ++k) {
       expansion_vec_.push_back(
-          std::make_shared<StateControlExpansion<T, B>>(nx[k], nu[k]));
+          std::make_unique<StateControlExpansion<T, B>>(nx[k], nu[k]));
     }
   }
   CostExpansion(int n, int m, int N) {
@@ -87,7 +87,7 @@ public:
     const_grad_.resize(N, false);
     for (auto k = 0; k < N; ++k) {
       expansion_vec_.push_back(
-          std::make_shared<StateControlExpansion<T, B>>(n, m));
+          std::make_unique<StateControlExpansion<T, B>>(n, m));
     }
   }
   CostExpansion(const CostExpansion &in)
@@ -96,46 +96,51 @@ public:
 
   const auto &operator[](int i) const { return expansion_vec_[i]; }
   auto &operator[](int i) { return expansion_vec_[i]; }
+  const auto &at(int i) const { return expansion_vec_[i]; }
+  auto &at(int i) { return expansion_vec_[i]; }
   int size() const { return expansion_vec_.size(); }
   int length() const { return expansion_vec_.size(); }
 
-  std::vector<std::shared_ptr<StateControlExpansion<T, B>>> expansion_vec_;
+  std::vector<std::unique_ptr<StateControlExpansion<T, B>>> expansion_vec_;
   std::vector<bool> const_hess_;
   std::vector<bool> const_grad_;
 };
 
 template <typename KP, bool B>
-CostExpansion<typename KP::base_type, B>
-FullStateExpansion(const CostExpansion<typename KP::base_type, B> &E,
-                   const DiscreteDynamics<KP> *model) {
+std::shared_ptr<CostExpansion<typename KP::base_type, B>> FullStateExpansion(
+    const std::shared_ptr<CostExpansion<typename KP::base_type, B>> &E,
+    const DiscreteDynamics<KP> *model) {
   return FullStateExpansion(statevectortype(model), E, model);
 }
 template <typename KP, bool B, typename SV = StateVectorType>
-CostExpansion<typename KP::base_type, B>
-FullStateExpansion(SV type, const CostExpansion<typename KP::base_type, B> &E,
-                   const DiscreteDynamics<KP> *model) {}
+auto FullStateExpansion(SV type,
+                        const CostExpansion<typename KP::base_type, B> &E,
+                        const DiscreteDynamics<KP> *model) {
+  CHECK(0);
+}
 template <typename KP, bool B>
-CostExpansion<typename KP::base_type, B>
-FullStateExpansion(EuclideanState type,
-                   const CostExpansion<typename KP::base_type, B> &E,
-                   const DiscreteDynamics<KP> *model) {
+std::shared_ptr<CostExpansion<typename KP::base_type, B>> FullStateExpansion(
+    EuclideanState type,
+    const std::shared_ptr<CostExpansion<typename KP::base_type, B>> &E,
+    const DiscreteDynamics<KP> *model) {
   return E;
 }
 template <typename KP, bool B>
-CostExpansion<typename KP::base_type, B>
-FullStateExpansion(RotationState type,
-                   const CostExpansion<typename KP::base_type, B> &E,
-                   const DiscreteDynamics<KP> *model) {
+std::shared_ptr<CostExpansion<typename KP::base_type, B>> FullStateExpansion(
+    RotationState type,
+    const std::shared_ptr<CostExpansion<typename KP::base_type, B>> &E,
+    const DiscreteDynamics<KP> *model) {
   const int n = model->state_dim();
   const int m = model->control_dim();
-  return CostExpansion<typename KP::base_type, B>(n, m, E.length());
+  return std::make_shared<CostExpansion<typename KP::base_type, B>>(n, m,
+                                                                    E.length());
 }
 
 template <typename O, typename C, typename P>
-void cost_expansion(const O *obj, C &E, const P &Z) {
+void cost_expansion(const O *obj, const C &E, const P &Z) {
   for (int k = 0; k < Z.size(); ++k) {
-    gradient(default_diffmethod(obj), obj->cost_[k], E[k]->grad, Z[k]);
-    hessian(default_diffmethod(obj), obj->cost_[k], E[k]->hess, Z[k]);
+    gradient(default_diffmethod(obj), obj->cost_[k], E->at(k)->grad, Z[k]);
+    hessian(default_diffmethod(obj), obj->cost_[k], E->at(k)->hess, Z[k]);
   }
 }
 template <typename M, typename C, typename P, typename Q>
