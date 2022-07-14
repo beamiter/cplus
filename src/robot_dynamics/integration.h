@@ -52,8 +52,8 @@ void jacobian(Euler<KP> *, StaticReturn, const ContinuousDynamics<KP> *model,
               typename KP::base_type h) {
   jacobian(model, J, xn, x, u, t);
   J *= h;
-   for (auto i = 0; i < model->state_dim(); ++i) {
-   J(i, i) += 1.0;
+  for (auto i = 0; i < model->state_dim(); ++i) {
+    J(i, i) += 1.0;
   }
 }
 template <typename KP>
@@ -64,8 +64,8 @@ void jacobian(Euler<KP> *, Inplace, const ContinuousDynamics<KP> *model,
               typename KP::base_type h) {
   jacobian(model, J, xn, x, u, t);
   J *= h;
-   for (auto i = 0; i < model->state_dim(); ++i) {
-   J(i, i) += 1.0;
+  for (auto i = 0; i < model->state_dim(); ++i) {
+    J(i, i) += 1.0;
   }
 }
 
@@ -139,6 +139,7 @@ void jacobian(RK3<KP> *inte, StaticReturn, const ContinuousDynamics<KP> *model,
   const auto iu = Eigen::seqN(n, m);
   const auto k1 = dynamics(model, x, u, t) * h;
   const auto k2 = dynamics(model, x + k1 / 2, u, t + h / 2) * h;
+  const auto &n_identity = MatrixXd::Identity(n, n);
 
   jacobian(model, J, xn, x, u, t);
   const auto &A1 = J(ix, ix);
@@ -153,17 +154,17 @@ void jacobian(RK3<KP> *inte, StaticReturn, const ContinuousDynamics<KP> *model,
   const auto &B3 = J(ix, iu);
 
   const auto dA1 = A1 * h;
-  const auto dA2 = A2 * (MatrixXd::Identity(n, n) + 0.5 * dA1) * h;
-  const auto dA3 = A3 * (MatrixXd::Identity(n, n) - dA1 + 2 * dA2) * h;
+  const auto dA2 = A2 * (n_identity + 0.5 * dA1) * h;
+  const auto dA3 = A3 * (n_identity - dA1 + 2 * dA2) * h;
 
   const auto dB1 = B1 * h;
   const auto dB2 = B2 * h + 0.5 * A2 * dB1 * h;
   const auto dB3 = B3 * h + A3 * (2 * dB2 - dB1) * h;
 
-  J(ix, ix).setIdentity();
-  J(ix, ix) += (dA1 + 4 * dA2 + dA3) / 6;
-  // J(ix, ix) = MatrixXd::Identity(n, n) + (dA1 + 4 * dA2 + dA3) / 6;
+  // Be careful with Eigen's delay calcualtion.
+  J(ix, ix) = n_identity + (dA1 + 4 * dA2 + dA3) / 6;
   J(ix, iu) = (dB1 + 4 * dB2 + dB3) / 6;
+  // TODO. Check if (1,,3), (0,6), (1, 7) is true or not.
 }
 template <typename KP>
 void jacobian(RK3<KP> *inte, Inplace, const ContinuousDynamics<KP> *model,
@@ -190,6 +191,7 @@ void jacobian(RK3<KP> *inte, Inplace, const ContinuousDynamics<KP> *model,
   std::tie(n, m, p) = model->dims();
   const auto ix = Eigen::seq(0, n - 1);
   const auto iu = Eigen::seqN(n, m);
+  const auto &n_identity = MatrixXd::Identity(n, n);
 
   jacobian(model, J, k1, x, u, t);
   dynamics(model, k1, x, u, t);
@@ -209,16 +211,15 @@ void jacobian(RK3<KP> *inte, Inplace, const ContinuousDynamics<KP> *model,
   B3 = J(ix, iu);
 
   dA1 = A1 * h;
-  dA2 = A2 * (MatrixXd::Identity(n, n) + 0.5 * dA1) * h;
-  dA3 = A3 * (MatrixXd::Identity(n, n) - dA1 + 2 * dA2) * h;
+  dA2 = A2 * (n_identity + 0.5 * dA1) * h;
+  dA3 = A3 * (n_identity - dA1 + 2 * dA2) * h;
 
   dB1 = B1 * h;
   dB2 = B2 * h + 0.5 * A2 * dB1 * h;
   dB3 = B3 * h + A3 * (2 * dB2 - dB1) * h;
 
-  J(ix, ix).setIdentity();
-  J(ix, ix) += (dA1 + 4 * dA2 + dA3) / 6;
-  // J(ix, ix) = MatrixXd::Identity(n, n) + (dA1 + 4 * dA2 + dA3) / 6;
+  // Be careful with Eigen's delay calcualtion.
+  J(ix, ix) = n_identity + (dA1 + 4 * dA2 + dA3) / 6;
   J(ix, iu) = (dB1 + 4 * dB2 + dB3) / 6;
 }
 
@@ -297,6 +298,7 @@ void jacobian(RK4<KP> *inte, StaticReturn, const ContinuousDynamics<KP> *model,
   const auto k1 = dynamics(model, x, u, t) * h;
   const auto k2 = dynamics(model, x + k1 / 2, u, t + h / 2) * h;
   const auto k3 = dynamics(model, x + k2 / 2, u, t + h / 2) * h;
+  const auto &n_identity = MatrixXd::Identity(n, n);
 
   jacobian(model, J, xn, x, u, t);
   const auto &A1 = J(ix, ix);
@@ -315,19 +317,17 @@ void jacobian(RK4<KP> *inte, StaticReturn, const ContinuousDynamics<KP> *model,
   const auto &B4 = J(ix, iu);
 
   const auto dA1 = A1 * h;
-  const auto dA2 = A2 * (MatrixXd::Identity(n, n) + 0.5 * dA1) * h;
-  const auto dA3 = A3 * (MatrixXd::Identity(n, n) + 0.5 * dA2) * h;
-  const auto dA4 = A4 * (MatrixXd::Identity(n, n) + dA3) * h;
+  const auto dA2 = A2 * (n_identity + 0.5 * dA1) * h;
+  const auto dA3 = A3 * (n_identity + 0.5 * dA2) * h;
+  const auto dA4 = A4 * (n_identity + dA3) * h;
 
   const auto dB1 = B1 * h;
   const auto dB2 = B2 * h + 0.5 * A2 * dB1 * h;
   const auto dB3 = B3 * h + 0.5 * A3 * dB2 * h;
   const auto dB4 = B4 * h + A4 * dB3 * h;
 
-  J(ix, ix).setIdentity();
-  J(ix, ix) += (dA1 + 2 * dA2 + 2 * dA3 + dA4) / 6;
-  // J(ix, ix) = MatrixXd::Identity(n, n) + (dA1 + 2 * dA2 + 2 * dA3 + dA4) /
-  // 6;
+  // Be careful with Eigen's delay calcualtion.
+  J(ix, ix) = n_identity + (dA1 + 2 * dA2 + 2 * dA3 + dA4) / 6;
   J(ix, iu) = (dB1 + 2 * dB2 + 2 * dB3 + dB4) / 6;
 }
 template <typename KP>
@@ -360,6 +360,7 @@ void jacobian(RK4<KP> *inte, Inplace, const ContinuousDynamics<KP> *model,
   std::tie(n, m, p) = model->dims();
   const auto ix = Eigen::seq(0, n - 1);
   const auto iu = Eigen::seqN(n, m);
+  const auto &n_identity = MatrixXd::Identity(n, n);
 
   jacobian(model, J, inte->k1, x, u, t);
   dynamics(model, inte->k1, x, u, t);
@@ -384,9 +385,9 @@ void jacobian(RK4<KP> *inte, Inplace, const ContinuousDynamics<KP> *model,
   B4 = J(ix, iu);
 
   dA1 = A1 * h;
-  dA2 = A2 * (MatrixXd::Identity(n, n) + 0.5 * dA1) * h;
-  dA3 = A3 * (MatrixXd::Identity(n, n) + 0.5 * dA2) * h;
-  dA4 = A4 * (MatrixXd::Identity(n, n) + dA3) * h;
+  dA2 = A2 * (n_identity + 0.5 * dA1) * h;
+  dA3 = A3 * (n_identity + 0.5 * dA2) * h;
+  dA4 = A4 * (n_identity + dA3) * h;
 
   dB1 = B1 * h;
   dB2 = B2 * h + 0.5 * A2 * dB1 * h;
@@ -394,10 +395,8 @@ void jacobian(RK4<KP> *inte, Inplace, const ContinuousDynamics<KP> *model,
 
   dB4 = B4 * h + A4 * dB3 * h;
 
-  J(ix, ix).setIdentity();
-  J(ix, ix) += (dA1 + 2 * dA2 + 2 * dA3 + dA4) / 6;
-  // J(ix, ix) = MatrixXd::Identity(n, n) + (dA1 + 2 * dA2 + 2 * dA3 + dA4) /
-  // 6;
+  // Be careful with Eigen's delay calcualtion.
+  J(ix, ix) = n_identity + (dA1 + 2 * dA2 + 2 * dA3 + dA4) / 6;
   J(ix, iu) = (dB1 + 2 * dB2 + 2 * dB3 + dB4) / 6;
 }
 

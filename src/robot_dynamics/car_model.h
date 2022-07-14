@@ -148,7 +148,7 @@ template <typename KP, typename C> class CarProblem : public Problem<KP, C> {
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
 
-  using discretized_type = DiscretizedDynamics<KP, RK3>;
+  using discretized_type = DiscretizedDynamics<KP, RK4>;
 
 public:
   CarProblem(std::vector<base_type> x0_in, std::vector<base_type> xf_in,
