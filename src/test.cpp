@@ -16,14 +16,14 @@ using namespace google;
 TEST(DynamicsExpansionTest, constructor) {
   std::vector<DynamicsExpansion<double>> vec;
   vec.push_back(DynamicsExpansion<double>(6, 6, 2));
-  auto func = [](DynamicsExpansion<double> *in) { in->Df.setRandom(); };
+  auto func = [](DynamicsExpansion<double> *in) { in->Df->setRandom(); };
   auto &val = vec.front();
   func(&val);
-  CHECK_EQ(val.A, val.Df(all, Eigen::seq(0, val.A.rows() - 1)));
-  CHECK_EQ(val.B, val.Df(all, Eigen::seqN(val.A.rows(), val.B.cols())));
-  CHECK_EQ(val.De, val.Df);
-  CHECK_EQ(val.fx, val.De(all, Eigen::seq(0, val.A.rows() - 1)));
-  CHECK_EQ(val.fu, val.De(all, Eigen::seqN(val.A.rows(), val.B.cols())));
+  CHECK_EQ(val.A, (*val.Df)(all, Eigen::seq(0, val.A.rows() - 1)));
+  CHECK_EQ(val.B, (*val.Df)(all, Eigen::seqN(val.A.rows(), val.B.cols())));
+  CHECK_EQ(*val.De, *val.Df);
+  CHECK_EQ(val.fx, (*val.De)(all, Eigen::seq(0, val.A.rows() - 1)));
+  CHECK_EQ(val.fu, (*val.De)(all, Eigen::seqN(val.A.rows(), val.B.cols())));
 }
 
 TEST(DynamicsExpansionTest, expansion) {
@@ -40,17 +40,17 @@ TEST(DynamicsExpansionTest, expansion) {
   iLQRSolverSd<6, 2, DiagonalCostS> solver(&prob, opts, stats, UserDefined(),
                                            Valbool<true>());
   auto &val = solver.D_vec.front();
-  CHECK_EQ(val->A, val->Df(all, Eigen::seq(0, val->A.rows() - 1)));
-  CHECK_EQ(val->B, val->Df(all, Eigen::seqN(val->A.rows(), val->B.cols())));
-  CHECK_EQ(val->De, val->Df);
-  CHECK_EQ(val->fx, val->De(all, Eigen::seq(0, val->A.rows() - 1)));
-  CHECK_EQ(val->fu, val->De(all, Eigen::seqN(val->A.rows(), val->B.cols())));
+  CHECK_EQ(val->A, (*val->Df)(all, Eigen::seq(0, val->A.rows() - 1)));
+  CHECK_EQ(val->B, (*val->Df)(all, Eigen::seqN(val->A.rows(), val->B.cols())));
+  CHECK_EQ(*val->De, *val->Df);
+  CHECK_EQ(val->fx, (*val->De)(all, Eigen::seq(0, val->A.rows() - 1)));
+  CHECK_EQ(val->fu, (*val->De)(all, Eigen::seqN(val->A.rows(), val->B.cols())));
   dynamics_expansion(&solver, solver.Z_dot);
-  CHECK_EQ(val->A, val->Df(all, Eigen::seq(0, val->A.rows() - 1)));
-  CHECK_EQ(val->B, val->Df(all, Eigen::seqN(val->A.rows(), val->B.cols())));
-  CHECK_EQ(val->De, val->Df);
-  CHECK_EQ(val->fx, val->De(all, Eigen::seq(0, val->A.rows() - 1)));
-  CHECK_EQ(val->fu, val->De(all, Eigen::seqN(val->A.rows(), val->B.cols())));
+  CHECK_EQ(val->A, (*val->Df)(all, Eigen::seq(0, val->A.rows() - 1)));
+  CHECK_EQ(val->B, (*val->Df)(all, Eigen::seqN(val->A.rows(), val->B.cols())));
+  CHECK_EQ(*val->De, *val->Df);
+  CHECK_EQ(val->fx, (*val->De)(all, Eigen::seq(0, val->A.rows() - 1)));
+  CHECK_EQ(val->fu, (*val->De)(all, Eigen::seqN(val->A.rows(), val->B.cols())));
 }
 
 TEST(DynamicsExpansionTest, jacobian) {
@@ -67,19 +67,19 @@ TEST(DynamicsExpansionTest, jacobian) {
   iLQRSolverSd<6, 2, DiagonalCostS> solver(&prob, opts, stats, UserDefined(),
                                            Valbool<true>());
   auto &val = solver.D_vec.front();
-  CHECK_EQ(val->A, val->Df(all, Eigen::seq(0, val->A.rows() - 1)));
-  CHECK_EQ(val->B, val->Df(all, Eigen::seqN(val->A.rows(), val->B.cols())));
+  CHECK_EQ(val->A, (*val->Df)(all, Eigen::seq(0, val->A.rows() - 1)));
+  CHECK_EQ(val->B, (*val->Df)(all, Eigen::seqN(val->A.rows(), val->B.cols())));
   CHECK_EQ(val->De, val->Df);
-  CHECK_EQ(val->fx, val->De(all, Eigen::seq(0, val->A.rows() - 1)));
-  CHECK_EQ(val->fu, val->De(all, Eigen::seqN(val->A.rows(), val->B.cols())));
+  CHECK_EQ(val->fx, (*val->De)(all, Eigen::seq(0, val->A.rows() - 1)));
+  CHECK_EQ(val->fu, (*val->De)(all, Eigen::seqN(val->A.rows(), val->B.cols())));
   jacobian(dynamics_signature(solver), UserDefined(),
            solver.model.front().get(), solver.D_vec.front().get(),
            solver.Z.front());
-  CHECK_EQ(val->A, val->Df(all, Eigen::seq(0, val->A.rows() - 1)));
-  CHECK_EQ(val->B, val->Df(all, Eigen::seqN(val->A.rows(), val->B.cols())));
-  CHECK_EQ(val->De, val->Df);
-  CHECK_EQ(val->fx, val->De(all, Eigen::seq(0, val->A.rows() - 1)));
-  CHECK_EQ(val->fu, val->De(all, Eigen::seqN(val->A.rows(), val->B.cols())));
+  CHECK_EQ(val->A, (*val->Df)(all, Eigen::seq(0, val->A.rows() - 1)));
+  CHECK_EQ(val->B, (*val->Df)(all, Eigen::seqN(val->A.rows(), val->B.cols())));
+  CHECK_EQ(*val->De, *val->Df);
+  CHECK_EQ(val->fx, (*val->De)(all, Eigen::seq(0, val->A.rows() - 1)));
+  CHECK_EQ(val->fu, (*val->De)(all, Eigen::seqN(val->A.rows(), val->B.cols())));
 }
 TEST(CostExpansionTest, expansion) {
   auto opts = SolverOptionsD();

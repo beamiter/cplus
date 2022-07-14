@@ -127,6 +127,7 @@ std::shared_ptr<CostExpansion<typename KP::base_type, B>> FullStateExpansion(
     EuclideanState type,
     const std::shared_ptr<CostExpansion<typename KP::base_type, B>> &E,
     const DiscreteDynamics<KP> *model) {
+  CHECK_EQ(errstate_dim(model), model->state_dim());
   return E;
 }
 template <typename KP, bool B>

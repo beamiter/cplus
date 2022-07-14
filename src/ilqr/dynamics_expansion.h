@@ -15,27 +15,30 @@ using Eigen::seqN;
 using Eigen::VectorX;
 
 template <typename T> struct DynamicsExpansion {
-  DynamicsExpansion(VectorX<T> f_in, MatrixX<T> Df_in, MatrixX<T> De_in,
-                    MatrixX<T> tmp_in, int n, int e, int m)
-      : f(f_in), Df(Df_in), A(Df(all, seq(0, n - 1))), B(Df(all, seqN(n, m))),
-        De(De_in), fx(De(all, seq(0, e - 1))), fu(De(all, seqN(e, m))),
-        tmp(tmp_in) {}
-  VectorX<T> f;  // (Nx,)
-  MatrixX<T> Df; // (Nx, Nx+Nu)
+  DynamicsExpansion(VectorX<T> f_in, std::shared_ptr<MatrixX<T>> Df_in,
+                    std::shared_ptr<MatrixX<T>> De_in, MatrixX<T> tmp_in, int n,
+                    int e, int m)
+      : f(f_in), Df(std::move(Df_in)), A(Df(all, seq(0, n - 1))),
+        B(Df(all, seqN(n, m))), De(std::move(De_in)),
+        fx(De(all, seq(0, e - 1))), fu(De(all, seqN(e, m))), tmp(tmp_in) {}
+  VectorX<T> f;                   // (Nx,)
+  std::shared_ptr<MatrixX<T>> Df; // (Nx, Nx+Nu)
   Ref<MatrixX<T>> A;
   Ref<MatrixX<T>> B;
-  // Dummy variable for in case of alia De to Df.
-  MatrixX<T> De_dummy; // (Ne, Ne+Nu)
-  Ref<MatrixX<T>> De;  // (Ne, Ne+Nu) or (Nx, Nx+Nu)
+  // Use shared_ptr so as to alias to Df in need.
+  std::shared_ptr<MatrixX<T>> De; // (Ne, Ne+Nu) or (Nx, Nx+Nu)
   Ref<MatrixX<T>> fx;
   Ref<MatrixX<T>> fu;
   MatrixX<T> tmp; // (Nx, Ne)
   DynamicsExpansion(int n, int e, int m)
-      : f(VectorX<T>::Zero(n)), Df(MatrixX<T>::Zero(n, n + m)),
-        A(Df(all, seq(0, n - 1))), B(Df(all, seqN(n, m))),
-        De_dummy(MatrixX<T>::Zero(e, e + m)), De(Df(all, all)),
-        fx(De(all, seq(0, e - 1))), fu(De(all, seqN(e, m))),
-        tmp(MatrixX<T>::Zero(n, e)) {}
+      : f(VectorX<T>::Zero(n)), Df(std::make_shared<MatrixX<T>>(n, n + m)),
+        A((*Df)(all, seq(0, n - 1))), B((*Df)(all, seqN(n, m))),
+        De(n == e ? Df : std::make_shared<MatrixX<T>>(e, e + m)),
+        fx((*De)(all, seq(0, e - 1))), fu((*De)(all, seqN(e, m))) {
+    Df->setZero();
+    De->setZero();
+    tmp.setZero(n, e);
+  }
 };
 
 template <typename KP, typename FS = FunctionSignature,
@@ -44,7 +47,7 @@ void jacobian(FS sig, DM diff, const DiscreteDynamics<KP> *model,
               DynamicsExpansion<typename KP::base_type> *D, const KP &z) {
   // jacobian(sig, diff, model, D->Df, D->f, z);
   jacobian(sig, diff, static_cast<const DiscretizedDynamics<KP, RK3> *>(model),
-           D->Df, D->f, z);
+           *D->Df, D->f, z);
   // jacobian(sig, diff, static_cast<const DiscretizedDynamics<KP, RK4>
   // *>(model), D->Df, D->f, z);
 }
