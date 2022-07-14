@@ -18,7 +18,7 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
     // *>(solver->model[0].get());
     rollout(dynamics_signature(*solver), solver->model.front().get(),
             &solver->Z, solver->x0);
-    LOG(INFO) << solver->Z;
+    // LOG(INFO) << solver->Z;
   }
 
   solver->Z_dot = solver->Z;

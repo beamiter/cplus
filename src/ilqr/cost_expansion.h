@@ -98,6 +98,10 @@ public:
   auto &operator[](int i) { return expansion_vec_[i]; }
   const auto &at(int i) const { return expansion_vec_[i]; }
   auto &at(int i) { return expansion_vec_[i]; }
+  const auto &front() const { return expansion_vec_.front(); }
+  auto &front() { return expansion_vec_.front(); }
+  const auto &back() const { return expansion_vec_.back(); }
+  auto &back() { return expansion_vec_.back(); }
   int size() const { return expansion_vec_.size(); }
   int length() const { return expansion_vec_.size(); }
 
