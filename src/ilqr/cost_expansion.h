@@ -75,31 +75,33 @@ public:
   CostExpansion() = default;
   CostExpansion(const std::vector<int> &nx, const std::vector<int> &nu = {}) {
     const auto N = nx.size();
-    const_hess.resize(N, false);
-    const_grad.resize(N, false);
+    const_hess_.resize(N, false);
+    const_grad_.resize(N, false);
     for (auto k = 0; k < N; ++k) {
-      data.push_back(
+      expansion_vec_.push_back(
           std::make_shared<StateControlExpansion<T, B>>(nx[k], nu[k]));
     }
   }
   CostExpansion(int n, int m, int N) {
-    const_hess.resize(N, false);
-    const_grad.resize(N, false);
+    const_hess_.resize(N, false);
+    const_grad_.resize(N, false);
     for (auto k = 0; k < N; ++k) {
-      data.push_back(std::make_shared<StateControlExpansion<T, B>>(n, m));
+      expansion_vec_.push_back(
+          std::make_shared<StateControlExpansion<T, B>>(n, m));
     }
   }
   CostExpansion(const CostExpansion &in)
-      : data(in.data), const_hess(in.const_hess), const_grad(in.const_grad) {}
+      : expansion_vec_(in.expansion_vec_), const_hess_(in.const_hess_),
+        const_grad_(in.const_grad_) {}
 
-  const auto &operator[](int i) const { return data[i]; }
-  auto &operator[](int i) { return data[i]; }
-  int size() const { return data.size(); }
-  int length() const { return data.size(); }
+  const auto &operator[](int i) const { return expansion_vec_[i]; }
+  auto &operator[](int i) { return expansion_vec_[i]; }
+  int size() const { return expansion_vec_.size(); }
+  int length() const { return expansion_vec_.size(); }
 
-  std::vector<std::shared_ptr<StateControlExpansion<T, B>>> data;
-  std::vector<bool> const_hess;
-  std::vector<bool> const_grad;
+  std::vector<std::shared_ptr<StateControlExpansion<T, B>>> expansion_vec_;
+  std::vector<bool> const_hess_;
+  std::vector<bool> const_grad_;
 };
 
 template <typename KP, bool B>
