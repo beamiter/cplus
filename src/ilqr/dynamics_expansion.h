@@ -24,15 +24,16 @@ template <typename T> struct DynamicsExpansion {
   MatrixX<T> Df; // (Nx, Nx+Nu)
   Ref<MatrixX<T>> A;
   Ref<MatrixX<T>> B;
-  // TODO: Need to bound with Df in case of (Nx, Nx+Nu)
-  MatrixX<T> De; // (Ne, Ne+Nu) or (Nx, Nx+Nu)
+  // Dummy variable for in case of alia De to Df.
+  MatrixX<T> De_dummy; // (Ne, Ne+Nu)
+  Ref<MatrixX<T>> De;  // (Ne, Ne+Nu) or (Nx, Nx+Nu)
   Ref<MatrixX<T>> fx;
   Ref<MatrixX<T>> fu;
   MatrixX<T> tmp; // (Nx, Ne)
   DynamicsExpansion(int n, int e, int m)
       : f(VectorX<T>::Zero(n)), Df(MatrixX<T>::Zero(n, n + m)),
         A(Df(all, seq(0, n - 1))), B(Df(all, seqN(n, m))),
-        De(n != e ? MatrixX<T>::Zero(e, e + m) : Df),
+        De_dummy(MatrixX<T>::Zero(e, e + m)), De(Df(all, all)),
         fx(De(all, seq(0, e - 1))), fu(De(all, seqN(e, m))),
         tmp(MatrixX<T>::Zero(n, e)) {}
 };

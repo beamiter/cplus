@@ -163,7 +163,7 @@ public:
 
     // Rollout.
     rollout(this);
-    LOG(INFO) << *this->get_trajectory();
+    //LOG(INFO) << *this->get_trajectory();
   }
 
   // Members.

@@ -21,7 +21,7 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
     const auto *tmp = static_cast<const DiscretizedDynamics<KP, Euler> *>(
         solver->model[0].get());
     rollout(dynamics_signature(*solver), tmp, &solver->Z, solver->x0);
-    LOG(INFO) << solver->Z;
+    //LOG(INFO) << solver->Z;
   }
 
   solver->Z_dot = solver->Z;
