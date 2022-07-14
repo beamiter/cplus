@@ -110,6 +110,24 @@ public:
       jaco(3, 7) = 1;
       jaco(4, 5) = 1;
       jaco(5, 6) = 1;
+    } else if (RefPos::cg == ref) {
+      const double ratio = lr / L;
+      const double beta = tan(ratio * x(3));
+      const double beta_dot_3 = ratio / std::pow(cos(ratio), 2);
+      const double s2 = sin(x(2) + beta);
+      const double c2 = cos(x(2) + beta);
+      jaco(0, 2) = -x(4) * s2;
+      jaco(0, 3) = -jaco(0, 2) * beta_dot_3;
+      jaco(0, 4) = c2;
+      jaco(1, 2) = x(4) * jaco(0, 4);
+      jaco(1, 3) = jaco(1, 2) * beta_dot_3;
+      jaco(1, 4) = s2;
+      jaco(2, 3) = (x(4) / L) * (-sin(beta) * beta_dot_3 * tan(x(3)) +
+                                 cos(beta) / std::pow(cos(x(3)), 2));
+      jaco(2, 4) = cos(beta) * tan(x(3)) / L;
+      jaco(3, 7) = 1;
+      jaco(4, 5) = 1;
+      jaco(5, 6) = 1;
     } else {
       CHECK(0);
     }
@@ -149,7 +167,7 @@ public:
     R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-    car_ = std::make_shared<CarModel<KP>>(RefPos::rear, 3.8, 1.0);
+    car_ = std::make_shared<CarModel<KP>>(RefPos::cg, 2.7, 1.5);
     obj_ = LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N, UserDefined());
     // Must be discretized.
     discretized_car_ = std::make_shared<discretized_type>(car_.get());
@@ -163,7 +181,7 @@ public:
 
     // Rollout.
     rollout(this);
-    //LOG(INFO) << *this->get_trajectory();
+    // LOG(INFO) << *this->get_trajectory();
   }
 
   // Members.

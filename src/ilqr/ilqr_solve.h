@@ -14,14 +14,11 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
     // In forwardpass.
     /* rollout(solver-> 0.0);  */
   } else {
-    // A Dynamic_cast has runtime overhead because it checks object types at run
-    // time using “Run-Time Type Information“.
-    // If there is a surety we will never cast to wrong object then always avoid
-    // dynamic_cast and use static_cast.
-    const auto *tmp = static_cast<const DiscretizedDynamics<KP, Euler> *>(
-        solver->model[0].get());
-    rollout(dynamics_signature(*solver), tmp, &solver->Z, solver->x0);
-    //LOG(INFO) << solver->Z;
+    // static_cast<const DiscretizedDynamics<KP, Euler>
+    // *>(solver->model[0].get());
+    rollout(dynamics_signature(*solver), solver->model.front().get(),
+            &solver->Z, solver->x0);
+    LOG(INFO) << solver->Z;
   }
 
   solver->Z_dot = solver->Z;
