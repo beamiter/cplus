@@ -22,12 +22,6 @@ using Eigen::Ref;
 using Eigen::VectorX;
 using Eigen::VectorXd;
 
-// template <bool B, typename T> struct StaticArray {
-//   typedef std::vector<T> type;
-// };
-// template <typename T> struct StaticArray<true, T> { typedef VectorX<T> type;
-// };
-
 template <typename T> class DynamicRegularization {
 public:
   DynamicRegularization() = default;
@@ -71,9 +65,9 @@ bool usestaticdefault(const AbstractFunction<KP> *model) {
   return default_signature(model) == StaticReturn();
 }
 
-#define iLQRSolverTypeName typename KP, typename C, bool B
-#define iLQRSolverTemplate template <typename KP, typename C, bool B = true>
-#define iLQRSolverDeclare iLQRSolver<KP, C, B>
+#define iLQRSolverTypeName typename KP, typename C, bool USE
+#define iLQRSolverTemplate template <typename KP, typename C, bool USE = true>
+#define iLQRSolverDeclare iLQRSolver<KP, C, USE>
 
 iLQRSolverTemplate class iLQRSolver : public UnconstrainedSolver<KP, C> {
   static constexpr int Nx = KP::N;
@@ -88,7 +82,7 @@ public:
   virtual ~iLQRSolver() = default;
 
   iLQRSolver(Problem<KP, C> *prob, SolverOptions<T> opts_in,
-             SolverStats<T> stats_in, DiffMethod diff, Valbool<B>) {
+             SolverStats<T> stats_in, DiffMethod diff, Valbool<USE>) {
     model = prob->model;
     obj = prob->obj;
     x0 = prob->x0;
@@ -110,7 +104,7 @@ public:
         nx.begin(), nx.end(), [&nx](const auto x) { return x == nx.front(); });
     const bool samecontroldim = std::all_of(
         nu.begin(), nu.end(), [&nu](const auto u) { return u == nu.front(); });
-    if constexpr (B) {
+    if constexpr (USE) {
       assert(samecontroldim && samestatedim);
       assert(Nx == nx.front());
       assert(Nu == nu.front());
@@ -212,24 +206,27 @@ public:
   SolverOptions<T> opts;
   SolverStats<T> stats_;
 
+  // TODO: Use shared_ptr for this.
   SampledTrajectory<KP> Z;
   SampledTrajectory<KP> Z_dot;
   std::vector<vector_type> dx;
   std::vector<vector_type> du;
 
-  std::vector<matrix_type> gains;
-  std::vector<Ref<matrix_type>> K_vec;
-  std::vector<Ref<vector_type>> d_vec;
+  std::vector<matrix_type> gains;      // N-1 * (Nu, Ne+1)
+  std::vector<Ref<matrix_type>> K_vec; // N-1 * (Nu, Ne)
+  std::vector<Ref<vector_type>> d_vec; // N-1 * (NU,)
 
   std::vector<std::unique_ptr<DynamicsExpansion<T>>> D_vec;
-  std::vector<matrix_type> G_vec;
+  std::vector<matrix_type> G_vec; // N * (Nx,Ne)
 
-  std::shared_ptr<CostExpansion<T>> Eerr_;
   // TODO: Link this to error cost expansion.
-  std::shared_ptr<CostExpansion<T>> Efull_;
+  std::shared_ptr<CostExpansion<T>> Efull_; // Cost expansion (full state)
+  std::shared_ptr<CostExpansion<T>> Eerr_;  // Cost expansion (error state)
 
-  std::vector<std::unique_ptr<StateControlExpansion<T, true>>> Q_vec;
-  std::vector<std::unique_ptr<StateControlExpansion<T, false>>> S_vec;
+  std::vector<std::unique_ptr<StateControlExpansion<T, true>>>
+      Q_vec; // Action-value expansion
+  std::vector<std::unique_ptr<StateControlExpansion<T, false>>>
+      S_vec; // Action-value expansion
 
   std::vector<T> DV;
 
@@ -265,6 +262,26 @@ iLQRSolverTemplate void dynamics_expansion(iLQRSolverDeclare *solver,
              solver->D_vec[k].get(), Z[k]);
   }
   error_expansion(solver->model, solver->D_vec, solver->G_vec);
+}
+
+iLQRSolverTemplate auto increaseregularization(iLQRSolverDeclare *solver)
+    -> decltype(solver->reg) {
+  auto &reg = solver->reg;
+  const auto rou_dot = solver->opts.bp_reg_increase_factor;
+  const auto rou_min = solver->opts.bp_reg_min;
+  reg.d_rou = std::max(reg.d_rou * rou_dot, rou_dot);
+  reg.rou = std::max(reg.rou * reg.d_rou, rou_min);
+  return reg;
+}
+
+iLQRSolverTemplate auto decreaseregularization(iLQRSolverDeclare *solver)
+    -> decltype(solver->reg) {
+  auto &reg = solver->reg;
+  const auto rou_dot = solver->opts.bp_reg_increase_factor;
+  const auto rou_min = solver->opts.bp_reg_min;
+  reg.d_rou = std::min(reg.d_rou / rou_dot, 1 / rou_dot);
+  reg.rou = std::max(rou_min, reg.rou * reg.d_rou);
+  return reg;
 }
 
 #endif

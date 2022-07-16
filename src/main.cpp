@@ -22,7 +22,7 @@ using namespace std;
 std::atomic_flag lock_stream = ATOMIC_FLAG_INIT;
 
 void do_something() {
-  while (1) {
+  for (;;) {
     if (!lock_stream.test_and_set()) {
       cout << "do something \n";
     }
@@ -31,7 +31,7 @@ void do_something() {
   }
 }
 void append_number(int x) {
-  while (1) {
+  for (;;) {
     while (lock_stream.test_and_set()) {
     }
     cout << "thread #" << x << '\n';
@@ -60,14 +60,27 @@ int main(int argc, char **argv) {
   LOG(INFO) << *data;
   LOG(INFO) << grad;
 
-  std::vector<std::thread> threads;
-  threads.push_back(std::thread(do_something));
-  for (int i = 1; i <= 10; ++i)
-    threads.push_back(std::thread(append_number, i));
-  for (auto &th : threads)
-    th.join();
+  // std::vector<std::thread> threads;
+  // threads.push_back(std::thread(do_something));
+  // for (int i = 1; i <= 10; ++i)
+  // threads.push_back(std::thread(append_number, i));
+  // for (auto &th : threads)
+  // th.join();
 
-  return 0;
+  Eigen::MatrixXd A(3, 3);
+  A << 6, 0, 0, 0, 3, 0, 0, 0, 7;
+  LOG(INFO) << isPsd(A) << isPd(A);
+  Eigen::MatrixXd L(A.llt().matrixL());
+  Eigen::MatrixXd L_T = L.adjoint(); // conjugate transpose
+
+  LOG(INFO) << "L" << std::endl;
+  LOG(INFO) << L << std::endl;
+  LOG(INFO) << "L_T" << std::endl;
+  LOG(INFO) << L_T << std::endl;
+  LOG(INFO) << "A" << std::endl;
+  LOG(INFO) << A << std::endl;
+  LOG(INFO) << "L*L_T" << std::endl;
+  LOG(INFO) << L * L_T << std::endl;
 
   google::ShutdownGoogleLogging();
 }

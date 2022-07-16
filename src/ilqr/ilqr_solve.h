@@ -1,3 +1,4 @@
+#include "backwardpass.h"
 #include "ilqr/dynamics_expansion.h"
 #include "ilqr_solver.h"
 #include "robot_dynamics/discretized_dynamics.h"
@@ -30,10 +31,15 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
   for (auto iter = 0; iter < solver->opts.iterations; ++iter) {
     auto J_prev = solver->cost(solver->Z_dot);
     LOG(INFO) << "********** " << J_prev;
+
+    // Calculate expansions.
     errstate_jacobian(solver->model, solver->G_vec, solver->Z_dot);
     dynamics_expansion(solver, solver->Z_dot);
     cost_expansion(solver->obj, solver->Efull_, solver->Z_dot);
     error_expansion(solver->model, solver->Eerr_, solver->Efull_, solver->G_vec,
                     solver->Z_dot);
+
+    // Get next iterate.
+    backwardpass(solver);
   }
 }

@@ -97,11 +97,15 @@ template <typename Func> void loop(int start, int end, const Func &f) {
     f(k);
   }
 }
-
-inline bool ispossemedef(MatrixXd A) {
+template <class MatrixT> bool isPosSemiDef(const MatrixT &A) {
   VectorXcd eigs = A.eigenvalues();
   return std::any_of(eigs.real().begin(), eigs.real().end(),
                      [](const auto val) { return val < 0; });
+}
+template <class MatrixT> bool isPosDef(const MatrixXd &A) {
+  VectorXcd eigs = A.eigenvalues();
+  return std::all_of(eigs.real().begin(), eigs.real().end(),
+                     [](const auto val) { return val > 0; });
 }
 
 // https://stackoverflow.com/questions/35227131/eigen-check-if-matrix-is-positive-semi-definite
@@ -116,14 +120,9 @@ template <class MatrixT> bool isPsd(const MatrixT &A) {
   return ldlt.isPositive();
 }
 template <class MatrixT> bool isPd(const MatrixT &A) {
-  if (!A.isApprox(A.transpose())) {
-    return false;
-  }
-  const auto ldlt = A.template selfadjointView<Eigen::Upper>().ldlt();
-  if (ldlt.info() == Eigen::NumericalIssue) {
-    return false;
-  }
-  return !ldlt.isNegative();
+  VectorXcd eigs = A.eigenvalues();
+  return std::all_of(eigs.real().begin(), eigs.real().end(),
+                     [](const auto val) { return val > 0; });
 }
 
 #endif

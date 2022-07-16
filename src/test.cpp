@@ -13,6 +13,16 @@
 
 using namespace google;
 
+TEST(EigenTest, Cholesky) {
+  Eigen::MatrixXd A(3, 3);
+  A << 4.0, 12.0, -16.0, 12.0, 37.0, -43.0, -16.0, -43.0, 98.0;
+  Eigen::MatrixXd L(A.llt().matrixL());
+  Eigen::MatrixXd L_T = L.adjoint(); // conjugate transpose
+  LOG(INFO) << L;
+  LOG(INFO) << L_T;
+  CHECK_EQ(L * L_T, A);
+}
+
 TEST(DynamicsExpansionTest, constructor) {
   std::vector<DynamicsExpansion<double>> vec;
   vec.push_back(DynamicsExpansion<double>(6, 6, 2));

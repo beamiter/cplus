@@ -27,6 +27,10 @@ enum class TerminationStatus {
   NO_PROGRESS,
   COST_INCREASE,
 };
+enum class BpRegType {
+  state,
+  control,
+};
 
 template <typename T> struct AbstractSolverOptions {};
 
@@ -57,7 +61,7 @@ template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
   T bp_reg_increase_factor = 1.6;
   T bp_reg_max = 1.0e8;
   T bp_reg_min = 1.0e-8;
-  // bp_reg_type::Symbol = :control;
+  BpRegType bp_reg_type = BpRegType::control;
   T bp_reg_fp = 10.0;
 
   bool use_conic_cost = false;
