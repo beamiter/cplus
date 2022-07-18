@@ -1,3 +1,6 @@
+#ifndef BACKWARDPASS_H_
+#define BACKWARDPASS_H_
+
 #include "ilqr_solver.h"
 
 // This is a supper cheap check.
@@ -5,7 +8,8 @@ template <typename Decom> bool isposdef(const Decom &in) {
   return in.info() == 0;
 }
 
-iLQRSolverTemplate void backwardpass(iLQRSolverDeclare *solver) {
+iLQRSolverTemplate std::vector<typename KP::base_type>
+backwardpass(iLQRSolverDeclare *solver) {
   const auto &N = solver->N;
   const auto &D_vec = solver->D_vec; // dynamics expansion
   const auto &E = solver->Eerr_;     // cost expansion
@@ -64,6 +68,8 @@ iLQRSolverTemplate void backwardpass(iLQRSolverDeclare *solver) {
 
     // Solve for gains.
     K_vec[k] = Qux_reg;
+    // LOG(INFO) << K_vec[k];
+    // LOG(INFO) << solver->gains[k];
     d_vec[k] = Q_vec[k]->u;
     const auto &Quu_fact = Quu_reg.llt();
     if (!isposdef(Quu_fact)) {
@@ -74,7 +80,37 @@ iLQRSolverTemplate void backwardpass(iLQRSolverDeclare *solver) {
       continue;
     }
     // Save time by solving for K and d at the same time (1 BLAS call)
+    /// https://www.mathematik.uni-ulm.de/~lehn/FLENS/flens/examples/lapack-potrs.html
+    // LOG(INFO) << solver->gains[k];
+    // Solve linear system of equations with cholesky decompositon.
+    solver->gains[k] = -1.0 * Quu_fact.solve(solver->gains[k]);
+    // LOG(INFO) << solver->gains[k];
+
+    // Update Cost-to-go.
+    S_vec[k]->x = Q_vec[k]->x;
+    Qtmp->u = Q_vec[k]->uu * d_vec[k];
+    S_vec[k]->x += K_vec[k].adjoint() * Qtmp->u;
+    S_vec[k]->x += K_vec[k].adjoint() * Q_vec[k]->u;
+    S_vec[k]->x += Q_vec[k]->ux.adjoint() * d_vec[k];
+
+    S_vec[k]->xx = Q_vec[k]->xx;
+    Qtmp->ux = Q_vec[k]->uu * K_vec[k];
+    S_vec[k]->xx += K_vec[k].adjoint() * Qtmp->ux;
+    S_vec[k]->xx += K_vec[k].adjoint() * Q_vec[k]->ux;
+    S_vec[k]->xx += Q_vec[k]->ux.adjoint() * K_vec[k];
+
+    S_vec[k]->xx = Qtmp->xx.transpose();
+    S_vec[k]->xx += Qtmp->xx;
+    S_vec[k]->xx /= 2.;
+
+    DV[0] += d_vec[k].dot(Q_vec[k]->u);
+    DV[1] += 0.5 * d_vec[k].dot(Q_vec[k]->uu * d_vec[k]);
+    //LOG(INFO) << "DV: " << DV[0] << ", " << DV[1];
 
     --k;
   }
+  decreaseregularization(solver);
+  return DV;
 }
+
+#endif

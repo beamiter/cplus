@@ -109,7 +109,7 @@ public:
 
   friend std::ostream &operator<<(std::ostream &output,
                                   const AbstractKnotPointDeclare &kp) {
-    output << kp.data();
+    output << "KP: " << kp.data() << std::endl;
     return output;
   }
 };

@@ -2,6 +2,7 @@
 #define TRAJECTORIES_H
 
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <numeric>
 #include <stdexcept>
@@ -354,8 +355,10 @@ public:
   }
   friend std::ostream &operator<<(std::ostream &output,
                                   const SampledTrajectory<KP> &Z) {
+    output << std::setprecision(3) << std::fixed;
     for (const auto &pt : Z.data) {
-      output << "Point : " << pt[0] << "\n";
+      output << pt;
+      //output << "Point : " << pt[0] << ", " << pt[1] << "\n";
     }
     return output;
   }

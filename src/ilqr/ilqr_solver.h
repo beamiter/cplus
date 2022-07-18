@@ -214,7 +214,7 @@ public:
 
   std::vector<matrix_type> gains;      // N-1 * (Nu, Ne+1)
   std::vector<Ref<matrix_type>> K_vec; // N-1 * (Nu, Ne)
-  std::vector<Ref<vector_type>> d_vec; // N-1 * (NU,)
+  std::vector<Ref<vector_type>> d_vec; // N-1 * (Nu,)
 
   std::vector<std::unique_ptr<DynamicsExpansion<T>>> D_vec;
   std::vector<matrix_type> G_vec; // N * (Nx,Ne)

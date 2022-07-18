@@ -4,60 +4,77 @@
 #include "robot_dynamics/functionbase.h"
 #include "robot_dynamics/knotpoint.h"
 
-template <typename Q, typename KP>
-auto state_diff(const AbstractFunction<KP> *fun, Q dx, Q x, Q x0) {
-  state_diff(fun->statevectortype(), fun, dx, x, x0);
+template <typename KP>
+auto state_diff(const AbstractFunction<KP> *func,
+                typename KP::ref_vector_type dx,
+                const typename KP::state_type &x, typename KP::state_type x0) {
+  state_diff(statevectortype(func), func, dx, x, x0);
 }
-template <typename Q, typename KP>
-auto state_diff(const AbstractFunction<KP> *fun, Q x, Q x0) {
-  return state_diff(fun->statevectortype(), fun, x, x0);
-}
-
-template <typename G, typename KP>
-auto errstate_jacobian(const AbstractFunction<KP> *fun, G J, const KP &z) {
-  errstate_jacobian(fun->statevectortype(), fun, J, state(z));
-}
-
-template <typename G, typename P, typename KP>
-auto errstate_jacobian(const AbstractFunction<KP> *fun, G J, P x) {
-  errstate_jacobian(fun->statevectortype(), fun, J, x);
+template <typename KP>
+auto state_diff(const AbstractFunction<KP> *func,
+                const typename KP::state_type &x,
+                const typename KP::state_type &x0) {
+  return state_diff(statevectortype(func), func, x, x0);
 }
 
-template <typename G, typename P, typename KP>
-auto d_errstate_jacobian(const AbstractFunction<KP> *fun, G J, const KP &z,
-                         P dx) {
-  return d_errstate_jacobian(fun->statevectortype(), fun, J, state(z), dx);
+template <typename KP>
+auto errstate_jacobian(const AbstractFunction<KP> *func,
+                       typename KP::ref_matrix_type J, const KP &z) {
+  errstate_jacobian(statevectortype(func), func, J, state(z));
 }
 
-template <typename G, typename P, typename KP>
-auto d_errstate_jacobian(const AbstractFunction<KP> *fun, G J, P x, P dx) {
-  return d_errstate_jacobian(fun->statevectortype(), fun, J, x, dx);
+template <typename KP>
+auto errstate_jacobian(const AbstractFunction<KP> *func,
+                       typename KP::ref_matrix_type J,
+                       const typename KP::state_type &x) {
+  errstate_jacobian(statevectortype(func), func, J, x);
 }
 
-template <typename T, typename KP>
-auto state_diff(FunctionSignature sig, const AbstractFunction<KP> *fun, T dx,
-                T x, T x0) {
+template <typename KP>
+auto d_errstate_jacobian(const AbstractFunction<KP> *func,
+                         typename KP::ref_matrix_type J, const KP &z,
+                         const typename KP::state_type &dx) {
+  return d_errstate_jacobian(func->statevectortype(), func, J, state(z), dx);
+}
+
+template <typename KP>
+auto d_errstate_jacobian(const AbstractFunction<KP> *func,
+                         typename KP::ref_matrix_type J,
+                         const typename KP::state_type &x,
+                         const typename KP::state_type &dx) {
+  return d_errstate_jacobian(func->statevectortype(), func, J, x, dx);
+}
+
+template <typename KP, typename FS>
+auto state_diff(FS, const AbstractFunction<KP> *func,
+                typename KP::ref_vector_type dx,
+                const typename KP::state_type &x,
+                const typename KP::state_type &x0) {
   dx = x - x0;
 }
-template <typename T, typename KP>
-auto state_diff(FunctionSignature sig, const AbstractFunction<KP> *fun, T x,
-                T x0) {
+template <typename KP, typename FS>
+auto state_diff(FS sig, const AbstractFunction<KP> *func,
+                const typename KP::state_type &x,
+                const typename KP::state_type &x0) {
   return x - x0;
 }
 
-template <typename T, typename KP>
-auto d_errstate_jacobian(FunctionSignature sig, const AbstractFunction<KP> *fun,
-                         T d_G, T x, T dx) {
-  d_G = 0;
-}
-
-template <typename T, typename KP>
-auto errstate_jacobian(FunctionSignature, const AbstractFunction<KP> *fun, T J,
-                       T x) {
-  J = 0;
-  for (auto i = 0; i < J.size()[1]; ++i) {
+template <typename KP, typename FS>
+auto errstate_jacobian(FS, const AbstractFunction<KP> *func,
+                       typename KP::ref_matrix_type J,
+                       const typename KP::state_type &x) {
+  J.setZero();
+  for (int i = 0; i < J.rows(); ++i) {
     J(i, i) = 1;
   }
+}
+
+template <typename KP, typename FS>
+auto d_errstate_jacobian(FS sig, const AbstractFunction<KP> *func,
+                         typename KP::ref_matrix_type d_G,
+                         const typename KP::state_type &x,
+                         const typename KP::state_type &dx) {
+  d_G = 0;
 }
 
 #endif

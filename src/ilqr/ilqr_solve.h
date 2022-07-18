@@ -1,4 +1,5 @@
 #include "backwardpass.h"
+#include "forwardpass.h"
 #include "ilqr/dynamics_expansion.h"
 #include "ilqr_solver.h"
 #include "robot_dynamics/discretized_dynamics.h"
@@ -29,7 +30,7 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
 iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
   initialize(solver);
   for (auto iter = 0; iter < solver->opts.iterations; ++iter) {
-    auto J_prev = solver->cost(solver->Z_dot);
+    const auto J_prev = solver->cost(solver->Z_dot);
     LOG(INFO) << "********** " << J_prev;
 
     // Calculate expansions.
@@ -41,5 +42,21 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
 
     // Get next iterate.
     backwardpass(solver);
+
+    const auto Jnew = forwardpass(solver, J_prev);
+
+    LOG(INFO) << solver->Z;
+    LOG(INFO) << solver->Z_dot;
+    solver->Z = solver->Z_dot;
+
+    const double dJ = J_prev - Jnew;
+    // const auto grad = gradient(solver);
+
+    // const bool exit = evaluate_convergence(solver);
+    // if (exit) {
+    // break;
+    //}
   }
+  // terminate(solver);
+  // return solver;
 }
