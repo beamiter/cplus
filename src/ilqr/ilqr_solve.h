@@ -21,7 +21,7 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
     rollout(dynamics_signature(*solver), solver->model.front().get(),
             &solver->Z, solver->x0);
     // LOG(INFO) << solver->Z;
-    LOG(INFO) << solver->Z_dot;
+    // LOG(INFO) << solver->Z_dot;
   }
 
   solver->Z_dot = solver->Z;
@@ -45,7 +45,7 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
 
     const auto Jnew = forwardpass(solver, J_prev);
 
-    LOG(INFO) << solver->Z;
+    // LOG(INFO) << solver->Z;
     LOG(INFO) << solver->Z_dot;
     solver->Z = solver->Z_dot;
 

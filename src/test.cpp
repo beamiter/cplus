@@ -112,6 +112,74 @@ TEST(CostExpansionTest, expansion) {
   CHECK_EQ(val->grad, val->data(all, last));
   CHECK_EQ(val->hess, val->data(all, seq(0, last - 1)));
 }
+TEST(StateControlExpansionTest, state_control) {
+  auto opts = SolverOptionsD();
+  auto stats = SolverStatsD();
+  stats.parent = SolverName::iLQR;
+  std::vector<double> x0({0, 0, 0, 0, 4, 0});
+  std::vector<double> xf({13, -1.0, 0, 0, 1.0, 0});
+  std::vector<double> uf({0, 0});
+  const int N = 51;
+  const double dt = 0.1;
+  const double tf = 5.0;
+  CarProblemSd<6, 2, DiagonalCostS> prob(x0, xf, uf, N, dt);
+  iLQRSolverSd<6, 2, DiagonalCostS> solver(&prob, opts, stats, UserDefined(),
+                                           Valbool<true>());
+  //StateControlExpansion<double, true> val(6, 2);
+  auto& val = *solver.Qtmp;
+  LOG(INFO) << val.data;
+  CHECK_EQ(val.data.rows(), 8);
+  CHECK_EQ(val.data.cols(), 9);
+  CHECK_EQ(val.hess.rows(), 8);
+  CHECK_EQ(val.hess.cols(), 8);
+  CHECK_EQ(val.hess, val.data(seq(0, 7), seq(0, 7)));
+
+  CHECK_EQ(val.grad.rows(), 8);
+  CHECK_EQ(val.grad.cols(), 1);
+  CHECK_EQ(val.grad, val.data(Eigen::all, Eigen::last));
+
+  CHECK_EQ(val.xx.rows(), 6);
+  CHECK_EQ(val.xx.cols(), 6);
+  CHECK_EQ(val.xx, val.data(seq(0, 5), seq(0, 5)));
+
+  CHECK_EQ(val.x.rows(), 6);
+  CHECK_EQ(val.x.cols(), 1);
+  CHECK_EQ(val.x, val.data(seq(0, 5), Eigen::last));
+
+  CHECK_EQ(val.uu.rows(), 2);
+  CHECK_EQ(val.uu.cols(), 2);
+  CHECK_EQ(val.uu, val.data(seqN(6, 2), seqN(6, 2)));
+
+  CHECK_EQ(val.ux.rows(), 2);
+  CHECK_EQ(val.ux.cols(), 6);
+  CHECK_EQ(val.ux, val.data(seqN(6, 2), seq(0, 5)));
+  LOG(INFO) << val.ux;
+
+  CHECK_EQ(val.u.rows(), 2);
+  CHECK_EQ(val.u.cols(), 1);
+  CHECK_EQ(val.u, val.data(seqN(6, 2), Eigen::last));
+}
+TEST(StateControlExpansionTest, state_only) {
+  StateControlExpansion<double, true> val(6, 2);
+  LOG(INFO) << val.data;
+  CHECK_EQ(val.data.rows(), 8);
+  CHECK_EQ(val.data.cols(), 9);
+  CHECK_EQ(val.hess.rows(), 8);
+  CHECK_EQ(val.hess.cols(), 8);
+  CHECK_EQ(val.hess, val.data(seq(0, 7), seq(0, 7)));
+
+  CHECK_EQ(val.grad.rows(), 8);
+  CHECK_EQ(val.grad.cols(), 1);
+  CHECK_EQ(val.grad, val.data(Eigen::all, Eigen::last));
+
+  CHECK_EQ(val.xx.rows(), 6);
+  CHECK_EQ(val.xx.cols(), 6);
+  CHECK_EQ(val.xx, val.data(seq(0, 5), seq(0, 5)));
+
+  CHECK_EQ(val.x.rows(), 6);
+  CHECK_EQ(val.x.cols(), 1);
+  CHECK_EQ(val.x, val.data(seq(0, 5), Eigen::last));
+}
 
 TEST(iLqrSolverTest, solve) {
   auto opts = SolverOptionsD();

@@ -43,6 +43,7 @@ backwardpass(iLQRSolverDeclare *solver) {
     Q_vec[k]->xx = A.adjoint() * Qtmp->xx;
     Q_vec[k]->xx += E->at(k)->xx;
 
+    // Something wrong with initial Qtmp->ux.
     Qtmp->ux = B.adjoint() * S_vec[k + 1]->xx;
     Q_vec[k]->uu = Qtmp->ux * B;
     Q_vec[k]->uu += E->at(k)->uu;
@@ -99,13 +100,12 @@ backwardpass(iLQRSolverDeclare *solver) {
     S_vec[k]->xx += K_vec[k].adjoint() * Q_vec[k]->ux;
     S_vec[k]->xx += Q_vec[k]->ux.adjoint() * K_vec[k];
 
-    S_vec[k]->xx = Qtmp->xx.transpose();
+    Qtmp->xx = S_vec[k]->xx.transpose();
     S_vec[k]->xx += Qtmp->xx;
     S_vec[k]->xx /= 2.;
 
     DV[0] += d_vec[k].dot(Q_vec[k]->u);
     DV[1] += 0.5 * d_vec[k].dot(Q_vec[k]->uu * d_vec[k]);
-    //LOG(INFO) << "DV: " << DV[0] << ", " << DV[1];
 
     --k;
   }
