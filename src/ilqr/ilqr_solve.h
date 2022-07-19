@@ -45,18 +45,95 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
 
     const auto Jnew = forwardpass(solver, J_prev);
 
-    // LOG(INFO) << solver->Z;
-    LOG(INFO) << solver->Z_dot;
+    // LOG(INFO) << solver->Z_dot;
     solver->Z = solver->Z_dot;
+    // LOG(INFO) << solver->Z;
 
     const double dJ = J_prev - Jnew;
-    // const auto grad = gradient(solver);
+    LOG(INFO) << dJ;
+    // Calculate the gradient of the new trajectory.
+    const auto grad = gradient(solver, solver->Z);
+    LOG(INFO) << grad;
 
-    // const bool exit = evaluate_convergence(solver);
-    // if (exit) {
-    // break;
-    //}
+    // Record the iteration.
+    RecordParam param;
+    param.dJ = dJ;
+    param.cost = Jnew;
+    param.gradient = grad;
+    record_iteration(solver, param);
+
+    // Check convergence.
+    const bool exit = evaluate_convergence(solver);
+    if (exit) {
+      break;
+    }
   }
-  // terminate(solver);
-  // return solver;
+  terminate(solver);
+}
+
+iLQRSolverTemplate double gradient(iLQRSolverDeclare *solver,
+                                   const SampledTrajectory<KP> &Z) {
+  double avggrad = 0.0;
+  for (int k = 0; k < solver->d_vec.size(); ++k) {
+    const auto m = solver->control_dim(k);
+    double umax = -std::numeric_limits<double>::infinity();
+    const auto &d = solver->d_vec[k];
+    const auto &u = Z[k].control();
+    for (int i = 0; i < m; ++i) {
+      umax = std::max(umax, std::fabs(d(i)) / (std::fabs(u(i)) + 1));
+    }
+    solver->grad[k] = umax;
+    avggrad += umax;
+  }
+  return avggrad / solver->d_vec.size();
+}
+
+iLQRSolverTemplate void record_iteration(iLQRSolverDeclare *solver,
+                                         const RecordParam &param) {
+  record_iteration(solver->stats_, param);
+  const auto iter = solver->stats_.iterations;
+  if (param.dJ < std::numeric_limits<double>::epsilon()) {
+    solver->stats_.dJ_zero_counter += 1;
+  } else {
+    solver->stats_.dJ_zero_counter = 0;
+  }
+  //LOG(INFO) << "cost " << param.cost;
+  //LOG(INFO) << "iter " << iter;
+  //LOG(INFO) << "dJ " << param.dJ;
+  //LOG(INFO) << "grad " << param.gradient;
+  //LOG(INFO) << "dJ_zero " << solver->stats_.dJ_zero_counter;
+  //LOG(INFO) << "rou " << solver->reg.rou;
+}
+
+iLQRSolverTemplate bool evaluate_convergence(iLQRSolverDeclare *solver) {
+  const auto &i = solver->stats().iterations;
+  const auto &grad = solver->stats().gradient[i];
+  const auto &dJ = solver->stats().dJ[i];
+  const auto &J = solver->stats().cost[i];
+
+  if (0.0 <= dJ && dJ < solver->opts.cost_tolerance &&
+      grad < solver->opts.gradient_tolerance && !solver->stats().ls_failed) {
+    LOG(INFO) << "Cost criteria satisfied.";
+    solver->stats_.status = TerminationStatus::SOLVE_SUCCEEDED;
+    return true;
+  }
+
+  if (i >= solver->opts.iterations) {
+    LOG(INFO) << "Hit max iteration. Terminating.";
+    solver->stats_.status = TerminationStatus::MAX_ITERATIONS;
+    return true;
+  }
+
+  if (solver->stats_.dJ_zero_counter > solver->opts.dJ_counter_limit) {
+    LOG(INFO) << "dJ Counter hit max. Terminating.";
+    solver->stats_.status = TerminationStatus::NO_PROGRESS;
+    return true;
+  }
+
+  if (J > solver->opts.max_cost_value) {
+    LOG(INFO) << "Hit maximum cost. Terminating.";
+    solver->stats_.status = TerminationStatus::MAXIMUM_COST;
+    return true;
+  }
+  return false;
 }

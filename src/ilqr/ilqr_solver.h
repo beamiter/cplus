@@ -174,24 +174,27 @@ public:
   }
 
   // Overrides.
-  SolverName solvername() const final { return SolverName::iLQR; }
-  SampledTrajectory<KP> get_trajectory() const final { return Z; }
+  const SolverName solvername() const final { return SolverName::iLQR; }
+  const SampledTrajectory<KP> &get_trajectory() const final { return Z; }
+  SampledTrajectory<KP> &get_trajectory() final { return Z; }
   const Objective<C> *get_objective() const final { return obj; }
   state_type get_initial_state() const final { return x0; }
-  state_type *get_initial_state() final { return &x0; }
-  SolverStats<T> stats() const override { return stats_; }
+  const SolverStats<T> &stats() const final { return stats_; }
+  SolverStats<T> &stats() final { return stats_; }
   const SolverOptions<T> &options() const final { return opts; }
-  SolverOptions<T> *options() final { return &opts; }
+  SolverOptions<T> &options() final { return opts; }
 
   // Functions.
   int state_dim() { return Nx; }
   int errstate_dim() { return Ne; }
   int control_dim() { return Nu; }
-  auto state_dim(int k) { return state_dim(model[k]); }
-  auto errstate_dim(int k) { return errstate_dim(model[k]); }
-  auto control_dim(int k) { return control_dim(model[k]); }
-  auto get_model() { return model; }
-  auto get_feedbackgains() { return K_vec; }
+  int state_dim(int k) { return state_dim(model[k]); }
+  int errstate_dim(int k) { return errstate_dim(model[k]); }
+  int control_dim(int k) { return model[k]->control_dim(); }
+  const std::vector<std::shared_ptr<DiscreteDynamics<KP>>> &get_model() {
+    return model;
+  }
+  const std::vector<Ref<matrix_type>> &get_feedbackgains() { return K_vec; }
 
   // Members.
   std::vector<std::shared_ptr<DiscreteDynamics<KP>>> model;

@@ -357,8 +357,8 @@ public:
                                   const SampledTrajectory<KP> &Z) {
     output << std::setprecision(3) << std::fixed;
     for (const auto &pt : Z.data) {
-      output << pt;
-      //output << "Point : " << pt[0] << ", " << pt[1] << "\n";
+      output << "Point: " << pt;
+      // output << "Point : " << pt[0] << ", " << pt[1] << "\n";
     }
     return output;
   }

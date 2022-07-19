@@ -125,8 +125,8 @@ TEST(StateControlExpansionTest, state_control) {
   CarProblemSd<6, 2, DiagonalCostS> prob(x0, xf, uf, N, dt);
   iLQRSolverSd<6, 2, DiagonalCostS> solver(&prob, opts, stats, UserDefined(),
                                            Valbool<true>());
-  //StateControlExpansion<double, true> val(6, 2);
-  auto& val = *solver.Qtmp;
+  // StateControlExpansion<double, true> val(6, 2);
+  auto &val = *solver.Qtmp;
   LOG(INFO) << val.data;
   CHECK_EQ(val.data.rows(), 8);
   CHECK_EQ(val.data.cols(), 9);

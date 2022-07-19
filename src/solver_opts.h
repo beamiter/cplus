@@ -93,7 +93,7 @@ template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
   bool projected_newton = true;
   bool reuse_jacobians = false;
   bool trim_stats = true;
-  int iterations = 1;
+  int iterations = 100;
   bool show_summary = true;
   int verbose = 0;
 };
@@ -157,6 +157,69 @@ template <typename T> void reset(SolverStats<T> &stats, int N = 0) {
   stats.dJ_zero_counter = 0;
   stats.is_reset = true;
   stats.status = TerminationStatus::UNSOLVED;
+}
+
+struct RecordParam {
+  double cost = std::numeric_limits<double>::quiet_NaN();
+  double dJ = std::numeric_limits<double>::quiet_NaN();
+  double c_max = std::numeric_limits<double>::quiet_NaN();
+  double gradient = std::numeric_limits<double>::quiet_NaN();
+  double penalty_max = std::numeric_limits<double>::quiet_NaN();
+};
+
+template <typename T>
+int record_iteration(SolverStats<T> &stats, RecordParam param,
+                      bool is_pn = false, bool is_outer = false) {
+  if (is_outer) {
+    stats.iterations_outer += 1;
+  } else {
+    stats.iterations += 1;
+  }
+  const int i = stats.iterations;
+  auto record = [&i](std::vector<T> &vec, T val) {
+    if (std::isnan(val)) {
+      if (vec[i] != 0) {
+        val = vec[i];
+      } else if (i > 0) {
+        val = vec[i - 1];
+      } else {
+        val = vec[i];
+      }
+    }
+    vec[i] = val;
+  };
+
+  stats.iteration[i] = i;
+  stats.iteration_outer[i] = stats.iterations_outer;
+  stats.iteration_pn[i] = is_pn;
+  record(stats.cost, param.cost);
+  record(stats.dJ, param.dJ);
+  record(stats.c_max, param.c_max);
+  record(stats.gradient, param.gradient);
+  record(stats.penalty_max, param.penalty_max);
+  if (is_pn) {
+    stats.iterations_pn += 1;
+  }
+  return stats.iterations;
+}
+
+template <typename T> void trim(SolverStats<T> &stats, SolverName parent) {
+  if (parent == stats.parent) {
+    trim(stats);
+  }
+}
+template <typename T> int trim(SolverStats<T> &stats) {
+  const auto N = stats.iterations;
+  stats.iteration.resize(N);
+  stats.iteration_outer.resize(N);
+  stats.iteration_pn.resize(N);
+  stats.cost.resize(N);
+  stats.dJ.resize(N);
+  stats.c_max.resize(N);
+  stats.gradient.resize(N);
+  stats.penalty_max.resize(N);
+  stats.is_reset = false;
+  return N;
 }
 
 #endif

@@ -6,7 +6,10 @@
 #include "solver_opts.h"
 #include "trajectory_optimization/objective.h"
 
-template <typename KP, typename C> class AbstractSolver {
+#define AbstractSolverTemplate template <typename KP, typename C>
+#define AbstractSolverDeclare AbstractSolver<KP, C>
+
+AbstractSolverTemplate class AbstractSolver {
 
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
@@ -17,45 +20,46 @@ template <typename KP, typename C> class AbstractSolver {
 
 public:
   // Pure virtual functions
-  virtual SolverName solvername() const = 0;
-  virtual SolverStats<T> stats() const = 0;
+  virtual const SolverName solvername() const = 0;
+  virtual const SolverStats<T> &stats() const = 0;
+  virtual SolverStats<T> &stats() = 0;
   virtual const SolverOptions<T> &options() const = 0;
-  virtual SolverOptions<T> *options() = 0;
-  virtual SampledTrajectory<KP> get_trajectory() const = 0;
+  virtual SolverOptions<T> &options() = 0;
+  virtual const SampledTrajectory<KP> &get_trajectory() const = 0;
+  virtual SampledTrajectory<KP> &get_trajectory() = 0;
   virtual const Objective<C> *get_objective() const = 0;
   virtual state_type get_initial_state() const = 0;
-  virtual state_type *get_initial_state() = 0;
 
   // Virtual functions.
   virtual bool is_constrained() { return true; }
   auto get_constraints() {}
 
   // Functions.
-  bool is_parentsolver() { return stats().parent == solvername(); }
-  int iterations() { return stats().iterations; }
-  TerminationStatus status() { return stats().status; }
+  bool is_parentsolver() const { return stats().parent == solvername(); }
+  const int iterations() const { return stats().iterations; }
+  const TerminationStatus &status() const { return stats().status; }
   void set_options(const SolverOptions<T> &opt) { *options() = opt; }
   void resetstats() { reset(stats(), iterations(), solvername()); }
   void reset_solver() {
-    auto opts = options();
+    const auto &opts = options();
     reset(stats(), opts.iterations, solvername());
     if (is_constrained()) {
       reset(get_constraints(), opts);
     }
   }
-  double cost(const SampledTrajectory<KP> &Z) {
+  double cost(const SampledTrajectory<KP> &Z) const {
     return get_objective()->cost(Z);
   }
-  std::vector<state_type> states() {
+  std::vector<state_type> states() const {
     std::vector<state_type> rtn;
     for (const auto &z : get_trajectory()) {
       rtn.push_back(z.state());
     }
   }
-  std::tuple<std::vector<int>, std::vector<int>, int> dims() {
+  std::tuple<std::vector<int>, std::vector<int>, int> dims() const {
     return dims(get_trajectory());
   }
-  std::vector<control_type> controls() {
+  std::vector<control_type> controls() const {
     std::vector<control_type> rtn;
     int N = std::get<2>(dims());
     auto Z = get_trajectory();
@@ -64,8 +68,8 @@ public:
     }
   }
   void set_initial_state(const state_type &x0) { *get_initial_state() = x0; }
-  std::vector<base_type> gettimes() { return gettimes(get_trajectory()); }
-  int num_constraints() { return num_constraints(get_constraints()); }
+  std::vector<base_type> gettimes() const { return gettimes(get_trajectory()); }
+  int num_constraints() const { return num_constraints(get_constraints()); }
   template <typename P> void initial_states(const P &X0) {
     setstates(get_trajectory(), X0);
   }
@@ -80,12 +84,23 @@ public:
   }
 };
 
-template <typename KP, typename C>
-struct UnconstrainedSolver : AbstractSolver<KP, C> {
+AbstractSolverTemplate void terminate(AbstractSolverDeclare *solver) {
+  auto &stat = solver->stats();
+  stat.tsolve = (clock() - stat.tstart) / CLOCKS_PER_SEC;
+  const auto &opts = solver->options();
+  if (opts.trim_stats) {
+    trim(stat, solver->solvername());
+  }
+  if (solver->options().show_summary && solver->is_parentsolver()) {
+    // TODO.
+    // print_summary(solver);
+  }
+}
+
+AbstractSolverTemplate struct UnconstrainedSolver : AbstractSolverDeclare {
   bool is_constrained() final { return false; }
 };
-template <typename KP, typename C>
-struct ConstrainedSolver : AbstractSolver<KP, C> {
+AbstractSolverTemplate struct ConstrainedSolver : AbstractSolverDeclare {
   bool is_constrained() final { return true; }
 };
 
