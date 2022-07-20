@@ -1,12 +1,10 @@
-#include "base/base.h"
 #include <Eigen/Dense>
 #include <Eigen/src/Core/DiagonalMatrix.h>
 #include <Eigen/src/Core/Matrix.h>
-#include <atomic>
+#include <Eigen/src/misc/lapacke.h>
 #include <atomic> // std::atomic_flag
 #include <chrono>
 #include <functional>
-#include <iostream>
 #include <iostream> // std::cout
 #include <memory>
 #include <sstream> // std::stringstream
@@ -54,8 +52,8 @@ int main(int argc, char **argv) {
   // Set logging level
   google::SetStderrLogging(google::GLOG_INFO);
 
-  std::shared_ptr<MatrixXd> data = std::make_shared<MatrixXd>(6, 8);
-  Eigen::Ref<MatrixXd> grad((*data)(Eigen::all, Eigen::last));
+  std::shared_ptr<Eigen::MatrixXd> data = std::make_shared<Eigen::MatrixXd>(6, 8);
+  Eigen::Ref<Eigen::MatrixXd> grad((*data)(Eigen::all, Eigen::last));
   data->setOnes();
   LOG(INFO) << *data;
   LOG(INFO) << grad;
@@ -69,7 +67,7 @@ int main(int argc, char **argv) {
 
   Eigen::MatrixXd A(3, 3);
   A << 6, 0, 0, 0, 3, 0, 0, 0, 7;
-  LOG(INFO) << isPsd(A) << isPd(A);
+
   Eigen::MatrixXd L(A.llt().matrixL());
   Eigen::MatrixXd L_T = L.adjoint(); // conjugate transpose
 

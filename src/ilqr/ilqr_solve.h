@@ -31,7 +31,7 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
   initialize(solver);
   for (auto iter = 0; iter < solver->opts.iterations; ++iter) {
     const auto J_prev = solver->cost(solver->Z_dot);
-    LOG(INFO) << "********** " << J_prev;
+    //LOG(INFO) << "********** " << J_prev;
 
     // Calculate expansions.
     errstate_jacobian(solver->model, solver->G_vec, solver->Z_dot);
@@ -50,10 +50,8 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
     // LOG(INFO) << solver->Z;
 
     const double dJ = J_prev - Jnew;
-    LOG(INFO) << dJ;
     // Calculate the gradient of the new trajectory.
     const auto grad = gradient(solver, solver->Z);
-    LOG(INFO) << grad;
 
     // Record the iteration.
     RecordParam param;

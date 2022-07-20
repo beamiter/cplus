@@ -18,6 +18,7 @@ using Eigen::VectorXcd;
 using Eigen::VectorXd;
 using Eigen::VectorXf;
 
+
 #define DERIVE(Base, Derived)                                                  \
   struct Derived : Base {};
 
