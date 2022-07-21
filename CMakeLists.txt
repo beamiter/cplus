@@ -5,8 +5,9 @@ project(test)
 set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 #set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
+#set(CMAKE_CXX_FLAGS "-O2 -g")
 
 #find_package (Eigen3 3.4 REQUIRED NO_MODULE)
 find_package (Eigen3 3.4 REQUIRED)
@@ -35,6 +36,7 @@ include_directories(src)
 #set(GLOG_LIBRARIES /usr/local/lib/libglog.so)
 set(GLOG_LIBRARIES glog::glog)
 
+#add_definitions(-DEIGEN_USE_LAPACKE_STRICT)
 #add_compile_definitions(EIGEN_USE_LAPACK EIGEN_USE_BLAS)
 #add_definitions(-DEIGEN_USE_BLAS -DEIGEN_USE_LAPACKE)
 

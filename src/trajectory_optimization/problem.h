@@ -167,7 +167,10 @@ void rollout(FS sig,
              SampledTrajectory<KP> *Z, const typename KP::state_type &x0) {
   Z->at(0).setstate(x0);
   for (int k = 1; k < Z->length(); ++k) {
-    propagate_dynamics(sig, models[k - 1].get(), &Z->at(k), Z->at(k - 1));
+    propagate_dynamics(
+        sig,
+        static_cast<const DiscretizedDynamics<KP, RK4> *>(models[k - 1].get()),
+        &Z->at(k), Z->at(k - 1));
   }
 }
 template <typename KP, typename C, typename FS = FunctionSignature>

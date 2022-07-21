@@ -45,6 +45,7 @@ typename KP::state_type discrete_dynamics(const DiscreteDynamics<KP> *model,
                                           const typename KP::control_type &u,
                                           typename KP::base_type t,
                                           typename KP::base_type dt) {
+  CHECK(0);
   return x + model->dynamics(x, u) * dt;
 }
 
@@ -61,6 +62,7 @@ void discrete_dynamics(const DiscreteDynamics<KP> *model,
                        const typename KP::state_type &x,
                        const typename KP::control_type &u,
                        typename KP::base_type t, typename KP::base_type dt) {
+  CHECK(0);
   model->dynamics(xn, x, u);
   xn *= dt;
   xn += x;

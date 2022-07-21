@@ -22,7 +22,10 @@ iLQRSolverTemplate bool rollout(iLQRSolverDeclare *solver, double alpha) {
 
     delta_u[k] += Z[k].control();
     Z_dot[k].setcontrol(delta_u[k]);
-    propagate_dynamics(sig, solver->model[k].get(), &Z_dot[k + 1], Z_dot[k]);
+    propagate_dynamics(sig,
+                       static_cast<const DiscretizedDynamics<KP, RK4> *>(
+                           solver->model[k].get()),
+                       &Z_dot[k + 1], Z_dot[k]);
 
     const auto max_x = *std::max_element(
         Z_dot[k + 1].state().begin(), Z_dot[k + 1].state().end(),
@@ -43,8 +46,8 @@ iLQRSolverTemplate bool rollout(iLQRSolverDeclare *solver, double alpha) {
       return false;
     }
   }
-  //LOG(INFO) << solver->Z;
-  //LOG(INFO) << solver->Z_dot;
+  // LOG(INFO) << solver->Z;
+  // LOG(INFO) << solver->Z_dot;
   solver->stats_.status = TerminationStatus::UNSOLVED;
   return true;
 }

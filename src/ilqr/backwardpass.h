@@ -76,7 +76,7 @@ backwardpass(iLQRSolverDeclare *solver) {
     if (!isposdef(Quu_fact)) {
       LOG(INFO) << "Backwardpass cholesky failed at time step " << k;
       increaseregularization(solver);
-      k = N - 1;
+      k = N - 2;
       std::fill(DV.begin(), DV.end(), 0);
       continue;
     }

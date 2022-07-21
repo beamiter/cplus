@@ -16,12 +16,12 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
     // In forwardpass.
     /* rollout(solver-> 0.0);  */
   } else {
-    // static_cast<const DiscretizedDynamics<KP, Euler>
-    // *>(solver->model[0].get());
-    rollout(dynamics_signature(*solver), solver->model.front().get(),
+    rollout(dynamics_signature(*solver),
+            static_cast<const DiscretizedDynamics<KP, RK4> *>(
+                solver->model.front().get()),
             &solver->Z, solver->x0);
-    // LOG(INFO) << solver->Z;
-    // LOG(INFO) << solver->Z_dot;
+    // rollout(dynamics_signature(*solver), solver->model.front().get(),
+    //&solver->Z, solver->x0);
   }
 
   solver->Z_dot = solver->Z;
@@ -31,7 +31,7 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
   initialize(solver);
   for (auto iter = 0; iter < solver->opts.iterations; ++iter) {
     const auto J_prev = solver->cost(solver->Z_dot);
-    //LOG(INFO) << "********** " << J_prev;
+    // LOG(INFO) << "********** " << J_prev;
 
     // Calculate expansions.
     errstate_jacobian(solver->model, solver->G_vec, solver->Z_dot);
@@ -95,12 +95,13 @@ iLQRSolverTemplate void record_iteration(iLQRSolverDeclare *solver,
   } else {
     solver->stats_.dJ_zero_counter = 0;
   }
-  //LOG(INFO) << "cost " << param.cost;
-  //LOG(INFO) << "iter " << iter;
-  //LOG(INFO) << "dJ " << param.dJ;
-  //LOG(INFO) << "grad " << param.gradient;
-  //LOG(INFO) << "dJ_zero " << solver->stats_.dJ_zero_counter;
-  //LOG(INFO) << "rou " << solver->reg.rou;
+  LOG(INFO) << "-----------------";
+  LOG(INFO) << "cost " << param.cost;
+  LOG(INFO) << "iter " << iter;
+  LOG(INFO) << "dJ " << param.dJ;
+  LOG(INFO) << "grad " << param.gradient;
+  LOG(INFO) << "dJ_zero " << solver->stats_.dJ_zero_counter;
+  LOG(INFO) << "rou " << solver->reg.rou;
 }
 
 iLQRSolverTemplate bool evaluate_convergence(iLQRSolverDeclare *solver) {

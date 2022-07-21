@@ -18,7 +18,6 @@ using Eigen::VectorXcd;
 using Eigen::VectorXd;
 using Eigen::VectorXf;
 
-
 #define DERIVE(Base, Derived)                                                  \
   struct Derived : Base {};
 
@@ -124,6 +123,26 @@ template <class MatrixT> bool isPd(const MatrixT &A) {
   VectorXcd eigs = A.eigenvalues();
   return std::all_of(eigs.real().begin(), eigs.real().end(),
                      [](const auto val) { return val > 0; });
+}
+
+// https://stackoverflow.com/questions/18662261/fastest-implementation-of-sine-cosine-and-square-root-in-c-doesnt-need-to-b
+// https://www.desmos.com/calculator/cbuhbme355
+template <typename T> inline T cosine(T x) noexcept {
+  constexpr T tp = 1. / (2. * M_PI);
+  x *= tp;
+  x -= T(.25) + std::floor(x + T(.25));
+  x *= T(16.) * (std::abs(x) - T(.5));
+#if EXTRA_PRECISION
+  x += T(.225) * x * (std::abs(x) - T(1.));
+#endif
+  return x;
+}
+template <typename T> inline T sine(T x) noexcept {
+  return cosine<T>(M_PI_2 - x);
+}
+
+template <typename T> inline T arctan(T z) {
+  return z * (M_PI_4 - (z - 1) * (14. / M_PI + 3.83 / M_PI * z));
 }
 
 #endif
