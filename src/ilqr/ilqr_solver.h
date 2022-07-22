@@ -117,7 +117,8 @@ public:
 
     if (std::any_of(Z[0].state().begin(), Z[0].state().end(),
                     [](const auto &s) { return std::isnan(s); })) {
-      rollout(dynamics_signature(Z), prob->shared_models_[0].get(), &Z, prob->x0);
+      rollout(dynamics_signature(Z), prob->shared_models_[0].get(), &Z,
+              prob->x0);
     }
     VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
     Z[0].setstate(v);
@@ -259,12 +260,12 @@ iLQRSolverTemplate void reset(iLQRSolverDeclare &solver) {
 iLQRSolverTemplate void dynamics_expansion(iLQRSolverDeclare *solver,
                                            const SampledTrajectory<KP> &Z) {
   const auto &diff = solver->opts.dynamics_diffmethod;
-  const auto &shared_models = solver->shared_models_;
+  // const auto &shared_models = solver->shared_models_;
   for (int k = 0; k < solver->D_vec.size(); ++k) {
-    jacobian(dynamics_signature(*solver), diff, shared_models[k].get(),
+    jacobian(dynamics_signature(*solver), diff, solver->shared_models_[k].get(),
              solver->D_vec[k].get(), Z[k]);
   }
-  error_expansion(shared_models, solver->D_vec, solver->G_vec);
+  error_expansion(solver->shared_models_, solver->D_vec, solver->G_vec);
 }
 
 iLQRSolverTemplate auto increaseregularization(iLQRSolverDeclare *solver)

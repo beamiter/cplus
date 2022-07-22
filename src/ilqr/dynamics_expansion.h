@@ -43,12 +43,12 @@ template <typename T> struct DynamicsExpansion {
 
 template <typename KP, typename FS = FunctionSignature,
           typename DM = DiffMethod>
-void jacobian(FS sig, DM diff, const DiscreteDynamics<KP> *model,
+void jacobian(FS sig, DM diff, DiscreteDynamics<KP> *model,
               DynamicsExpansion<typename KP::base_type> *D, const KP &z) {
   // jacobian(sig, diff, model, D->Df, D->f, z);
   // jacobian(sig, diff, static_cast<const DiscretizedDynamics<KP, RK3>
   // *>(model), *D->Df, D->f, z);
-  jacobian(sig, diff, static_cast<const DiscretizedDynamics<KP, RK4> *>(model),
+  jacobian(sig, diff, static_cast<DiscretizedDynamics<KP, RK4> *>(model),
            *D->Df, D->f, z);
 }
 
@@ -78,17 +78,21 @@ void errstate_jacobian(RotationState type, const std::vector<M> &models,
   }
 }
 template <typename M, typename E, typename P>
-void error_expansion(const std::vector<M> model, std::vector<E> &D,
+void error_expansion(const std::vector<M> &models, std::vector<E> &D,
                      const std::vector<P> &G) {
-  _error_expansion(statevectortype(model.front().get()), D, model, G);
+  _error_expansion(statevectortype(models.front().get()), D, models, G);
 }
 template <typename M, typename E, typename P, typename SV = StateVectorType>
-void _error_expansion(SV type, std::vector<E> &D, const std::vector<M> &model,
-                      const std::vector<P> &G) {}
-
+void _error_expansion(SV type, std::vector<E> &D, const std::vector<M> &models,
+                      const std::vector<P> &G) {
+  CHECK(0);
+}
+template <typename M, typename E, typename P>
+void _error_expansion(EuclideanState type, std::vector<E> &D,
+                      const std::vector<M> &models, const std::vector<P> &G) {}
 template <typename M, typename E, typename P>
 void _error_expansion(RotationState type, std::vector<E> &D,
-                      const std::vector<M> &model, const std::vector<P> &G) {
+                      const std::vector<M> &models, const std::vector<P> &G) {
   for (int k = 0; k < D.size(); ++k) {
     _error_expansion(D[k], G[k], G[k + 1]);
   }

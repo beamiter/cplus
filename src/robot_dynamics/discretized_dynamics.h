@@ -95,17 +95,18 @@ void discretized_dynamics(StaticReturn, const DiscretizedDynamics<KP, Q> *model,
 
 template <typename KP, template <typename> class Q,
           typename FS = FunctionSignature, typename DM = DiffMethod>
-void jacobian(FS sig, DM diff, const DiscretizedDynamics<KP, Q> *model,
-              typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
-              const KP &z) {}
-template <typename KP, template <typename> class Q,
-          typename FS = FunctionSignature>
-void jacobian(FS sig, UserDefined, const DiscretizedDynamics<KP, Q> *model,
+void jacobian(FS sig, DM diff, DiscretizedDynamics<KP, Q> *model,
               typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
               const KP &z) {
-  jacobian<KP>(&const_cast<DiscretizedDynamics<KP, Q> *>(model)->integrator,
-               sig, model->continuous_dynamics, J, y, z.state(), z.control(),
-               z.time(), z.timestep());
+  CHECK(0);
+}
+template <typename KP, template <typename> class Q,
+          typename FS = FunctionSignature>
+void jacobian(FS sig, UserDefined, DiscretizedDynamics<KP, Q> *model,
+              typename KP::ref_matrix_type J, typename KP::ref_vector_type y,
+              const KP &z) {
+  jacobian<KP>(&model->integrator, sig, model->continuous_dynamics, J, y,
+               z.state(), z.control(), z.time(), z.timestep());
 }
 
 // Propagate dynamics.
