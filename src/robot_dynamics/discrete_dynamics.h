@@ -114,6 +114,7 @@ void jacobian(const DiscreteDynamics<KP> *model, typename KP::jacobian_type &J,
               const Q &y, const typename KP::state_type &x,
               const typename KP::control_type &u, typename KP::base_type t,
               typename KP::base_type dt) {
+  CHECK(0);
   model->jacobian(J, y, x, u, t, dt);
 }
 
