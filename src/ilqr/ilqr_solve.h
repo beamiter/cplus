@@ -32,12 +32,12 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
 
 iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
   initialize(solver);
-  FILE *gnuplotPipe = popen("/usr/bin/gnuplot", "w");
-  fprintf(gnuplotPipe, "set xrange [0:15]\n");
-  fprintf(gnuplotPipe, "set yrange [-1.5:1]\n");
-  const std::string name = "/home/yinj3/projects/cplus/data/data.dat";
-  std::ofstream file(name);
-  LOG(INFO) << name;
+  // FILE *gnuplotPipe = popen("/usr/bin/gnuplot", "w");
+  // fprintf(gnuplotPipe, "set xrange [0:15]\n");
+  // fprintf(gnuplotPipe, "set yrange [-1.5:1]\n");
+  // const std::string name = "/home/yinj3/projects/cplus/data/solve.dat";
+  // std::ofstream file(name);
+  // LOG(INFO) << name;
   for (auto iter = 0; iter < solver->opts.iterations; ++iter) {
     const auto J_prev = solver->cost(solver->Z_dot);
     // LOG(INFO) << "********** " << J_prev;
@@ -48,8 +48,8 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
     dynamics_expansion(solver, solver->Z_dot);
     cost_expansion(solver->obj, solver->Efull_, solver->Z_dot);
     // Dummy.
-    error_expansion(solver->shared_models_, solver->Eerr_, solver->Efull_, solver->G_vec,
-                    solver->Z_dot);
+    error_expansion(solver->shared_models_, solver->Eerr_, solver->Efull_,
+                    solver->G_vec, solver->Z_dot);
 
     // Get next iterate.
     backwardpass(solver);
@@ -59,12 +59,12 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
     // LOG(INFO) << solver->Z_dot;
     solver->Z = solver->Z_dot;
     // LOG(INFO) << solver->Z;
-    for (const auto &pt : solver->Z_dot) {
-      file << pt.state()(0) << " " << pt.state()(1) << std::endl;
-    }
-    std::string plot_str = "plot \"" + name + "\"\n";
-    fprintf(gnuplotPipe, "%s", plot_str.c_str());
-    fflush(gnuplotPipe);
+    // for (const auto &pt : solver->Z_dot) {
+    // file << pt.state()(0) << " " << pt.state()(1) << std::endl;
+    //}
+    // std::string plot_str = "plot \"" + name + "\"\n";
+    // fprintf(gnuplotPipe, "%s", plot_str.c_str());
+    // fflush(gnuplotPipe);
 
     const double dJ = J_prev - Jnew;
     // Calculate the gradient of the new trajectory.
@@ -83,7 +83,7 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
       break;
     }
   }
-  file.close();
+  // file.close();
   terminate(solver);
 }
 

@@ -144,5 +144,23 @@ template <typename T> inline T sine(T x) noexcept {
 template <typename T> inline T arctan(T z) {
   return z * (M_PI_4 - (z - 1) * (14. / M_PI + 3.83 / M_PI * z));
 }
+static FILE *gnuplotPipe = nullptr;
+inline int PlotInit(const char *path = "/usr/bin/gnuplot") {
+  if (gnuplotPipe == nullptr) {
+    gnuplotPipe = popen(path, "w");
+    // Init withy x/y range.
+    fprintf(gnuplotPipe, "set xrange [0:15]\n");
+    fprintf(gnuplotPipe, "set yrange [-1.5:1]\n");
+  }
+  return gnuplotPipe != nullptr;
+}
+inline void PlotRun(const std::string &file_name) {
+  std::string plot_str = "plot \"" + file_name + "\"\n";
+  fprintf(gnuplotPipe, "%s", plot_str.c_str());
+}
+inline void PlotShow() {
+  fprintf(gnuplotPipe, "replot\n");
+  fflush(gnuplotPipe);
+}
 
 #endif

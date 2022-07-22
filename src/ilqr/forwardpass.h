@@ -1,11 +1,12 @@
 #ifndef FORWARDPASS_H_
 #define FORWARDPASS_H_
 
+#include <fstream>
+
 #include "ilqr_solver.h"
 
 iLQRSolverTemplate bool rollout(iLQRSolverDeclare *solver, double alpha) {
-  const auto &N = solver->N;
-  auto &Z = solver->Z;
+  const auto &Z = solver->Z;
   auto &Z_dot = solver->Z_dot;
   const auto &K_vec = solver->K_vec;
   const auto &d_vec = solver->d_vec;
@@ -14,7 +15,7 @@ iLQRSolverTemplate bool rollout(iLQRSolverDeclare *solver, double alpha) {
 
   Z_dot[0].setstate(solver->x0);
   const auto sig = dynamics_signature(*solver);
-  for (int k = 0; k < N - 1; ++k) {
+  for (int k = 0; k < solver->N - 1; ++k) {
     state_diff(solver->shared_models_[k].get(), delta_x[k], Z_dot[k].state(),
                Z[k].state());
     delta_u[k] = d_vec[k] * alpha;
@@ -54,9 +55,6 @@ iLQRSolverTemplate bool rollout(iLQRSolverDeclare *solver, double alpha) {
 
 iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
                                       double J_prev) {
-  auto &Z = solver->Z;
-  auto &Z_dot = solver->Z_dot;
-  const auto &DV = solver->DV;
   const auto &phi = solver->opts.line_search_decrease_factor;
   const auto &z_lb = solver->opts.line_search_lower_bound;
   const auto &z_ub = solver->opts.line_search_upper_bound;
@@ -69,6 +67,11 @@ iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
   solver->stats_.ls_failed = false;
   const double max_iters = solver->opts.iterations_linesearch;
   bool exit_linesearch = false;
+  PlotInit();
+  const std::string name = "/home/yinj3/projects/cplus/data/forwardpass.dat";
+  std::ofstream file(name);
+  LOG(INFO) << name;
+  PlotRun(name);
   for (int i = 0; i < max_iters; ++i) {
     const auto isrolloutgood = rollout(solver, alpha);
 
@@ -77,14 +80,19 @@ iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
       continue;
     }
 
-    J = solver->obj->cost(Z_dot);
+    J = solver->obj->cost(solver->Z_dot);
 
-    expected = -alpha * (DV[0] + alpha * DV[1]);
+    for (const auto &pt : solver->Z_dot) {
+      file << pt.state()(0) << " " << pt.state()(1) << std::endl;
+    }
+    PlotShow();
+
+    expected = -alpha * (solver->DV[0] + alpha * solver->DV[1]);
 
     if (0.0 < expected && expected < solver->opts.expected_decrease_tolerance) {
       alpha = 0.0;
       z = std::numeric_limits<double>::infinity();
-      Z_dot = Z;
+      solver->Z_dot = solver->Z;
       J = J_prev;
       LOG(INFO) << "No step, expected decrease too small!";
 
@@ -103,7 +111,7 @@ iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
 
     if (i == max_iters) {
       alpha = 0.0;
-      Z_dot = Z;
+      solver->Z_dot = solver->Z;
       J = J_prev;
       LOG(INFO) << "Max linesearch iters: " << i;
       increaseregularization(solver);
@@ -118,6 +126,7 @@ iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
 
     alpha *= phi;
   }
+  file.close();
 
   if (J > J_prev) {
     solver->stats_.status = TerminationStatus::COST_INCREASE;
