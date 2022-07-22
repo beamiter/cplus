@@ -83,7 +83,7 @@ public:
 
   iLQRSolver(Problem<KP, C> *prob, SolverOptions<T> opts_in,
              SolverStats<T> stats_in, DiffMethod diff, Valbool<USE>) {
-    model = prob->model;
+    shared_models_ = prob->shared_models_;
     obj = prob->obj;
     x0 = prob->x0;
     tf = prob->get_final_time();
@@ -95,7 +95,7 @@ public:
 
     std::vector<int> nx, nu, ne;
     std::tie(nx, nu) = prob->dims();
-    for (const auto &m : prob->model) {
+    for (const auto &m : prob->shared_models_) {
       ne.push_back(::errstate_dim(m.get()));
     }
     ne.push_back(ne.back());
@@ -117,7 +117,7 @@ public:
 
     if (std::any_of(Z[0].state().begin(), Z[0].state().end(),
                     [](const auto &s) { return std::isnan(s); })) {
-      rollout(dynamics_signature(Z), prob->model[0].get(), &Z, prob->x0);
+      rollout(dynamics_signature(Z), prob->shared_models_[0].get(), &Z, prob->x0);
     }
     VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
     Z[0].setstate(v);
@@ -149,7 +149,7 @@ public:
     });
 
     Eerr_ = std::make_shared<CostExpansion<T>>(ne, nu);
-    Efull_ = FullStateExpansion(Eerr_, prob->model.front().get());
+    Efull_ = FullStateExpansion(Eerr_, prob->shared_models_.front().get());
 
     loop(0, N, [&ne, &nu, this](const int k) {
       Q_vec.push_back(
@@ -188,16 +188,16 @@ public:
   int state_dim() { return Nx; }
   int errstate_dim() { return Ne; }
   int control_dim() { return Nu; }
-  int state_dim(int k) { return state_dim(model[k]); }
-  int errstate_dim(int k) { return errstate_dim(model[k]); }
-  int control_dim(int k) { return model[k]->control_dim(); }
+  int state_dim(int k) { return state_dim(shared_models_[k]); }
+  int errstate_dim(int k) { return errstate_dim(shared_models_[k]); }
+  int control_dim(int k) { return shared_models_[k]->control_dim(); }
   const std::vector<std::shared_ptr<DiscreteDynamics<KP>>> &get_model() {
-    return model;
+    return shared_models_;
   }
   const std::vector<Ref<matrix_type>> &get_feedbackgains() { return K_vec; }
 
   // Members.
-  std::vector<std::shared_ptr<DiscreteDynamics<KP>>> model;
+  std::vector<std::shared_ptr<DiscreteDynamics<KP>>> shared_models_;
   const Objective<C> *obj;
 
   state_type x0;
@@ -259,12 +259,12 @@ iLQRSolverTemplate void reset(iLQRSolverDeclare &solver) {
 iLQRSolverTemplate void dynamics_expansion(iLQRSolverDeclare *solver,
                                            const SampledTrajectory<KP> &Z) {
   const auto &diff = solver->opts.dynamics_diffmethod;
-  const auto &model = solver->model;
+  const auto &shared_models = solver->shared_models_;
   for (int k = 0; k < solver->D_vec.size(); ++k) {
-    jacobian(dynamics_signature(*solver), diff, model[k].get(),
+    jacobian(dynamics_signature(*solver), diff, shared_models[k].get(),
              solver->D_vec[k].get(), Z[k]);
   }
-  error_expansion(solver->model, solver->D_vec, solver->G_vec);
+  error_expansion(shared_models, solver->D_vec, solver->G_vec);
 }
 
 iLQRSolverTemplate auto increaseregularization(iLQRSolverDeclare *solver)

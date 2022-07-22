@@ -27,15 +27,15 @@ public:
           const Objective<C> *obj_in, ConstraintList constraints_in,
           state_type x0_in, state_type xf_in, SampledTrajectory<KP> Z_in,
           int N_in)
-      : model(model_in), obj(std::move(obj_in)),
+      : shared_models_(model_in), obj(std::move(obj_in)),
         constraints(std::move(constraints_in)), x0(std::move(x0_in)),
         xf(std::move(xf_in)), Z(std::move(Z_in)), N(N_in) {}
 
   explicit Problem(const Problem<KP, C> &prob)
       : obj(prob.obj), constraints(prob.constraints), x0(prob.x0), xf(prob.xf),
         Z(prob.Z), N(prob.N) {
-    std::copy(prob.model.begin(), prob.model.end(),
-              std::back_inserter(this->model));
+    std::copy(prob.shared_models_.begin(), prob.shared_models_.end(),
+              std::back_inserter(this->shared_models_));
   }
 
   // Initializer
@@ -44,7 +44,7 @@ public:
     this->N = obj_in->length();
     this->x0 = x0_in;
     this->xf = VectorX<base_type>::Zero(models_in.back()->state_dim());
-    this->model = models_in;
+    this->shared_models_ = models_in;
     this->obj = obj_in;
     this->constraints = ConstraintList(models_in);
 
@@ -89,20 +89,20 @@ public:
   state_type x0;
   state_type xf;
   SampledTrajectory<KP> Z;
-  std::vector<std::shared_ptr<DiscreteDynamics<KP>>> model;
+  std::vector<std::shared_ptr<DiscreteDynamics<KP>>> shared_models_;
   const Objective<C> *obj = nullptr;
   ConstraintList constraints;
 
   std::tuple<std::vector<int>, std::vector<int>> dims() const {
-    return ::dims(model);
+    return ::dims(shared_models_);
   }
   std::tuple<int, int, int> dims(int i) const {
     int n = 0, m = 0;
-    std::tie(n, m) = dims(model[i]);
+    std::tie(n, m) = dims(shared_models_[i]);
     return std::make_tuple(n, m, N);
   }
-  int state_dim(int k) const { return state_dim(model[k]); }
-  int control_dim(int k) const { return control_dim(model[k]); }
+  int state_dim(int k) const { return state_dim(shared_models_[k]); }
+  int control_dim(int k) const { return control_dim(shared_models_[k]); }
   int horizonlength() const { return N; }
   std::vector<typename KP::control_type> controls() const {
     return get_trajectory()->controls();
@@ -118,10 +118,10 @@ public:
   auto get_constraints() { return this->constraints; }
   auto num_constraints() { return get_constraints().p; }
   const std::vector<std::shared_ptr<DiscreteDynamics<KP>>> &get_model() const {
-    return this->model;
+    return this->shared_models_;
   }
   const std::shared_ptr<DiscreteDynamics<KP>> &get_model(int k) const {
-    return this->model[k];
+    return this->shared_models_[k];
   }
   const Objective<C> *get_objective() { return this->obj; }
   const SampledTrajectory<KP> *get_trajectory() const { return &this->Z; }

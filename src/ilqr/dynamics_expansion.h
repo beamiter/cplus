@@ -60,7 +60,12 @@ void errstate_jacobian(const std::vector<M> &model, std::vector<P> &G,
 }
 template <typename M, typename P, typename Q, typename SV = StateVectorType>
 void errstate_jacobian(SV type, const std::vector<M> &models, std::vector<P> &G,
-                       const Q &Z) {}
+                       const Q &Z) {
+  CHECK(0);
+}
+template <typename M, typename P, typename Q, typename SV = StateVectorType>
+void errstate_jacobian(EuclideanState type, const std::vector<M> &models,
+                       std::vector<P> &G, const Q &Z) {}
 template <typename M, typename P, typename Q>
 void errstate_jacobian(RotationState type, const std::vector<M> &models,
                        std::vector<P> &G, const Q &Z) {

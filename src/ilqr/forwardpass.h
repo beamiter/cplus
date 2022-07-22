@@ -15,7 +15,7 @@ iLQRSolverTemplate bool rollout(iLQRSolverDeclare *solver, double alpha) {
   Z_dot[0].setstate(solver->x0);
   const auto sig = dynamics_signature(*solver);
   for (int k = 0; k < N - 1; ++k) {
-    state_diff(solver->model[k].get(), delta_x[k], Z_dot[k].state(),
+    state_diff(solver->shared_models_[k].get(), delta_x[k], Z_dot[k].state(),
                Z[k].state());
     delta_u[k] = d_vec[k] * alpha;
     delta_u[k] += K_vec[k] * delta_x[k];
@@ -24,7 +24,7 @@ iLQRSolverTemplate bool rollout(iLQRSolverDeclare *solver, double alpha) {
     Z_dot[k].setcontrol(delta_u[k]);
     propagate_dynamics(sig,
                        static_cast<const DiscretizedDynamics<KP, RK4> *>(
-                           solver->model[k].get()),
+                           solver->shared_models_[k].get()),
                        &Z_dot[k + 1], Z_dot[k]);
 
     const auto max_x = *std::max_element(

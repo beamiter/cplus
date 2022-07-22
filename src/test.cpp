@@ -83,7 +83,7 @@ TEST(DynamicsExpansionTest, jacobian) {
   CHECK_EQ(val->fx, (*val->De)(all, Eigen::seq(0, val->A.rows() - 1)));
   CHECK_EQ(val->fu, (*val->De)(all, Eigen::seqN(val->A.rows(), val->B.cols())));
   jacobian(dynamics_signature(solver), UserDefined(),
-           solver.model.front().get(), solver.D_vec.front().get(),
+           solver.shared_models_.front().get(), solver.D_vec.front().get(),
            solver.Z.front());
   CHECK_EQ(val->A, (*val->Df)(all, Eigen::seq(0, val->A.rows() - 1)));
   CHECK_EQ(val->B, (*val->Df)(all, Eigen::seqN(val->A.rows(), val->B.cols())));

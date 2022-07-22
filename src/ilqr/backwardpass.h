@@ -30,7 +30,7 @@ backwardpass(iLQRSolverDeclare *solver) {
   while (k >= 0) {
     const auto &A = D_vec[k]->fx;
     const auto &B = D_vec[k]->fu;
-    const int m = solver->model[k]->control_dim();
+    const int m = solver->shared_models_[k]->control_dim();
 
     // Action-value expansion.
     Q_vec[k]->x = A.adjoint() * S_vec[k + 1]->x;

@@ -21,7 +21,7 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
   } else {
     rollout(dynamics_signature(*solver),
             static_cast<const DiscretizedDynamics<KP, RK4> *>(
-                solver->model.front().get()),
+                solver->shared_models_.front().get()),
             &solver->Z, solver->x0);
     // rollout(dynamics_signature(*solver), solver->model.front().get(),
     //&solver->Z, solver->x0);
@@ -34,7 +34,7 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
   initialize(solver);
   FILE *gnuplotPipe = popen("/usr/bin/gnuplot", "w");
   fprintf(gnuplotPipe, "set xrange [0:15]\n");
-  fprintf(gnuplotPipe, "set yrange [-1:2]\n");
+  fprintf(gnuplotPipe, "set yrange [-1.5:1]\n");
   const std::string name = "/home/yinj3/projects/cplus/data/data.dat";
   std::ofstream file(name);
   LOG(INFO) << name;
@@ -43,10 +43,12 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
     // LOG(INFO) << "********** " << J_prev;
 
     // Calculate expansions.
-    errstate_jacobian(solver->model, solver->G_vec, solver->Z_dot);
+    // Dummy.
+    errstate_jacobian(solver->shared_models_, solver->G_vec, solver->Z_dot);
     dynamics_expansion(solver, solver->Z_dot);
     cost_expansion(solver->obj, solver->Efull_, solver->Z_dot);
-    error_expansion(solver->model, solver->Eerr_, solver->Efull_, solver->G_vec,
+    // Dummy.
+    error_expansion(solver->shared_models_, solver->Eerr_, solver->Efull_, solver->G_vec,
                     solver->Z_dot);
 
     // Get next iterate.

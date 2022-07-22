@@ -157,7 +157,12 @@ void error_expansion(const std::vector<M> &models, C &Eerr, const C &Efull,
 template <typename M, typename C, typename P, typename Q,
           typename SV = StateVectorType>
 void _error_expansion(SV type, const std::vector<M> &models, C &Eerr,
-                      const C &Efull, P &G, const Q &Z) {}
+                      const C &Efull, P &G, const Q &Z) {
+  CHECK(0);
+}
+template <typename M, typename C, typename P, typename Q>
+void _error_expansion(EuclideanState type, const std::vector<M> &models,
+                      C &Eerr, const C &Efull, P &G, const Q &Z) {}
 template <typename M, typename C, typename P, typename Q>
 void _error_expansion(RotationState type, const std::vector<M> &models, C &Eerr,
                       const C &Efull, P &G, const Q &Z) {
