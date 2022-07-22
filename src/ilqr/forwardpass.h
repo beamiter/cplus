@@ -18,25 +18,12 @@ iLQRSolverTemplate bool rollout(iLQRSolverDeclare *solver, double alpha) {
   for (int k = 0; k < solver->N - 1; ++k) {
     state_diff(solver->shared_models_[k].get(), delta_x[k], Z_dot[k].state(),
                Z[k].state());
+    // TODO: Comes to know that d_vec[k] is abnormal.
     delta_u[k] = d_vec[k] * alpha;
     delta_u[k] += K_vec[k] * delta_x[k];
 
     delta_u[k] += Z[k].control();
     Z_dot[k].setcontrol(delta_u[k]);
-    propagate_dynamics(sig,
-                       static_cast<const DiscretizedDynamics<KP, RK4> *>(
-                           solver->shared_models_[k].get()),
-                       &Z_dot[k + 1], Z_dot[k]);
-
-    const auto max_x = *std::max_element(
-        Z_dot[k + 1].state().begin(), Z_dot[k + 1].state().end(),
-        [](const auto &lhs, const auto &rhs) {
-          return std::fabs(lhs) < std::fabs(rhs);
-        });
-    if (max_x > solver->opts.max_state_value || std::isnan(max_x)) {
-      solver->stats_.status = TerminationStatus::STATE_LIMIT;
-      return false;
-    }
     const auto max_u =
         *std::max_element(Z_dot[k].control().begin(), Z_dot[k].control().end(),
                           [](const auto &lhs, const auto &rhs) {
@@ -46,9 +33,21 @@ iLQRSolverTemplate bool rollout(iLQRSolverDeclare *solver, double alpha) {
       solver->stats_.status = TerminationStatus::CONTROL_LIMIT;
       return false;
     }
+
+    propagate_dynamics(sig,
+                       static_cast<const DiscretizedDynamics<KP, RK4> *>(
+                           solver->shared_models_[k].get()),
+                       &Z_dot[k + 1], Z_dot[k]);
+    const auto max_x = *std::max_element(
+        Z_dot[k + 1].state().begin(), Z_dot[k + 1].state().end(),
+        [](const auto &lhs, const auto &rhs) {
+          return std::fabs(lhs) < std::fabs(rhs);
+        });
+    if (max_x > solver->opts.max_state_value || std::isnan(max_x)) {
+      solver->stats_.status = TerminationStatus::STATE_LIMIT;
+      return false;
+    }
   }
-  // LOG(INFO) << solver->Z;
-  // LOG(INFO) << solver->Z_dot;
   solver->stats_.status = TerminationStatus::UNSOLVED;
   return true;
 }
@@ -68,24 +67,31 @@ iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
   const double max_iters = solver->opts.iterations_linesearch;
   bool exit_linesearch = false;
   PlotInit();
-  const std::string name = "/home/yinj3/projects/cplus/data/forwardpass.dat";
-  std::ofstream file(name);
-  LOG(INFO) << name;
-  PlotRun(name);
   for (int i = 0; i < max_iters; ++i) {
-    const auto isrolloutgood = rollout(solver, alpha);
-
-    if (!isrolloutgood) {
-      alpha *= phi;
-      continue;
+    const std::string name = "/home/yinj3/projects/cplus/data/forwardpass_" +
+                             std::to_string(i) + ".dat";
+    std::ofstream file(name);
+    PlotRun(name);
+    PlotShow();
+    for (const auto &pt : solver->Z) {
+      file << pt.state()(0) << " " << pt.state()(1) << std::endl;
     }
-
-    J = solver->obj->cost(solver->Z_dot);
-
+    PlotShow();
     for (const auto &pt : solver->Z_dot) {
       file << pt.state()(0) << " " << pt.state()(1) << std::endl;
     }
     PlotShow();
+    const auto isrolloutgood = rollout(solver, alpha);
+    if (!isrolloutgood) {
+      alpha *= phi;
+      continue;
+    }
+    for (const auto &pt : solver->Z_dot) {
+      file << pt.state()(0) << " " << pt.state()(1) << std::endl;
+    }
+    PlotShow();
+
+    J = solver->obj->cost(solver->Z_dot);
 
     expected = -alpha * (solver->DV[0] + alpha * solver->DV[1]);
 
@@ -125,8 +131,8 @@ iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
     }
 
     alpha *= phi;
+    file.close();
   }
-  file.close();
 
   if (J > J_prev) {
     solver->stats_.status = TerminationStatus::COST_INCREASE;

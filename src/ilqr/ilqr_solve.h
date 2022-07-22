@@ -32,9 +32,6 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
 
 iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
   initialize(solver);
-  // FILE *gnuplotPipe = popen("/usr/bin/gnuplot", "w");
-  // fprintf(gnuplotPipe, "set xrange [0:15]\n");
-  // fprintf(gnuplotPipe, "set yrange [-1.5:1]\n");
   // const std::string name = "/home/yinj3/projects/cplus/data/solve.dat";
   // std::ofstream file(name);
   // LOG(INFO) << name;
@@ -54,17 +51,16 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
     // Get next iterate.
     backwardpass(solver);
 
+    for (int i = 0; i < solver->Z.size(); ++i) {
+      CHECK(solver->Z_dot[i].data() == solver->Z[i].data());
+    }
     const auto Jnew = forwardpass(solver, J_prev);
-
     // LOG(INFO) << solver->Z_dot;
     solver->Z = solver->Z_dot;
     // LOG(INFO) << solver->Z;
     // for (const auto &pt : solver->Z_dot) {
     // file << pt.state()(0) << " " << pt.state()(1) << std::endl;
     //}
-    // std::string plot_str = "plot \"" + name + "\"\n";
-    // fprintf(gnuplotPipe, "%s", plot_str.c_str());
-    // fflush(gnuplotPipe);
 
     const double dJ = J_prev - Jnew;
     // Calculate the gradient of the new trajectory.
