@@ -40,7 +40,7 @@ set(GLOG_LIBRARIES glog::glog)
 #add_compile_definitions(EIGEN_USE_LAPACK EIGEN_USE_BLAS)
 #add_definitions(-DEIGEN_USE_BLAS -DEIGEN_USE_LAPACKE)
 # add_definitions(-DENABLE_LOG)
-# add_definitions(-DENABLE_PLOT)
+add_definitions(-DENABLE_PLOT)
 
 add_executable(m src/main.cpp)
 target_link_libraries(m Eigen3::Eigen ${GTEST_LIBRARIES} ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES} pthread ${BLAS_LIBRARIES})

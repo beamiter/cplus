@@ -97,6 +97,7 @@ iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
 #endif
 
     J = solver->obj->cost(solver->Z_dot);
+    LOG(INFO) << "******* " << J_prev << ", ******* " << J;
 
     expected = -alpha * (solver->DV[0] + alpha * solver->DV[1]);
 

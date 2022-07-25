@@ -44,10 +44,11 @@ public:
     const auto &a = x[5];
     double beta, s, c, omega;
     if constexpr (RefPos::cg == RP) {
-      beta = std::atan2(lr * delta, L);
+      const double tan3 = tan(delta);
+      beta = std::atan2(lr * tan3, L);
       s = sin(theta + beta);
       c = cos(theta + beta);
-      omega = v * cos(beta) * tan(delta) / L;
+      omega = v * cos(beta) * tan3 / L;
     } else if constexpr (RefPos::rear == RP) {
       s = sin(theta);
       c = cos(theta);
@@ -75,10 +76,11 @@ public:
     const auto &a = x[5];
     double beta, s, c, omega;
     if constexpr (RefPos::cg == RP) {
-      beta = std::atan2(lr * delta, L);
+      const double tan3 = tan(delta);
+      beta = std::atan2(lr * tan3, L);
       s = sin(theta + beta);
       c = cos(theta + beta);
-      omega = v * cos(beta) * tan(delta) / L;
+      omega = v * cos(beta) * tan3 / L;
     } else if constexpr (RefPos::rear == RP) {
       s = sin(theta);
       c = cos(theta);
@@ -102,31 +104,46 @@ public:
       // Works great.
       const double s2 = sin(x(2));
       const double c2 = cos(x(2));
+      const double c3 = cos(x(3));
+      const double s3 = sin(x(3));
+      const double tan3 = s3 / c3;
       jaco(0, 2) = -s2 * x(4);
       jaco(0, 4) = c2;
       jaco(1, 2) = c2 * x(4);
       jaco(1, 4) = s2;
-      jaco(2, 4) = tan(x(3)) / L;
-      jaco(2, 3) = x(4) / (std::pow(cos(x(3)), 2) * L);
+      jaco(2, 4) = tan3 / L;
+      jaco(2, 3) = x(4) / (std::pow(c3, 2) * L);
       jaco(3, 7) = 1;
       jaco(4, 5) = 1;
       jaco(5, 6) = 1;
     } else if constexpr (RefPos::cg == RP) {
       // TODO: Jacobian with this is not stable, need to fix on it later.
       const double ratio = lr / L;
-      const double beta = tan(ratio * x(3));
-      const double beta_dot_3 = ratio / std::pow(cos(ratio), 2);
-      const double s2 = sin(x(2) + beta);
-      const double c2 = cos(x(2) + beta);
-      jaco(0, 2) = -x(4) * s2;
+      // Wrong gradient for beta!
+      const double c3 = cos(x(3));
+      const double s3 = sin(x(3));
+      // const double tan3 = tan(x(3));
+      const double tan3 = s3 / c3;
+      const double beta_param = ratio * tan3;
+      const double beta = std::atan(beta_param);
+      const double cbeta = cos(beta);
+      const double sbeta = sin(beta);
+      const double beta_dot_3 =
+          1.0 / (1. + std::pow(beta_param, 2)) * ratio / std::pow(c3, 2);
+      const double s2_beta = sin(x(2) + beta);
+      const double c2_beta = cos(x(2) + beta);
+      jaco(0, 2) = -x(4) * s2_beta;
+      // jaco(0, 3) = -x(4) * s2_beta * beta_dot_3;
       jaco(0, 3) = -jaco(0, 2) * beta_dot_3;
-      jaco(0, 4) = c2;
+      jaco(0, 4) = c2_beta;
+      // jaco(1, 2) = x(4) * c2_beta;
       jaco(1, 2) = x(4) * jaco(0, 4);
+      // jaco(1, 3) = x(4) * c2_beta * beta_dot_3;
       jaco(1, 3) = jaco(1, 2) * beta_dot_3;
-      jaco(1, 4) = s2;
-      jaco(2, 3) = (x(4) / L) * (-sin(beta) * beta_dot_3 * tan(x(3)) +
-                                 cos(beta) / std::pow(cos(x(3)), 2));
-      jaco(2, 4) = cos(beta) * tan(x(3)) / L;
+      jaco(1, 4) = s2_beta;
+      jaco(2, 3) =
+          (x(4) / L) * (cbeta / std::pow(c3, 2) - tan3 * sbeta * beta_dot_3);
+      jaco(2, 4) = cbeta * tan3 / L;
       jaco(3, 7) = 1;
       jaco(4, 5) = 1;
       jaco(5, 6) = 1;

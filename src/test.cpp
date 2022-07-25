@@ -195,7 +195,7 @@ TEST(iLqrSolverTest, solve) {
   iLQRSolverSd<6, 2, DiagonalCostS> solver(&prob, opts, stats, UserDefined(),
                                            Valbool<true>());
   solve(&solver);
-  LOG(INFO) << solver.Z;
+  // LOG(INFO) << solver.Z;
 }
 
 int main(int argc, char **argv) {

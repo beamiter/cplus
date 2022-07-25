@@ -36,7 +36,7 @@ template <typename T> struct AbstractSolverOptions {};
 
 template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
   T constraint_tolerance = 1e-6;
-  T cost_tolerance = 5.0;
+  T cost_tolerance = 0.001;
   T cost_tolerance_intermediate = 1e-4;
   T gradient_tolerance = 10.0;
   T gradient_tolerance_intermediate = 1.0;
