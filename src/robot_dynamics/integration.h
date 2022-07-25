@@ -250,6 +250,7 @@ inline auto getks(const RK4<KP> &inte)
     -> decltype(std::make_tuple(inte.k1, inte.k2, inte.k3, inte.k4)) {
   return std::make_tuple(inte.k1, inte.k2, inte.k3, inte.k4);
 }
+// Profile: 2.00%
 template <typename KP>
 typename KP::state_type
 integrate(const RK4<KP> &, const ContinuousDynamics<KP> *model,
@@ -285,7 +286,7 @@ void jacobian(RK4<KP> *inte, FS sig, const ContinuousDynamics<KP> *model,
   static_assert(std::is_base_of<FunctionSignature, FS>::value,
                 "FS is not derived of FunctionSignature");
 }
-// Profile: 41.8%
+// Profile: 41.4%
 template <typename KP>
 void jacobian(RK4<KP> *inte, StaticReturn, const ContinuousDynamics<KP> *model,
               typename KP::ref_matrix_type J, typename KP::ref_vector_type xn,

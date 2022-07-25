@@ -8,7 +8,7 @@ template <typename Decom> bool isposdef(const Decom &in) {
   return in.info() == 0;
 }
 
-// Profile: 35.5%
+// Profile: 35.8%
 iLQRSolverTemplate std::vector<typename KP::base_type>
 backwardpass(iLQRSolverDeclare *solver) {
   const auto &N = solver->N;

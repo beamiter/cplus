@@ -19,14 +19,14 @@ enum class RefPos {
   fg,
 };
 
-template <typename KP> class CarModel : public ContinuousDynamics<KP> {
+template <typename KP, RefPos RP = RefPos::rear>
+class CarModel : public ContinuousDynamics<KP> {
 
 public:
   virtual ~CarModel() = default;
   static constexpr int Nx = KP::N;
   static constexpr int Nu = KP::M;
-  CarModel(RefPos ref_in, double L_in, double lr_in) {
-    this->ref = ref_in;
+  CarModel(double L_in, double lr_in) {
     this->L = L_in;
     this->lr = lr_in;
   }
@@ -43,16 +43,16 @@ public:
     const auto &v = x[4];
     const auto &a = x[5];
     double beta, s, c, omega;
-    if (RefPos::cg == ref) {
+    if constexpr (RefPos::cg == RP) {
       beta = std::atan2(lr * delta, L);
       s = sin(theta + beta);
       c = cos(theta + beta);
       omega = v * cos(beta) * tan(delta) / L;
-    } else if (RefPos::rear == ref) {
+    } else if constexpr (RefPos::rear == RP) {
       s = sin(theta);
       c = cos(theta);
       omega = v * tan(delta) / L;
-    } else if (RefPos::fg == ref) {
+    } else if constexpr (RefPos::fg == RP) {
       s = sin(theta + delta);
       c = cos(theta + delta);
       omega = v * sin(delta) / L;
@@ -74,16 +74,16 @@ public:
     const auto &v = x[4];
     const auto &a = x[5];
     double beta, s, c, omega;
-    if (RefPos::cg == ref) {
+    if constexpr (RefPos::cg == RP) {
       beta = std::atan2(lr * delta, L);
       s = sin(theta + beta);
       c = cos(theta + beta);
       omega = v * cos(beta) * tan(delta) / L;
-    } else if (RefPos::rear == ref) {
+    } else if constexpr (RefPos::rear == RP) {
       s = sin(theta);
       c = cos(theta);
       omega = v * tan(delta) / L;
-    } else if (RefPos::fg == ref) {
+    } else if constexpr (RefPos::fg == RP) {
       s = sin(theta + delta);
       c = cos(theta + delta);
       omega = v * sin(delta) / L;
@@ -98,7 +98,7 @@ public:
                 typename KP::ref_vector_type y,
                 const typename KP::state_type &x,
                 const typename KP::control_type &u) const final {
-    if (RefPos::rear == ref) {
+    if constexpr (RefPos::rear == RP) {
       // Works great.
       const double s2 = sin(x(2));
       const double c2 = cos(x(2));
@@ -111,7 +111,7 @@ public:
       jaco(3, 7) = 1;
       jaco(4, 5) = 1;
       jaco(5, 6) = 1;
-    } else if (RefPos::cg == ref) {
+    } else if constexpr (RefPos::cg == RP) {
       // TODO: Jacobian with this is not stable, need to fix on it later.
       const double ratio = lr / L;
       const double beta = tan(ratio * x(3));
@@ -135,7 +135,6 @@ public:
     }
   }
 
-  RefPos ref;
   double L = 0.0;
   double lr = 0.0;
 
@@ -151,6 +150,7 @@ template <typename KP, typename C> class CarProblem : public Problem<KP, C> {
   static constexpr int Nu = KP::M;
 
   using discretized_type = DiscretizedDynamics<KP, RK4>;
+  using model_type = CarModel<KP, RefPos::rear>;
 
 public:
   CarProblem(std::vector<base_type> x0_in, std::vector<base_type> xf_in,
@@ -169,7 +169,7 @@ public:
     R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-    car_ = std::make_shared<CarModel<KP>>(RefPos::rear, 2.7, 1.5);
+    car_ = std::make_shared<model_type>(2.7, 1.5);
     obj_ = LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N, UserDefined());
     // Must be discretized.
     discretized_car_ = std::make_shared<discretized_type>(car_.get());
@@ -187,7 +187,7 @@ public:
   }
 
   // Members.
-  std::shared_ptr<CarModel<KP>> car_;
+  std::shared_ptr<model_type> car_;
   Objective<C> obj_;
   std::shared_ptr<discretized_type> discretized_car_;
 };
