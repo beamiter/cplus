@@ -105,13 +105,13 @@ public:
     const bool samecontroldim = std::all_of(
         nu.begin(), nu.end(), [&nu](const auto u) { return u == nu.front(); });
     if constexpr (USE) {
-      assert(samecontroldim && samestatedim);
-      assert(Nx == nx.front());
-      assert(Nu == nu.front());
+      CHECK(samecontroldim && samestatedim);
+      CHECK(Nx == nx.front());
+      CHECK(Nu == nu.front());
       this->Ne = ne.front();
     } else {
-      assert(Nx == (samestatedim ? nx.front() : Nx));
-      assert(Nu == (samecontroldim ? nu.front() : Nu));
+      CHECK(Nx == (samestatedim ? nx.front() : Nx));
+      CHECK(Nu == (samecontroldim ? nu.front() : Nu));
       this->Ne = samestatedim ? ne.front() : 0;
     }
 
@@ -120,8 +120,9 @@ public:
       rollout(dynamics_signature(Z), prob->shared_models_[0].get(), &Z,
               prob->x0);
     }
-    VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
-    Z[0].setstate(v);
+    // VectorX<T> v = Map<Eigen::VectorX<T>>(prob->x0.data(), prob->x0.size());
+    // Z[0].setstate(v);
+    Z[0].setstate(prob->x0);
 
     loop(0, N,
          [&ne, this](const int k) { dx.push_back(VectorX<T>::Zero(ne[k])); });

@@ -54,9 +54,9 @@ void jacobian(FS sig, DM diff, DiscreteDynamics<KP> *model,
 
 // error_expansion
 template <typename M, typename P, typename Q>
-void errstate_jacobian(const std::vector<M> &model, std::vector<P> &G,
+void errstate_jacobian(const std::vector<M> &models, std::vector<P> &G,
                        const Q &Z) {
-  errstate_jacobian(statevectortype(model.front().get()), model, G, Z);
+  errstate_jacobian(statevectortype(models.front().get()), models, G, Z);
 }
 template <typename M, typename P, typename Q, typename SV = StateVectorType>
 void errstate_jacobian(SV type, const std::vector<M> &models, std::vector<P> &G,

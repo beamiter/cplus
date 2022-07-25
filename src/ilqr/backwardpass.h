@@ -37,7 +37,12 @@ backwardpass(iLQRSolverDeclare *solver) {
     Q_vec[k]->x += E->at(k)->x;
 
     Q_vec[k]->u = B.adjoint() * S_vec[k + 1]->x;
+    LOG(INFO) << B.adjoint();
+    LOG(INFO) << S_vec[k + 1]->x;
+    LOG(INFO) << Q_vec[k]->u;
     Q_vec[k]->u += E->at(k)->u;
+    LOG(INFO) << E->at(k)->u;
+    LOG(INFO) << Q_vec[k]->u;
 
     Qtmp->xx = S_vec[k + 1]->xx * A;
     Q_vec[k]->xx = A.adjoint() * Qtmp->xx;

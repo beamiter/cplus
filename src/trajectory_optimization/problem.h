@@ -74,7 +74,8 @@ public:
   }
 
   void init(const std::shared_ptr<DiscreteDynamics<KP>> &model_in,
-            const Objective<C> *obj_in, state_type x0_in, base_type tf_in) {
+            const Objective<C> *obj_in, const state_type &x0_in,
+            const base_type &tf_in) {
     const auto N = obj_in->length();
     std::vector<std::shared_ptr<DiscreteDynamics<KP>>> models;
     for (auto k = 0; k < N - 1; ++k) {

@@ -10,6 +10,7 @@ iLQRSolverTemplate bool rollout(iLQRSolverDeclare *solver, double alpha) {
   auto &Z_dot = solver->Z_dot;
   const auto &K_vec = solver->K_vec;
   const auto &d_vec = solver->d_vec;
+  // It's safe to clear this.
   auto &delta_x = solver->dx;
   auto &delta_u = solver->du;
 
