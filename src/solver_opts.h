@@ -36,7 +36,7 @@ template <typename T> struct AbstractSolverOptions {};
 
 template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
   T constraint_tolerance = 1e-6;
-  T cost_tolerance = 1e-4;
+  T cost_tolerance = 5.0;
   T cost_tolerance_intermediate = 1e-4;
   T gradient_tolerance = 10.0;
   T gradient_tolerance_intermediate = 1.0;
@@ -93,7 +93,7 @@ template <typename T = double> struct SolverOptions : AbstractSolverOptions<T> {
   bool projected_newton = true;
   bool reuse_jacobians = false;
   bool trim_stats = true;
-  int iterations = 20;
+  int iterations = 40;
   bool show_summary = true;
   int verbose = 0;
 };
@@ -169,7 +169,7 @@ struct RecordParam {
 
 template <typename T>
 int record_iteration(SolverStats<T> &stats, RecordParam param,
-                      bool is_pn = false, bool is_outer = false) {
+                     bool is_pn = false, bool is_outer = false) {
   if (is_outer) {
     stats.iterations_outer += 1;
   } else {

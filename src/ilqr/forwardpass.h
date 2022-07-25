@@ -69,8 +69,9 @@ iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
   bool exit_linesearch = false;
   PlotInit();
   for (int i = 0; i < max_iters; ++i) {
-    const std::string name = "/home/yinj3/projects/cplus/data/forwardpass_" +
-                             std::to_string(i) + ".dat";
+#ifdef ENABLE_PLOT
+    const std::string name =
+        "/home/yinj3/projects/cplus/data/data_" + std::to_string(i) + ".dat";
     std::ofstream file(name);
     PlotRun(name);
     PlotShow();
@@ -82,15 +83,18 @@ iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
       file << pt.state()(0) << " " << pt.state()(1) << std::endl;
     }
     PlotShow();
+#endif
     const auto isrolloutgood = rollout(solver, alpha);
     if (!isrolloutgood) {
       alpha *= phi;
       continue;
     }
+#ifdef ENABLE_PLOT
     for (const auto &pt : solver->Z_dot) {
       file << pt.state()(0) << " " << pt.state()(1) << std::endl;
     }
     PlotShow();
+#endif
 
     J = solver->obj->cost(solver->Z_dot);
 
@@ -132,7 +136,9 @@ iLQRSolverTemplate double forwardpass(iLQRSolverDeclare *solver,
     }
 
     alpha *= phi;
+#ifdef ENABLE_PLOT
     file.close();
+#endif
   }
 
   if (J > J_prev) {

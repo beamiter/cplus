@@ -99,6 +99,7 @@ public:
                 const typename KP::state_type &x,
                 const typename KP::control_type &u) const final {
     if (RefPos::rear == ref) {
+      // Works great.
       const double s2 = sin(x(2));
       const double c2 = cos(x(2));
       jaco(0, 2) = -s2 * x(4);
@@ -111,6 +112,7 @@ public:
       jaco(4, 5) = 1;
       jaco(5, 6) = 1;
     } else if (RefPos::cg == ref) {
+      // TODO: Jacobian with this is not stable, need to fix on it later.
       const double ratio = lr / L;
       const double beta = tan(ratio * x(3));
       const double beta_dot_3 = ratio / std::pow(cos(ratio), 2);
@@ -167,7 +169,7 @@ public:
     R = rho * R;
     DiagonalMatrix<double, Nx> Qf(10, 10, 60, 1, 1, 1);
 
-    car_ = std::make_shared<CarModel<KP>>(RefPos::cg, 2.7, 1.5);
+    car_ = std::make_shared<CarModel<KP>>(RefPos::rear, 2.7, 1.5);
     obj_ = LQRObjective<Nx, Nu, base_type>(Q, R, Qf, xf, uf, N, UserDefined());
     // Must be discretized.
     discretized_car_ = std::make_shared<discretized_type>(car_.get());

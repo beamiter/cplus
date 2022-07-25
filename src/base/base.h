@@ -146,6 +146,9 @@ template <typename T> inline T arctan(T z) {
 }
 static FILE *gnuplotPipe = nullptr;
 inline int PlotInit(const char *path = "/usr/bin/gnuplot") {
+#ifndef ENABLE_PLOT
+  return 0;
+#endif
   if (gnuplotPipe == nullptr) {
     gnuplotPipe = popen(path, "w");
     // Init withy x/y range.
@@ -155,10 +158,16 @@ inline int PlotInit(const char *path = "/usr/bin/gnuplot") {
   return gnuplotPipe != nullptr;
 }
 inline void PlotRun(const std::string &file_name) {
+#ifndef ENABLE_PLOT
+  return;
+#endif
   std::string plot_str = "plot \"" + file_name + "\"\n";
   fprintf(gnuplotPipe, "%s", plot_str.c_str());
 }
 inline void PlotShow() {
+#ifndef ENABLE_PLOT
+  return;
+#endif
   fprintf(gnuplotPipe, "replot\n");
   fflush(gnuplotPipe);
 }

@@ -285,6 +285,7 @@ void jacobian(RK4<KP> *inte, FS sig, const ContinuousDynamics<KP> *model,
   static_assert(std::is_base_of<FunctionSignature, FS>::value,
                 "FS is not derived of FunctionSignature");
 }
+// Profile: 41.8%
 template <typename KP>
 void jacobian(RK4<KP> *inte, StaticReturn, const ContinuousDynamics<KP> *model,
               typename KP::ref_matrix_type J, typename KP::ref_vector_type xn,

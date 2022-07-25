@@ -32,12 +32,9 @@ iLQRSolverTemplate void initialize(iLQRSolverDeclare *solver) {
 
 iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
   initialize(solver);
-  // const std::string name = "/home/yinj3/projects/cplus/data/solve.dat";
-  // std::ofstream file(name);
-  // LOG(INFO) << name;
   for (auto iter = 0; iter < solver->opts.iterations; ++iter) {
     const auto J_prev = solver->cost(solver->Z_dot);
-    // LOG(INFO) << "********** " << J_prev;
+    LOG(INFO) << iter << " ********** " << J_prev;
 
     // Calculate expansions.
     // Dummy.
@@ -58,9 +55,6 @@ iLQRSolverTemplate void solve(iLQRSolverDeclare *solver) {
     // LOG(INFO) << solver->Z_dot;
     solver->Z = solver->Z_dot;
     // LOG(INFO) << solver->Z;
-    // for (const auto &pt : solver->Z_dot) {
-    // file << pt.state()(0) << " " << pt.state()(1) << std::endl;
-    //}
 
     const double dJ = J_prev - Jnew;
     // Calculate the gradient of the new trajectory.
@@ -109,6 +103,7 @@ iLQRSolverTemplate void record_iteration(iLQRSolverDeclare *solver,
   } else {
     solver->stats_.dJ_zero_counter = 0;
   }
+#ifdef ENABLE_LOG
   LOG(INFO) << "-----------------";
   LOG(INFO) << "cost " << param.cost;
   LOG(INFO) << "iter " << iter;
@@ -116,6 +111,7 @@ iLQRSolverTemplate void record_iteration(iLQRSolverDeclare *solver,
   LOG(INFO) << "grad " << param.gradient;
   LOG(INFO) << "dJ_zero " << solver->stats_.dJ_zero_counter;
   LOG(INFO) << "rou " << solver->reg.rou;
+#endif
 }
 
 iLQRSolverTemplate bool evaluate_convergence(iLQRSolverDeclare *solver) {

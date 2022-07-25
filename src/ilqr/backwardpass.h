@@ -8,6 +8,7 @@ template <typename Decom> bool isposdef(const Decom &in) {
   return in.info() == 0;
 }
 
+// Profile: 35.5%
 iLQRSolverTemplate std::vector<typename KP::base_type>
 backwardpass(iLQRSolverDeclare *solver) {
   const auto &N = solver->N;
@@ -37,12 +38,12 @@ backwardpass(iLQRSolverDeclare *solver) {
     Q_vec[k]->x += E->at(k)->x;
 
     Q_vec[k]->u = B.adjoint() * S_vec[k + 1]->x;
-    LOG(INFO) << B.adjoint();
-    LOG(INFO) << S_vec[k + 1]->x;
-    LOG(INFO) << Q_vec[k]->u;
+    // LOG(INFO) << B.adjoint();
+    // LOG(INFO) << S_vec[k + 1]->x;
+    // LOG(INFO) << Q_vec[k]->u;
     Q_vec[k]->u += E->at(k)->u;
-    LOG(INFO) << E->at(k)->u;
-    LOG(INFO) << Q_vec[k]->u;
+    // LOG(INFO) << E->at(k)->u;
+    // LOG(INFO) << Q_vec[k]->u;
 
     Qtmp->xx = S_vec[k + 1]->xx * A;
     Q_vec[k]->xx = A.adjoint() * Qtmp->xx;
@@ -77,6 +78,7 @@ backwardpass(iLQRSolverDeclare *solver) {
     // LOG(INFO) << K_vec[k];
     // LOG(INFO) << solver->gains[k];
     d_vec[k] = Q_vec[k]->u;
+    // LOG(INFO) << k << "\n" << d_vec[k];
     const auto &Quu_fact = Quu_reg.llt();
     if (!isposdef(Quu_fact)) {
       LOG(INFO) << "Backwardpass cholesky failed at time step " << k;
