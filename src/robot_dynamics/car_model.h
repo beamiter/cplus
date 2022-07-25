@@ -19,9 +19,9 @@ enum class RefPos {
   fg,
 };
 
-template <typename KP, RefPos RP = RefPos::rear>
+template <typename KP, RefPos RP>
 class CarModel : public ContinuousDynamics<KP> {
-
+  // https://dingyan89.medium.com/simple-understanding-of-kinematic-bicycle-model-81cac6420357
 public:
   virtual ~CarModel() = default;
   static constexpr int Nx = KP::N;
@@ -130,6 +130,24 @@ public:
       jaco(3, 7) = 1;
       jaco(4, 5) = 1;
       jaco(5, 6) = 1;
+    } else if constexpr (RefPos::fg == RP) {
+      const double s23 = sin(x(2) + x(3));
+      const double c23 = cos(x(2) + x(3));
+      const double s3 = sin(x(3));
+      const double c3 = cos(x(3));
+      jaco(0, 2) = -x(4) * s23;
+      // jaco(0, 3) = -x(4) * s23;
+      jaco(0, 3) = jaco(0, 2);
+      jaco(0, 4) = c23;
+      jaco(1, 2) = x(4) * c23;
+      // jaco(1, 3) = x(4) * c23;
+      jaco(1, 3) = jaco(1, 2);
+      jaco(1, 4) = s23;
+      jaco(2, 3) = x(4) * c3 / L;
+      jaco(2, 4) = s3 / L;
+      jaco(3, 7) = 1;
+      jaco(4, 5) = 1;
+      jaco(5, 6) = 1;
     } else {
       CHECK(0);
     }
@@ -150,7 +168,7 @@ template <typename KP, typename C> class CarProblem : public Problem<KP, C> {
   static constexpr int Nu = KP::M;
 
   using discretized_type = DiscretizedDynamics<KP, RK4>;
-  using model_type = CarModel<KP, RefPos::rear>;
+  using model_type = CarModel<KP, RefPos::fg>;
 
 public:
   CarProblem(std::vector<base_type> x0_in, std::vector<base_type> xf_in,
